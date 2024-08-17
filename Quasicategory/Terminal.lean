@@ -41,9 +41,16 @@ end SimplexCategory
 
 namespace SSet
 
-def ptIsTerminal : IsTerminal Δ[0] := Functor.isTerminalOfObjIsTerminal Δ[0] <| by
-  intro t
-  sorry
+def ptIsTerminal : IsTerminal Δ[0] := by
+  letI : ∀ (X : SSet), Unique (X ⟶ Δ[0]) := fun X ↦ {
+    default := {
+      app := fun n _ ↦ ULift.up (Limits.IsTerminal.from (isTerminalZero) (Opposite.unop n)) }
+    uniq := by
+      intros f
+      ext n
+      apply ULift.up_inj.2
+      apply Limits.IsTerminal.hom_ext isTerminalZero _}
+  refine IsTerminal.ofUnique Δ[0]
 
 def binaryFan (X : SSet.{0}) : BinaryFan Δ[0] X :=
   BinaryFan.mk (ptIsTerminal.from X) (𝟙 X)
