@@ -1,227 +1,11 @@
-import Mathlib.AlgebraicTopology.Quasicategory
-import Mathlib.AlgebraicTopology.KanComplex
-import Mathlib.CategoryTheory.Adhesive
-import Quasicategory.InternalHom
-import Quasicategory.MorphismProperty
+import Quasicategory.Basic
+import Quasicategory.Monomorphism
 import Quasicategory.Terminal
+import Quasicategory.InternalHom
 
 namespace SSet
 
-open CategoryTheory Simplicial MorphismProperty
-
-/- a morphism is a trivial Kan fibration if it has the right lifting property wrt
-  every boundary inclusion  `∂Δ[n] ⟶ Δ[n]`. -/
-def trivialKanFibration : MorphismProperty SSet := fun _ _ p ↦
-  ∀ (n : ℕ), HasLiftingProperty (boundaryInclusion n) p
-
-/- a morphism is an inner fibration if it has the right lifting property wrt
-  every inner horn inclusion  `Λ[n, i] ⟶ Δ[n]`. -/
-def innerFibration : MorphismProperty SSet := fun _ _ p ↦
-  ∀ ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (_h0 : 0 < i) (_hn : i < Fin.last (n+2)),
-    HasLiftingProperty (hornInclusion (n+2) i) p
-
-/- a morphism is inner anodyne if it has the left lifting property wrt all inner fibrations. -/
-abbrev innerAnodyne := llp_wrt innerFibration
-
-/- inner horn inclusions are inner anodyne. -/
-lemma innerAnodyne_of_innerHorn
-    ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (_h0 : 0 < i) (_hn : i < Fin.last (n+2)) :
-    innerAnodyne (hornInclusion (n+2) i) := fun _ _ _ h ↦ h _h0 _hn
-
--- innerAnodyne is WSC gen. by inner horn inclusions
-lemma contains_innerAnodyne_iff_contains_inner_horn
-    (S : MorphismProperty SSet) (hS : WeaklySaturated S) :
-    (∀ ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (_h0 : 0 < i) (_hn : i < Fin.last (n+2)), S (hornInclusion (n+2) i))
-      ↔ (∀ {X Y : SSet} (p : X ⟶ Y) (hp : innerAnodyne p), S p) := by
-  refine ⟨?_, fun h n i _h0 _hn ↦ h (hornInclusion (n + 2) i) (innerAnodyne_of_innerHorn _h0 _hn)⟩
-  sorry
-
-section Monomorphism
-
--- boundary inclusions are monomorphisms
-instance boundaryInclusion_mono (n : ℕ) : Mono (boundaryInclusion n) := by
-  have : ∀ (k : SimplexCategoryᵒᵖ), Mono ((boundaryInclusion n).app k) := fun _ ↦ by
-    rw [mono_iff_injective]
-    exact (Set.injective_codRestrict Subtype.property).mp fun ⦃a₁ a₂⦄ a ↦ a
-  apply NatTrans.mono_of_mono_app
-
-open MonoidalCategory in
--- need that B ⊗ ∂Δ[n] ⟶ B ⊗ Δ[n] is a monomorphism for next lemma
-instance boundaryInclusion_whisker_mono (B : SSet) (n : ℕ) : Mono (B ◁ (boundaryInclusion n)) := by
-  have : ∀ (k : SimplexCategoryᵒᵖ), Mono ((B ◁ boundaryInclusion n).app k) := by
-    intro k
-    rw [mono_iff_injective]
-    rintro ⟨b, x⟩ ⟨b', x'⟩ h
-    apply Prod.ext_iff.1 at h
-    apply Prod.ext
-    · exact h.1
-    · simp only [boundaryInclusion, whiskerLeft_app_apply] at h ⊢
-      apply (Set.injective_codRestrict Subtype.property).mp
-      exact fun ⦃a₁ a₂⦄ a ↦ a
-      exact h.2
-  apply NatTrans.mono_of_mono_app
-
--- inner horn inclusions are monomorphisms
-instance inner_horn_mono ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (_h0 : 0 < i) (_hn : i < Fin.last (n+2)) :
-    monomorphisms SSet (hornInclusion (n+2) i) := by
-  have : ∀ (k : SimplexCategoryᵒᵖ), Mono ((hornInclusion (n + 2) i).app k) := fun _ ↦ by
-    rw [mono_iff_injective]
-    exact (Set.injective_codRestrict Subtype.property).mp fun ⦃a₁ a₂⦄ a ↦ a
-  apply NatTrans.mono_of_mono_app
-
-instance monomorphisms.StableUnderCobaseChange : StableUnderCobaseChange (monomorphisms SSet) := by
-  intro A B A' B' f s f' t P hf
-  letI _ : Mono f := hf
-  letI _ : Adhesive SSet := adhesive_functor
-  exact Adhesive.mono_of_isPushout_of_mono_right P
-
-def transfinite_monos_aux (α : Ordinal) (F : {β | β ≤ α} ⥤ SSet) : Ordinal → Prop := fun γ ↦
-  (hγ : γ ≤ α) → monomorphisms SSet (F.map (zero_to γ hγ))
-
-instance transfinite_monos
-    (X Y : SSet) (f : X ⟶ Y)
-    (α : Ordinal)
-    (F : {β | β ≤ α} ⥤ SSet) (hF : Limits.PreservesColimits F)
-    (hS : ∀ (β : Ordinal) (hβ : β < α), monomorphisms SSet (F.map (to_succ hβ))) :
-    ∀ {γ} (hγ : γ ≤ α), monomorphisms SSet (F.map (zero_to γ hγ)) := by
-  intro γ hγ
-  refine @Ordinal.limitRecOn (transfinite_monos_aux α F) γ ?_ ?_ ?_ hγ
-  all_goals dsimp [transfinite_monos_aux]
-  · intro; simp [zero_to]; exact instMonoId _
-  · intro o IH (succ_le : o + 1 ≤ α)
-    have o_lt : o < α := Order.succ_le_iff.mp succ_le
-    have : (F.map (zero_to (Order.succ o) succ_le)) = (F.map (zero_to o (le_of_lt o_lt))) ≫
-        (F.map (to_succ o_lt)) := by
-      suffices (zero_to (Order.succ o) succ_le) = (zero_to o (le_of_lt o_lt)) ≫ (to_succ o_lt) by
-        aesop
-      simp only [Set.coe_setOf, Set.mem_setOf_eq, zero_to, to_succ, homOfLE_comp]
-    rw [this]
-    have a := IH (le_of_lt o_lt)
-    have b := hS o o_lt
-    exact @CategoryTheory.mono_comp SSet _ _ _ _
-      (F.map (zero_to o (le_of_lt o_lt))) a (F.map (to_succ o_lt)) b
-  · simp only [monomorphisms.iff]
-    intro o ho IH o_le
-    sorry -- because monomorphisms are closed under filtered colimits?
--- o is colimit of o' < o, and ∀ o' < o we have f_o'_0 : F(0) ⟶ F(o') is a Mono.
--- {o' | o' < o} is a filtered category (as a directed set), so o is a filtered colimit
--- F preserves colimits, so F(o) is a filtered colimit of F(o') for o' < o
--- since each F(0) ⟶ F(o') is a Mono, also F(0) ⟶ F(o) is a Mono
-
-instance monomorphisms.StableUnderTransfiniteComposition :
-    StableUnderTransfiniteComposition (monomorphisms SSet) := by
-  intro X Y f hf
-  induction hf with
-  | mk α F hF hS => exact transfinite_monos X Y f α F hF hS (le_refl α)
-
--- `0077` (a) monomorphisms are weakly saturated
-instance monomorphisms.WeaklySaturated : WeaklySaturated (monomorphisms SSet) :=
-  ⟨ monomorphisms.StableUnderCobaseChange,
-    monomorphisms.StableUnderRetracts,
-    monomorphisms.StableUnderTransfiniteComposition⟩
-
--- `0077` (b) monomorphisms are generated by boundary inclusions
-lemma contains_mono_iff_contains_boundaryInclusion
-    (S : MorphismProperty SSet) (hS : WeaklySaturated S) :
-    (∀ (n : ℕ), S (boundaryInclusion n))
-      ↔ ∀ {A B : SSet} (i : A ⟶ B) [Mono i], S i := by
-  sorry
-
-/- `006Y` trivial Kan fibration iff rlp wrt all monomorphisms -/
-lemma trivialKanFibration_iff_rlp_monomorphisms {X Y : SSet} (p : X ⟶ Y) :
-    trivialKanFibration p ↔ rlp_wrt (monomorphisms SSet) p :=
-  ⟨ (contains_mono_iff_contains_boundaryInclusion (llp_wrt' p) (llp_weakly_saturated' p)).1,
-    fun h n ↦ h (boundaryInclusion_mono n)⟩
-
--- innerAnodyne is generated by inner horn inclusions, which are monos and monos are saturated,
--- thus innerAnodynes are monos
-lemma innerAnodyne_mono {X Y : SSet} (p : X ⟶ Y) (hp : innerAnodyne p) :
-    monomorphisms SSet p :=
-  (contains_innerAnodyne_iff_contains_inner_horn
-    (monomorphisms SSet) monomorphisms.WeaklySaturated).1 inner_horn_mono p hp
-
-end Monomorphism
-
-section _007E
-
--- `007E` (1), if extension property wrt every inner anodyne, then quasicat
--- to prove converse, need that class of inner anodyne morphisms is generated by inner horn inclusions
-instance _007Ea {S : SSet}
-    (h : ∀ {A B} (i : A ⟶ B) (_ : innerAnodyne i) (f₀ : A ⟶ S), ∃ (f : B ⟶ S), f₀ = i ≫ f) :
-    Quasicategory S where
-  hornFilling' n i σ₀ _h0 _hn := h (hornInclusion (n + 2) i) (innerAnodyne_of_innerHorn _h0 _hn) σ₀
-
-abbrev proj (S : SSet) : S ⟶ Δ[0] := Limits.IsTerminal.from ptIsTerminal S
-
--- extension property wrt every inner anodyne morphism is equivalent to (S ⟶ Δ[0]) having RLP wrt
--- every inner anodyne morphism
-lemma extension_iff_llp_proj {S : SSet} :
-    (∀ {A B} (i : A ⟶ B) (_ : innerAnodyne i) (f₀ : A ⟶ S), ∃ (f : B ⟶ S), f₀ = i ≫ f) ↔
-    (rlp_wrt (innerAnodyne)) (proj S) := by
-  refine ⟨?_, ?_⟩
-  · intro h A B i hi
-    refine ⟨?_⟩
-    intro f₀ t sq
-    obtain ⟨l, hl⟩ := h i hi f₀
-    exact ⟨l, hl.symm, Limits.IsTerminal.hom_ext ptIsTerminal _ _⟩
-  · intro h A B i hi f₀
-    have : f₀ ≫ proj S = (i ≫ proj B) := Limits.IsTerminal.hom_ext ptIsTerminal _ _
-    obtain ⟨⟨lift⟩⟩ := (h hi).sq_hasLift (CommSq.mk this)
-    exact ⟨lift.l, lift.fac_left.symm⟩
-
--- since S is a quasicat, every inner horn inclusion has LLP wrt (S ⟶ Δ[0]), and
--- inner horn inclusions generate inner anodyne morphisms,
--- so all inner anodyne must have LLP wrt (S ⟶ Δ[0])
-
--- `007E`
--- quasicategory iff extension property wrt every inner anodyne morphism
-instance quasicat_iff_extension_wrt_innerAnodyne {S : SSet} :
-    (∀ {A B} (i : A ⟶ B) (_ : innerAnodyne i) (f₀ : A ⟶ S), ∃ (f : B ⟶ S), f₀ = i ≫ f) ↔
-    Quasicategory S := by
-  refine ⟨_007Ea, ?_⟩
-  intro hS
-  rw [extension_iff_llp_proj]
-  apply (contains_innerAnodyne_iff_contains_inner_horn (llp_wrt' S.proj)
-    (llp_weakly_saturated' S.proj)).1
-  intro n i _h0 _hn
-  constructor
-  intro σ₀ _ sq
-  obtain ⟨l, hl⟩ := hS.hornFilling _h0 _hn σ₀
-  use l
-  exact hl.symm
-  apply Limits.IsTerminal.hom_ext ptIsTerminal
-
-end _007E
-
-open MonoidalCategory MonoidalClosed
-
-noncomputable
-abbrev Fun : SSetᵒᵖ ⥤ SSet ⥤ SSet := internalHom
-
--- the pushout in `007F` (a)
-def monoPushout {A B : SSet} (i : A ⟶ B) [Mono i] :=
-  IsPushout.of_hasPushout (hornInclusion 2 1 ▷ A) (Λ[2, 1] ◁ i)
-
-noncomputable
-def B_cocone {A B : SSet} (i : A ⟶ B) [Mono i] :
-    Limits.PushoutCocone (hornInclusion 2 1 ▷ A) (Λ[2, 1] ◁ i) :=
-  Limits.PushoutCocone.mk (Δ[2] ◁ i) (hornInclusion 2 1 ▷ B) rfl
-
--- induced morphism from the pushout to `Δ[2] ⊗ B` given by `B_cocone`
-noncomputable
-def to_B {A B : SSet} (i : A ⟶ B) [Mono i] : (monoPushout i).cocone.pt ⟶ Δ[2] ⊗ B :=
-  (monoPushout i).isColimit.desc (B_cocone i)
-
--- `007F` (a)
-lemma monoPushout_innerAnodyne {A B : SSet} (i : A ⟶ B) [Mono i] :
-    innerAnodyne (to_B i) := by sorry
-
--- `007F` (b)
--- inner Anodyne morphisms are generated by the pushout maps given in `to_Δ`
-lemma contains_innerAnodyne_iff_contains_pushout_maps
-    (S : MorphismProperty SSet) (hS : WeaklySaturated S) :
-    (∀ m, S (to_B (boundaryInclusion m))) ↔ (∀ {X Y : SSet} (p : X ⟶ Y) (hp : innerAnodyne p), S p) := by
-  refine ⟨sorry, fun h m ↦ h _ (monoPushout_innerAnodyne (boundaryInclusion m))⟩
+open CategoryTheory Simplicial MorphismProperty MonoidalCategory MonoidalClosed
 
 section _0079
 
@@ -433,9 +217,9 @@ end _0079
 /- S is a quasicat iff Fun(Δ[2], S) ⟶ Fun(Λ[2, 1], S) is a trivial Kan fib -/
 instance horn_tkf_iff_quasicat (S : SSet) : Quasicategory S ↔
     trivialKanFibration ((Fun.map (hornInclusion 2 1).op).app S) := by
-  rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_llp_proj, rlp_wrt]
+  rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_llp_proj, rlp]
   have := contains_innerAnodyne_iff_contains_pushout_maps _ (llp_weakly_saturated' S.proj)
-  dsimp [llp_wrt'] at this
+  dsimp [llp'] at this
   rw [← this]
   refine ⟨?_, ?_⟩
   · intro h m
@@ -446,7 +230,6 @@ instance horn_tkf_iff_quasicat (S : SSet) : Quasicategory S ↔
     constructor
     intro f g sq
     exact (newSqLift_of_sqLift S m f g sq) ((h m).sq_hasLift (newSq S m f))
-
 
 /- changing the square to apply the lifting property of p
    on the monomorphism `(B ◁ boundaryInclusion n)` -/
@@ -483,7 +266,6 @@ def fun_quasicat_aux (S D : SSet) [Quasicategory D] :
       Arrow.mk ((Fun.map (hornInclusion 2 1).op).app ((Fun.obj (Opposite.op S)).obj D)) :=
     CategoryTheory.Comma.isoMk (ihom_iso' _ _ _) (ihom_iso' _ _ _)
   exact HasLiftingProperty.of_arrow_iso_right (boundaryInclusion n) H
-
 
 -- what can be said for more general filling conditions?
 -- `0066`

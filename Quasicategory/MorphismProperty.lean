@@ -35,17 +35,21 @@ instance monomorphisms.StableUnderRetracts : StableUnderRetracts (monomorphisms 
   have := Arrow.hom.congr_left H.retract
   aesop
 
-def llp_wrt (T : MorphismProperty C) : MorphismProperty C := fun _ _ f ↦
+/- llp wrt a class of morphisms -/
+def llp (T : MorphismProperty C) : MorphismProperty C := fun _ _ f ↦
   ∀ ⦃X Y : C⦄ ⦃g : X ⟶ Y⦄ (_ : T g), HasLiftingProperty f g
 
-def rlp_wrt (T : MorphismProperty C) : MorphismProperty C := fun _ _ f ↦
+/- rlp wrt a class of morphisms -/
+def rlp (T : MorphismProperty C) : MorphismProperty C := fun _ _ f ↦
   ∀ ⦃X Y : C⦄ ⦃g : X ⟶ Y⦄ (_ : T g), HasLiftingProperty g f
 
-def llp_wrt' {X Y : C} (p : X ⟶ Y) : MorphismProperty C := fun _ _ f ↦ HasLiftingProperty f p
+/- llp wrt a single morphism -/
+def llp' {X Y : C} (p : X ⟶ Y) : MorphismProperty C := fun _ _ f ↦ HasLiftingProperty f p
 
-def rlp_wrt' {X Y : C} (p : X ⟶ Y) : MorphismProperty C := fun _ _ f ↦ HasLiftingProperty p f
+/- rlp wrt a single morphism -/
+def rlp' {X Y : C} (p : X ⟶ Y) : MorphismProperty C := fun _ _ f ↦ HasLiftingProperty p f
 
-instance llp_retract {T : MorphismProperty C} : StableUnderRetracts (llp_wrt T) := by
+instance llp_retract {T : MorphismProperty C} : StableUnderRetracts (llp T) := by
   intro C D C' D' f f' H L
   intro X Y g h
   refine ⟨?_⟩
@@ -63,7 +67,7 @@ instance llp_retract {T : MorphismProperty C} : StableUnderRetracts (llp_wrt T) 
     have := Arrow.hom.congr_right H.retract
     aesop
 
-instance llp_retract' {X Y : C} {p : X ⟶ Y} : StableUnderRetracts (llp_wrt' p) := by
+instance llp_retract' {X Y : C} {p : X ⟶ Y} : StableUnderRetracts (llp' p) := by
   intro C D C' D' f f' H L
   refine ⟨?_⟩
   intro u v sq
@@ -81,7 +85,7 @@ instance llp_retract' {X Y : C} {p : X ⟶ Y} : StableUnderRetracts (llp_wrt' p)
     aesop
 
 open Limits.PushoutCocone in
-instance llp_pushout {T : MorphismProperty C} : StableUnderCobaseChange (llp_wrt T) := by
+instance llp_pushout {T : MorphismProperty C} : StableUnderCobaseChange (llp T) := by
   intro A B A' B' f s f' t P L
   intro X Y g hg
   refine ⟨?_⟩
@@ -107,7 +111,7 @@ instance llp_pushout {T : MorphismProperty C} : StableUnderCobaseChange (llp_wrt
   · rename_i k; cases k; all_goals dsimp
 
 open Limits.PushoutCocone in
-instance llp_pushout' {X Y : C} {p : X ⟶ Y} : StableUnderCobaseChange (llp_wrt' p) := by
+instance llp_pushout' {X Y : C} {p : X ⟶ Y} : StableUnderCobaseChange (llp' p) := by
   intro A B A' B' f s f' t P L
   refine ⟨?_⟩
   intro u v sq
@@ -138,13 +142,13 @@ section llp_comp_aux
 
 variable {α : Ordinal.{v}} (o : Ordinal.{v}) (ho : o ≤ α)
     (F : {β | β ≤ α} ⥤ C) (hF : Limits.PreservesColimits F) (T : MorphismProperty C)
-    (hS : ∀ (β : Ordinal.{v}) (hβ : β < α), T.llp_wrt (F.map (to_succ hβ)))
+    (hS : ∀ (β : Ordinal.{v}) (hβ : β < α), T.llp (F.map (to_succ hβ)))
     {X Y : C} {g : X ⟶ Y} {u : F.obj ord_zero_le ⟶ X} {v : F.obj (ord_le_refl α) ⟶ Y}
     (sq : CommSq u (F.map bot_to_top) g v)
 
 structure llp_comp_aux {α : Ordinal.{v}} (o : Ordinal.{v}) (ho : o ≤ α)
     (F : {β | β ≤ α} ⥤ C) (hF : Limits.PreservesColimits F) (T : MorphismProperty C)
-    (hS : ∀ (β : Ordinal.{v}) (hβ : β < α), T.llp_wrt (F.map (to_succ hβ)))
+    (hS : ∀ (β : Ordinal.{v}) (hβ : β < α), T.llp (F.map (to_succ hβ)))
     {X Y : C} {g : X ⟶ Y} {u : F.obj ord_zero_le ⟶ X} {v : F.obj (ord_le_refl α) ⟶ Y}
     (sq : CommSq u (F.map bot_to_top) g v) : Sort (v + 2) where
   μ (β) (hβ : β ≤ o) : F.obj ⟨β, le_trans hβ ho⟩ ⟶ X
@@ -161,7 +165,7 @@ want ∀ β ≤ α, a morphism (μ β) : F(β) ⟶ X such that
   ⬝ ∀ β ≤ γ, (μ β) = F(β ⟶ γ) ≫ (μ γ)
 Then to prove llp_comp below, the lift we need is (μ α) : F(α) ⟶ X
 -/
-instance llp_comp {T : MorphismProperty C} : StableUnderTransfiniteComposition (llp_wrt T) := by
+instance llp_comp {T : MorphismProperty C} : StableUnderTransfiniteComposition (llp T) := by
   intro C0 Cα f h X Y g hg
   induction h with
   | mk α F hF hS =>
@@ -216,16 +220,16 @@ instance llp_comp {T : MorphismProperty C} : StableUnderTransfiniteComposition (
 
 end llp_comp_aux
 
-instance llp_comp' {X Y : C} {p : X ⟶ Y} : StableUnderTransfiniteComposition (llp_wrt' p) := sorry
+instance llp_comp' {X Y : C} {p : X ⟶ Y} : StableUnderTransfiniteComposition (llp' p) := sorry
 
 -- maybe this should be a class
 def WeaklySaturated (P : MorphismProperty C) : Prop :=
   P.StableUnderCobaseChange ∧ P.StableUnderRetracts ∧ P.StableUnderTransfiniteComposition
 
-instance llp_weakly_saturated (T : MorphismProperty C) : WeaklySaturated (llp_wrt T) :=
+instance llp_weakly_saturated (T : MorphismProperty C) : WeaklySaturated (llp T) :=
   ⟨llp_pushout, llp_retract, llp_comp⟩
 
-instance llp_weakly_saturated' {X Y : C} (p : X ⟶ Y) : WeaklySaturated (llp_wrt' p) :=
+instance llp_weakly_saturated' {X Y : C} (p : X ⟶ Y) : WeaklySaturated (llp' p) :=
   ⟨llp_pushout', llp_retract', llp_comp'⟩
 
 end MorphismProperty

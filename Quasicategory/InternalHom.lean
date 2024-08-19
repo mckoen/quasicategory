@@ -8,6 +8,9 @@ namespace SSet
 
 instance : MonoidalClosed SSet := FunctorToTypes.monoidalClosed
 
+noncomputable
+abbrev Fun : SSetᵒᵖ ⥤ SSet ⥤ SSet := internalHom
+
 noncomputable section
 
 @[ext]

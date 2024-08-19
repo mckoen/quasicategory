@@ -52,6 +52,8 @@ def ptIsTerminal : IsTerminal Δ[0] := by
       apply Limits.IsTerminal.hom_ext isTerminalZero _}
   refine IsTerminal.ofUnique Δ[0]
 
+abbrev proj (S : SSet) : S ⟶ Δ[0] := Limits.IsTerminal.from ptIsTerminal S
+
 def binaryFan (X : SSet.{0}) : BinaryFan Δ[0] X :=
   BinaryFan.mk (ptIsTerminal.from X) (𝟙 X)
 
