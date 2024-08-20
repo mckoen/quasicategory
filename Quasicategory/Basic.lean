@@ -1,6 +1,7 @@
 import Mathlib.AlgebraicTopology.Quasicategory
 import Quasicategory.MorphismProperty
 import Quasicategory.Terminal
+import Mathlib.AlgebraicTopology.KanComplex
 
 namespace SSet
 
@@ -40,6 +41,20 @@ abbrev innerAnodyne := innerFibration.llp
 lemma innerAnodyne_of_innerHorn
     ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (_h0 : 0 < i) (_hn : i < Fin.last (n+2)) :
     innerAnodyne (hornInclusion (n+2) i) := fun _ _ _ h ↦ h _h0 _hn
+
+def innerAnodyneVerticesEquiv' {X Y : SSet} (p : X ⟶ Y) (hp : innerAnodyne p) :
+    (Δ[0] ⟶ X) ≃ (Δ[0] ⟶ Y) where
+  toFun := by
+    intro x
+    dsimp [innerAnodyne, innerFibration, llp] at hp
+    sorry
+  invFun := sorry
+  left_inv := sorry
+  right_inv := sorry
+
+def innerAnodyneVerticesEquiv {X Y : SSet} (p : X ⟶ Y) (hp : innerAnodyne p) :
+    X _[0] ≃ Y _[0] :=
+  sorry
 
 -- innerAnodyne = llp(rlp(inner horn inclusions)) is WSC gen. by inner horn inclusions
 lemma contains_innerAnodyne_iff_contains_inner_horn

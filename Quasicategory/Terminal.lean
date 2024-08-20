@@ -41,6 +41,23 @@ end SimplexCategory
 
 namespace SSet
 
+def empty : SSet where
+  obj _ := Empty
+  map _ := Empty.elim
+
+def emptyIsInitial : IsInitial empty :=
+  letI : ∀ (X : SSet), Unique (empty ⟶ X) := fun X => {
+    default := {
+      app := fun _ ↦ Empty.elim
+      naturality := fun _ _ _ => by
+        simp only [empty]
+        aesop }
+    uniq := fun f => by
+      ext _ e
+      simp only [empty] at e
+      aesop }
+  IsInitial.ofUnique _
+
 def ptIsTerminal : IsTerminal Δ[0] := by
   letI : ∀ (X : SSet), Unique (X ⟶ Δ[0]) := fun X ↦ {
     default := {

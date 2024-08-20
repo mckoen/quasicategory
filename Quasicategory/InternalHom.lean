@@ -1,6 +1,8 @@
 
 import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 import Quasicategory.FunctorToTypes
+import Mathlib.CategoryTheory.Limits.Shapes.Terminal
+import Mathlib.CategoryTheory.Limits.Shapes.FunctorToTypes
 
 open CategoryTheory Simplicial MonoidalCategory MonoidalClosed
 
@@ -10,6 +12,42 @@ instance : MonoidalClosed SSet := FunctorToTypes.monoidalClosed
 
 noncomputable
 abbrev Fun : SSetᵒᵖ ⥤ SSet ⥤ SSet := internalHom
+
+open FunctorToTypes
+
+/-- If an initial object `I` exists in a CCC, then `A ⨯ I ≅ I`. -/
+@[simps]
+noncomputable
+def zeroMul {I : SSet} (t : Limits.IsInitial I) : A ⊗ I ≅ I where
+  hom := prod.snd
+  inv := t.to _
+  hom_inv_id := by
+    have : (prod.snd : A ⊗ I ⟶ I) = MonoidalClosed.uncurry (t.to _) := by
+      rw [← curry_eq_iff]
+      apply t.hom_ext
+    rw [this, ← uncurry_natural_right, ← eq_curry_iff]
+    apply t.hom_ext
+  inv_hom_id := t.hom_ext _ _
+
+instance prod.mono_lift_of_mono_left {W X Y : SSet} (f : W ⟶ X) (g : W ⟶ Y)
+    [Mono f] : Mono (prod.lift f g) :=
+  mono_of_mono_fac <| prod.lift_fst _ _
+
+instance prod.mono_lift_of_mono_right {W X Y : SSet} (f : W ⟶ X) (g : W ⟶ Y)
+    [Mono g] : Mono (prod.lift f g) :=
+  mono_of_mono_fac <| prod.lift_snd _ _
+
+theorem strict_initial {A I : SSet} (t : Limits.IsInitial I) (f : A ⟶ I) : IsIso f := by
+  haveI : Mono (prod.lift (𝟙 A) f ≫ (zeroMul t).hom) := mono_comp _ _
+  rw [zeroMul_hom, prod.lift_snd] at this
+  haveI : IsSplitEpi f := IsSplitEpi.mk' ⟨t.to _, t.hom_ext _ _⟩
+  apply isIso_of_mono_of_isSplitEpi
+
+theorem initial_mono {I : SSet} (B : SSet) (t : Limits.IsInitial I) : Mono (t.to B) :=
+  ⟨fun g h _ => by
+    haveI := strict_initial t g
+    haveI := strict_initial t h
+    exact eq_of_inv_eq_inv (t.hom_ext _ _)⟩
 
 noncomputable section
 
