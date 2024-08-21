@@ -102,59 +102,19 @@ instance quasicategory_of_innerFibration {X Y : SSet} (p : X ⟶ Y) (hp : innerF
   rw [quasicategory_iff_proj_innerFibration] at h ⊢
   exact innerFibration_comp p hp Y.proj h
 
-/- the retract proofs below are basically the same as `rlp_retract`,
-   but we can't use that because fibrations are defined as having rlp wrt
-   certain collections of horn inclusions, and I'm not sure how to define
-   such a collection as a morphism property. -/
+/-
+instance leftFibration.StableUnderRetracts : StableUnderRetracts leftFibration := sorry
+instance leftFibration.StableUnderBaseChange : StableUnderBaseChange leftFibration := sorry
+instance rightFibration.StableUnderRetracts : StableUnderRetracts rightFibration := sorry
+instance rightFibration.StableUnderBaseChange : StableUnderBaseChange rightFibration := sorry
+-/
 
-instance leftFibration.StableUnderRetracts : StableUnderRetracts leftFibration := by
-  intro C D C' D' f f' H hg
-  intro n i _h0 _hn
-  refine ⟨?_⟩
-  intro u v sq
-  have : (u ≫ H.i.left) ≫ f' = ((hornInclusion (n + 2) i)) ≫ (v ≫ H.i.right) := by
-    rw [← Category.assoc, ← sq.w]
-    simp
-  obtain lift := ((hg _h0 _hn).sq_hasLift (CommSq.mk this)).exists_lift.some
-  refine ⟨lift.l ≫ H.r.left, ?_, ?_⟩
-  · rw [← Category.assoc, lift.fac_left, Category.assoc]
-    have := Arrow.hom.congr_left H.retract
-    aesop
-  · rw [Category.assoc]
-    have := H.r.w
-    dsimp at this
-    rw [this, ← Category.assoc, lift.fac_right, Category.assoc]
-    have := Arrow.hom.congr_right H.retract
-    aesop
+/- the proofs below are exactly the same as `rlp_retract` and `rlp_pullback`,
+   but we can't use them because fibrations are defined as having rlp wrt horn inclusions,
+   and I'm not sure how to define that as a morphism property.
 
---
-instance leftFibration.StableUnderBaseChange : StableUnderBaseChange leftFibration := by
-  sorry
-
---
-instance rightFibration.StableUnderRetracts : StableUnderRetracts rightFibration := by
-  intro C D C' D' f f' H hg
-  intro n i _h0 _hn
-  refine ⟨?_⟩
-  intro u v sq
-  have : (u ≫ H.i.left) ≫ f' = ((hornInclusion (n + 2) i)) ≫ (v ≫ H.i.right) := by
-    rw [← Category.assoc, ← sq.w]
-    simp
-  obtain lift := ((hg _h0 _hn).sq_hasLift (CommSq.mk this)).exists_lift.some
-  refine ⟨lift.l ≫ H.r.left, ?_, ?_⟩
-  · rw [← Category.assoc, lift.fac_left, Category.assoc]
-    have := Arrow.hom.congr_left H.retract
-    aesop
-  · rw [Category.assoc]
-    have := H.r.w
-    dsimp at this
-    rw [this, ← Category.assoc, lift.fac_right, Category.assoc]
-    have := Arrow.hom.congr_right H.retract
-    aesop
-
---
-instance rightFibration.StableUnderBaseChange : StableUnderBaseChange rightFibration := by
-  sorry
+   The same proofs (copy-pasted) work for the equivalent statements
+   about left/right fibrations. -/
 
 -- `01BD`
 instance innerFibration.StableUnderRetracts : StableUnderRetracts innerFibration := by
@@ -178,8 +138,30 @@ instance innerFibration.StableUnderRetracts : StableUnderRetracts innerFibration
     aesop
 
 -- `01BE`
+open Limits.PullbackCone in
 instance innerFibration.StableUnderBaseChange : StableUnderBaseChange innerFibration := by
-  sorry
+  intro B' A A' B t f s f' P L
+  --intro X Y g hg
+  intro n i h0 hn
+  refine ⟨?_⟩
+  intro u v sq
+  have := P.toCommSq.w
+  have w : (u ≫ s) ≫ f = (hornInclusion (n + 2) i) ≫ v ≫ t := by
+    rw [Category.assoc, P.toCommSq.w, ← Category.assoc, ← Category.assoc, sq.w]
+  obtain lift := ((L h0 hn).sq_hasLift (CommSq.mk w)).exists_lift.some
+  let lift' : Δ[n + 2] ⟶ A' := IsLimit.lift P.isLimit lift.l v (by rw [lift.fac_right])
+  let l : lift' ≫ f' = v := IsLimit.lift_snd P.isLimit lift.l v (by rw [lift.fac_right])
+  let l' : lift' ≫ s = lift.l := IsLimit.lift_fst P.isLimit lift.l v (by rw [lift.fac_right])
+  have comm : (u ≫ s) ≫ f = ((hornInclusion (n + 2) i) ≫ v) ≫ t := by aesop
+  let newCone := mk _ _ comm
+  refine ⟨lift', (P.isLimit.uniq newCone ((hornInclusion (n + 2) i) ≫ lift') ?_).trans (P.isLimit.uniq newCone u ?_).symm, l⟩
+  all_goals dsimp [newCone]; intro j; cases j; simp only [Limits.cospan_one, condition_one, IsPullback.cone_fst, Category.assoc]
+  · rw [← Category.assoc u, ← lift.fac_left, ← l', Category.assoc, Category.assoc]
+  · rename_i k; cases k; all_goals dsimp
+    · rw [← lift.fac_left, ← l', Category.assoc]
+    · rw [← sq.w, Category.assoc, l, sq.w]
+  · rename_i k; cases k; all_goals dsimp
+    exact sq.w
 
 /- a morphism is inner anodyne if it has the left lifting property wrt all inner fibrations. -/
 abbrev innerAnodyne := innerFibration.llp
@@ -198,7 +180,7 @@ lemma contains_innerAnodyne_iff_contains_inner_horn
   sorry
 
 -- `01C3` aux
-def bijection_on_vertices : MorphismProperty SSet := fun A B _ ↦
+def bijection_on_vertices : MorphismProperty SSet.{0} := fun A B _ ↦
   ∃ (f : A _[0] → B _[0]), Function.Bijective f
 
 -- `01C3` aux
@@ -208,13 +190,13 @@ instance bijection_on_vertices.WeaklySaturated : WeaklySaturated bijection_on_ve
 -- `01C3` aux
 lemma inner_horn_bij_on_vertices
     ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (_h0 : 0 < i) (_hn : i < Fin.last (n+2)) :
-    bijection_on_vertices (hornInclusion (n+2) i) := by
+    bijection_on_vertices (hornInclusion.{0} (n+2) i) := by
   sorry
 
 -- `01C3` inner anodyne morphisms are bijective on vertices
 def innerAnodyneVerticesEquiv {X Y : SSet} (p : X ⟶ Y) (hp : innerAnodyne p) :
     bijection_on_vertices p := by
-  apply (contains_innerAnodyne_iff_contains_inner_horn
+  apply (contains_innerAnodyne_iff_contains_inner_horn.{0,1}
     bijection_on_vertices bijection_on_vertices.WeaklySaturated).1
   exact inner_horn_bij_on_vertices
   exact hp
@@ -241,14 +223,14 @@ lemma extension_iff_llp_proj {S : SSet} :
 
 -- `007E`
 -- quasicategory iff extension property wrt every inner anodyne morphism
-instance quasicat_iff_extension_wrt_innerAnodyne {S : SSet} :
+instance quasicat_iff_extension_wrt_innerAnodyne {S : SSet.{0}} :
     (∀ {A B} (i : A ⟶ B) (_ : innerAnodyne i) (f₀ : A ⟶ S), ∃ (f : B ⟶ S), f₀ = i ≫ f) ↔
     Quasicategory S := by
   refine ⟨fun h ↦
     ⟨fun n i σ₀ _h0 _hn ↦ h (hornInclusion (n + 2) i) (innerAnodyne_of_innerHorn _h0 _hn) σ₀⟩, ?_⟩
   intro hS
   rw [extension_iff_llp_proj]
-  apply (contains_innerAnodyne_iff_contains_inner_horn (llp' S.proj)
+  apply (contains_innerAnodyne_iff_contains_inner_horn.{0,1} (llp' S.proj)
     (llp_weakly_saturated' S.proj)).1
   intro n i _h0 _hn
   constructor

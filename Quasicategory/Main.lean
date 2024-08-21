@@ -215,10 +215,10 @@ end _0079
 
 -- `0079`
 /- S is a quasicat iff Fun(Δ[2], S) ⟶ Fun(Λ[2, 1], S) is a trivial Kan fib -/
-instance horn_tkf_iff_quasicat (S : SSet) : Quasicategory S ↔
+instance horn_tkf_iff_quasicat (S : SSet.{0}) : Quasicategory S ↔
     trivialKanFibration ((Fun.map (hornInclusion 2 1).op).app S) := by
   rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_llp_proj, rlp]
-  have := contains_innerAnodyne_iff_contains_pushout_maps _ (llp_weakly_saturated' S.proj)
+  have := contains_innerAnodyne_iff_contains_pushout_maps.{0,1} _ (llp_weakly_saturated' S.proj)
   dsimp [llp'] at this
   rw [← this]
   refine ⟨?_, ?_⟩
@@ -243,7 +243,7 @@ lemma induced_tkf_aux (B X Y : SSet) (p : X ⟶ Y)
 -- `0071` (special case of `0070`)
 /- if p : X ⟶ Y is a trivial Kan fib, then Fun(B,X) ⟶ Fun(B,Y) is -/
 noncomputable
-instance induced_tkf (B X Y : SSet) (p : X ⟶ Y) (hp: trivialKanFibration p) :
+instance induced_tkf (B X Y : SSet.{0}) (p : X ⟶ Y) (hp: trivialKanFibration p) :
     trivialKanFibration ((Fun.obj (.op B)).map p) := by
   intro n
   have := (trivialKanFibration_iff_rlp_monomorphisms p).1 hp (boundaryInclusion_whisker_mono B n)
@@ -254,7 +254,7 @@ instance induced_tkf (B X Y : SSet) (p : X ⟶ Y) (hp: trivialKanFibration p) :
 -- apply `ihom_equiv` and `0079`
 open MonoidalClosed in
 noncomputable
-def fun_quasicat_aux (S D : SSet) [Quasicategory D] :
+def fun_quasicat_aux (S D : SSet.{0}) [Quasicategory D] :
     trivialKanFibration ((Fun.map (hornInclusion 2 1).op).app ((Fun.obj (.op S)).obj D)) := by
   intro n
   -- since Fun[Δ[n], D] ⟶ Fun[Λ[2,1], D] is a TKF by `0079`,
@@ -270,7 +270,7 @@ def fun_quasicat_aux (S D : SSet) [Quasicategory D] :
 -- what can be said for more general filling conditions?
 -- `0066`
 /- if D is a quasicat, then Fun(S, D) is -/
-instance fun_quasicat (S D : SSet) [Quasicategory D] : Quasicategory ((Fun.obj (.op S)).obj D) :=
+instance fun_quasicat (S D : SSet.{0}) [Quasicategory D] : Quasicategory ((Fun.obj (.op S)).obj D) :=
   -- instance inferred by `fun_quasicat_aux`
   (horn_tkf_iff_quasicat ((Fun.obj (.op S)).obj D)).2 (fun_quasicat_aux S D)
 
