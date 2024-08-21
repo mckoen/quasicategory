@@ -163,6 +163,7 @@ lemma innerAnodyne_mono {X Y : SSet} (p : X ⟶ Y) (hp : innerAnodyne p) :
 def monoPushout {A B : SSet} (i : A ⟶ B) [Mono i] :=
   IsPushout.of_hasPushout (hornInclusion 2 1 ▷ A) (Λ[2, 1] ◁ i)
 
+-- cocone with pt. `Δ[2] ⊗ B` given by `i`
 noncomputable
 def B_cocone {A B : SSet} (i : A ⟶ B) [Mono i] :
     Limits.PushoutCocone (hornInclusion 2 1 ▷ A) (Λ[2, 1] ◁ i) :=

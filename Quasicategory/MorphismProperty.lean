@@ -49,11 +49,12 @@ def llp' {X Y : C} (p : X ⟶ Y) : MorphismProperty C := fun _ _ f ↦ HasLiftin
 /- rlp wrt a single morphism -/
 def rlp' {X Y : C} (p : X ⟶ Y) : MorphismProperty C := fun _ _ f ↦ HasLiftingProperty p f
 
-instance llp_retract {T : MorphismProperty C} : StableUnderRetracts (llp T) := by
+instance llp_retract {T : MorphismProperty C} : StableUnderRetracts T.llp := by
   intro C D C' D' f f' H L
   intro X Y g h
   refine ⟨?_⟩
   intro u v sq
+  have := sq.w
   have : (H.r.left ≫ u) ≫ g = f' ≫ (H.r.right ≫ v) := by simp [sq.w]
   obtain ⟨lift⟩ := ((L h).sq_hasLift (CommSq.mk this)).exists_lift
   refine ⟨H.i.right ≫ lift.l, ?_, ?_⟩
@@ -64,6 +65,26 @@ instance llp_retract {T : MorphismProperty C} : StableUnderRetracts (llp T) := b
     have := Arrow.hom.congr_left H.retract
     aesop
   · rw [Category.assoc, lift.fac_right, ← Category.assoc]
+    have := Arrow.hom.congr_right H.retract
+    aesop
+
+instance rlp_retract {T : MorphismProperty C} : StableUnderRetracts T.rlp := by
+  intro C D C' D' f f' H L
+  intro X Y g h
+  refine ⟨?_⟩
+  intro u v sq
+  have : (u ≫ H.i.left) ≫ f' = g ≫ (v ≫ H.i.right) := by
+    rw [← Category.assoc, ← sq.w]
+    simp
+  obtain lift := ((L h).sq_hasLift (CommSq.mk this)).exists_lift.some
+  refine ⟨lift.l ≫ H.r.left, ?_, ?_⟩
+  · rw [← Category.assoc, lift.fac_left, Category.assoc]
+    have := Arrow.hom.congr_left H.retract
+    aesop
+  · rw [Category.assoc]
+    have := H.r.w
+    dsimp at this
+    rw [this, ← Category.assoc, lift.fac_right, Category.assoc]
     have := Arrow.hom.congr_right H.retract
     aesop
 
@@ -84,8 +105,27 @@ instance llp_retract' {X Y : C} {p : X ⟶ Y} : StableUnderRetracts (llp' p) := 
     have := Arrow.hom.congr_right H.retract
     aesop
 
+instance rlp_retract' {X Y : C} {p : X ⟶ Y} : StableUnderRetracts (rlp' p) := by
+  intro C D C' D' f f' H L
+  refine ⟨?_⟩
+  intro u v sq
+  have : (u ≫ H.i.left) ≫ f' = p ≫ (v ≫ H.i.right) := by
+    rw [← Category.assoc, ← sq.w]
+    simp
+  obtain lift := (L.sq_hasLift (CommSq.mk this)).exists_lift.some
+  refine ⟨lift.l ≫ H.r.left, ?_, ?_⟩
+  · rw [← Category.assoc, lift.fac_left, Category.assoc]
+    have := Arrow.hom.congr_left H.retract
+    aesop
+  · rw [Category.assoc]
+    have := H.r.w
+    dsimp at this
+    rw [this, ← Category.assoc, lift.fac_right, Category.assoc]
+    have := Arrow.hom.congr_right H.retract
+    aesop
+
 open Limits.PushoutCocone in
-instance llp_pushout {T : MorphismProperty C} : StableUnderCobaseChange (llp T) := by
+instance llp_pushout {T : MorphismProperty C} : StableUnderCobaseChange T.llp := by
   intro A B A' B' f s f' t P L
   intro X Y g hg
   refine ⟨?_⟩
@@ -109,6 +149,37 @@ instance llp_pushout {T : MorphismProperty C} : StableUnderCobaseChange (llp T) 
     · rw [← Category.assoc, l, sq.w]
     · rw [← Category.assoc, l', lift.fac_right]
   · rename_i k; cases k; all_goals dsimp
+
+open Limits.PullbackCone in
+instance rlp_pushout {T : MorphismProperty C} : StableUnderBaseChange T.rlp := by
+  intro B' A A' B t f s f' P L
+  intro X Y g hg
+  refine ⟨?_⟩
+  intro u v sq
+  have := P.toCommSq.w
+  have w : (u ≫ s) ≫ f = g ≫ v ≫ t := by
+    rw [Category.assoc, P.toCommSq.w, ← Category.assoc, ← Category.assoc, sq.w]
+  obtain lift := ((L hg).sq_hasLift (CommSq.mk w)).exists_lift.some
+  let lift' : Y ⟶ A' := IsLimit.lift P.isLimit lift.l v (by rw [lift.fac_right])
+  let l : lift' ≫ f' = v := IsLimit.lift_snd P.isLimit lift.l v (by rw [lift.fac_right])
+  let l' := IsLimit.lift_fst P.isLimit lift.l v (by rw [lift.fac_right])
+  --let l' : t ≫ lift' = lift.l := IsColimit.inr_desc P.isColimit u lift.l (by rw [lift.fac_left])
+  --let newCone := mk (u ≫ f') (g ≫ v) (by have := P.w; apply_fun (fun f ↦ u ≫ f) at this; aesop)
+  refine ⟨lift', ?_, l⟩
+
+  /-
+    (P.isLimit.uniq newCone (lift' ≫ g) ?_).trans (P.isLimit.uniq newCone v ?_).symm⟩
+  all_goals
+    dsimp [newCocone]
+    intro j
+    cases j
+    simp only [Limits.span_zero, condition_zero, IsPushout.cocone_inl, Category.assoc]
+  · rw [← Category.assoc, ← Category.assoc, Category.assoc s f' lift', l, ← sq.w, Category.assoc]
+  · rename_i k; cases k; all_goals dsimp
+    · rw [← Category.assoc, l, sq.w]
+    · rw [← Category.assoc, l', lift.fac_right]
+  · rename_i k; cases k; all_goals dsimp
+  -/
 
 open Limits.PushoutCocone in
 instance llp_pushout' {X Y : C} {p : X ⟶ Y} : StableUnderCobaseChange (llp' p) := by
@@ -165,7 +236,7 @@ want ∀ β ≤ α, a morphism (μ β) : F(β) ⟶ X such that
   ⬝ ∀ β ≤ γ, (μ β) = F(β ⟶ γ) ≫ (μ γ)
 Then to prove llp_comp below, the lift we need is (μ α) : F(α) ⟶ X
 -/
-instance llp_comp {T : MorphismProperty C} : StableUnderTransfiniteComposition (llp T) := by
+instance llp_comp {T : MorphismProperty C} : StableUnderTransfiniteComposition T.llp := by
   intro C0 Cα f h X Y g hg
   induction h with
   | mk α F hF hS =>
@@ -226,7 +297,7 @@ instance llp_comp' {X Y : C} {p : X ⟶ Y} : StableUnderTransfiniteComposition (
 def WeaklySaturated (P : MorphismProperty C) : Prop :=
   P.StableUnderCobaseChange ∧ P.StableUnderRetracts ∧ P.StableUnderTransfiniteComposition
 
-instance llp_weakly_saturated (T : MorphismProperty C) : WeaklySaturated (llp T) :=
+instance llp_weakly_saturated (T : MorphismProperty C) : WeaklySaturated T.llp :=
   ⟨llp_pushout, llp_retract, llp_comp⟩
 
 instance llp_weakly_saturated' {X Y : C} (p : X ⟶ Y) : WeaklySaturated (llp' p) :=
