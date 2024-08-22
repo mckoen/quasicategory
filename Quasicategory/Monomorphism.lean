@@ -15,8 +15,8 @@ instance boundaryInclusion_mono (n : ℕ) : Mono (boundaryInclusion n) := by
     exact (Set.injective_codRestrict Subtype.property).mp fun ⦃a₁ a₂⦄ a ↦ a
   apply NatTrans.mono_of_mono_app
 
-open MonoidalCategory in
 -- B ⊗ ∂Δ[n] ⟶ B ⊗ Δ[n] is a monomorphism
+open MonoidalCategory in
 instance boundaryInclusion_whisker_mono (B : SSet) (n : ℕ) : Mono (B ◁ (boundaryInclusion n)) := by
   have : ∀ (k : SimplexCategoryᵒᵖ), Mono ((B ◁ boundaryInclusion n).app k) := by
     intro k
@@ -84,9 +84,19 @@ instance transfinite_monos
   | mk α F hF hS => exact transfinite_monos X Y f α F hF hS (le_refl α)
 -/
 
+instance monomorphisms.isStableUnderTransfiniteCompositionOfShape (β : Type u_1)
+    (h1 : LinearOrder β) (h2 : IsWellOrder β fun x x_1 ↦ x < x_1) (h3 : OrderBot β) :
+    (monomorphisms SSet).IsStableUnderTransfiniteCompositionOfShape β where
+  condition := by
+    intro F hf h c hc
+    sorry
+
 instance monomorphisms.IsStableUnderTransfiniteComposition :
-    IsStableUnderTransfiniteComposition (monomorphisms SSet) := by
-  sorry
+    IsStableUnderTransfiniteComposition (monomorphisms SSet) where
+  id_mem _ := instMonoId _
+  comp_mem f g hf hg := @mono_comp _ _ _ _ _ f hf g hg
+  isStableUnderTransfiniteCompositionOfShape :=
+    monomorphisms.isStableUnderTransfiniteCompositionOfShape
 
 -- `0077` (a) monomorphisms are weakly saturated
 instance monomorphisms.WeaklySaturated : WeaklySaturated (monomorphisms SSet) :=
@@ -102,16 +112,26 @@ lemma contains_mono_iff_contains_boundaryInclusion
   sorry
 
 /- `006Y` trivial Kan fibration iff rlp wrt all monomorphisms -/
-lemma trivialKanFibration_iff_rlp_monomorphisms {X Y : SSet.{0}} (p : X ⟶ Y) :
-    trivialKanFibration p ↔ (monomorphisms SSet).rlp p :=
-  ⟨ (contains_mono_iff_contains_boundaryInclusion.{0,1} (llp' p) (llp_weakly_saturated' p)).1,
-    fun h n ↦ h (boundaryInclusion_mono n)⟩
+lemma trivialKanFibration_eq_rlp_monomorphisms :
+    trivialKanFibration.{0} = (monomorphisms SSet).rlp:= by
+  ext X Y p
+  refine ⟨?_, ?_⟩
+  · intro h
+    rw [class_rlp_iff_llp_morphism]
+    apply (contains_mono_iff_contains_boundaryInclusion.{0,1}
+      (MorphismClass p).llp (llp_weakly_saturated _)).1
+    intro n _ _ p hp
+    induction hp
+    exact h (.mk n)
+  · intro h _ _ p hp
+    induction hp
+    exact h (boundaryInclusion_mono _)
 
 -- `006Z`(a), trivial Kan fibrations admit sections
 noncomputable
 def trivialKanFibration_section {X Y : SSet} (p : X ⟶ Y)
     (hp : trivialKanFibration p) : Y ⟶ X := by
-  rw [trivialKanFibration_iff_rlp_monomorphisms] at hp
+  rw [trivialKanFibration_eq_rlp_monomorphisms] at hp
   have : (emptyIsInitial.to X) ≫ p = (emptyIsInitial.to Y) ≫ (𝟙 Y) :=
     Limits.IsInitial.hom_ext emptyIsInitial _ _
   exact ((hp (initial_mono Y emptyIsInitial)).sq_hasLift (CommSq.mk (this))).exists_lift.some.l
@@ -119,7 +139,7 @@ def trivialKanFibration_section {X Y : SSet} (p : X ⟶ Y)
 -- the above map is a section
 lemma trivialKanFibration_section_comp {X Y : SSet} (p : X ⟶ Y) (hp : trivialKanFibration p) :
     trivialKanFibration_section p hp ≫ p = 𝟙 Y := by
-  rw [trivialKanFibration_iff_rlp_monomorphisms] at hp
+  rw [trivialKanFibration_eq_rlp_monomorphisms] at hp
   have : (emptyIsInitial.to X) ≫ p = (emptyIsInitial.to Y) ≫ (𝟙 Y) :=
     Limits.IsInitial.hom_ext emptyIsInitial _ _
   exact ((hp (initial_mono Y emptyIsInitial)).sq_hasLift (CommSq.mk (this))).exists_lift.some.fac_right
@@ -131,7 +151,7 @@ instance kanComplex_of_trivialKanFibration {X Y : SSet.{0}}
   intro h
   constructor
   intro n i σ₀
-  rw [trivialKanFibration_iff_rlp_monomorphisms] at hp
+  rw [trivialKanFibration_eq_rlp_monomorphisms] at hp
   dsimp [rlp] at hp
   have : (emptyIsInitial.to X) ≫ p = (emptyIsInitial.to Λ[n, i]) ≫ σ₀ :=
     Limits.IsInitial.hom_ext emptyIsInitial _ _
@@ -147,7 +167,7 @@ instance quasicategory_of_trivialKanFibration {X Y : SSet.{0}}
   intro h
   constructor
   intro n i σ₀ h0 hn
-  rw [trivialKanFibration_iff_rlp_monomorphisms] at hp
+  rw [trivialKanFibration_eq_rlp_monomorphisms] at hp
   dsimp [rlp] at hp
   have : (emptyIsInitial.to X) ≫ p = (emptyIsInitial.to Λ[n + 2, i]) ≫ σ₀ :=
     Limits.IsInitial.hom_ext emptyIsInitial _ _

@@ -217,19 +217,20 @@ end _0079
 /- S is a quasicat iff Fun(Δ[2], S) ⟶ Fun(Λ[2, 1], S) is a trivial Kan fib -/
 instance horn_tkf_iff_quasicat (S : SSet.{0}) : Quasicategory S ↔
     trivialKanFibration ((Fun.map (hornInclusion 2 1).op).app S) := by
-  rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_llp_proj, rlp]
-  have := contains_innerAnodyne_iff_contains_pushout_maps.{0,1} _ (llp_weakly_saturated' S.proj)
-  dsimp [llp'] at this
+  rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_rlp_proj, class_rlp_iff_llp_morphism]
+  have := contains_innerAnodyne_iff_contains_pushout_maps.{0,1} _ (llp_weakly_saturated (MorphismClass S.proj))
   rw [← this]
   refine ⟨?_, ?_⟩
-  · intro h m
+  · intro h _ _ p hp
+    induction hp with | mk m =>
     constructor
     intro α β sq
-    exact sqLift_of_newSqLift _ _ _ ((h m).sq_hasLift (newSquare S m sq))
-  · intro h m
+    exact sqLift_of_newSqLift _ _ _ ((h m .mk).sq_hasLift (newSquare S m sq))
+  · intro h m _ _ p hp
+    induction hp
     constructor
     intro f g sq
-    exact (newSqLift_of_sqLift S m f g sq) ((h m).sq_hasLift (newSq S m f))
+    exact (newSqLift_of_sqLift S m f g sq) ((h (.mk m)).sq_hasLift (newSq S m f))
 
 /- changing the square to apply the lifting property of p
    on the monomorphism `(B ◁ boundaryInclusion n)` -/
@@ -245,8 +246,10 @@ lemma induced_tkf_aux (B X Y : SSet) (p : X ⟶ Y)
 noncomputable
 instance induced_tkf (B X Y : SSet.{0}) (p : X ⟶ Y) (hp: trivialKanFibration p) :
     trivialKanFibration ((Fun.obj (.op B)).map p) := by
-  intro n
-  have := (trivialKanFibration_iff_rlp_monomorphisms p).1 hp (boundaryInclusion_whisker_mono B n)
+  intro _ _ i hi
+  induction hi with | mk n =>
+  rw [trivialKanFibration_eq_rlp_monomorphisms] at hp
+  have := hp (boundaryInclusion_whisker_mono B n)
   apply induced_tkf_aux
 
 -- uses `0071` and `0079`
@@ -256,11 +259,12 @@ open MonoidalClosed in
 noncomputable
 def fun_quasicat_aux (S D : SSet.{0}) [Quasicategory D] :
     trivialKanFibration ((Fun.map (hornInclusion 2 1).op).app ((Fun.obj (.op S)).obj D)) := by
-  intro n
+  intro _ _ i hi
+  induction hi with | mk n =>
   -- since Fun[Δ[n], D] ⟶ Fun[Λ[2,1], D] is a TKF by `0079`,
   -- get Fun(S, Fun(Δ[n], D)) ⟶ Fun(S, Fun(Λ[2,1], D)) is a TKF by `0071`
   have := (horn_tkf_iff_quasicat D).1 (by infer_instance)
-  have := (induced_tkf S _ _ ((Fun.map (hornInclusion 2 1).op).app D)) this n
+  have := (induced_tkf S _ _ ((Fun.map (hornInclusion 2 1).op).app D)) this (.mk n)
   dsimp at this
   have H : Arrow.mk ((ihom S).map ((MonoidalClosed.pre (hornInclusion 2 1)).app D)) ≅
       Arrow.mk ((Fun.map (hornInclusion 2 1).op).app ((Fun.obj (Opposite.op S)).obj D)) :=
