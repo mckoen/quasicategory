@@ -85,7 +85,7 @@ instance transfinite_monos
 -/
 
 instance monomorphisms.isStableUnderTransfiniteCompositionOfShape (β : Type u_1)
-    (h1 : LinearOrder β) (h2 : IsWellOrder β fun x x_1 ↦ x < x_1) (h3 : OrderBot β) :
+    (h1 : LinearOrder β) (h2 : IsWellOrder β fun x y ↦ x < y) (h3 : OrderBot β) :
     (monomorphisms SSet).IsStableUnderTransfiniteCompositionOfShape β where
   condition := by
     intro F hf h c hc
