@@ -13,6 +13,7 @@ structure IsDegenerate (s : S _[n + 1]) : Prop where
 
 abbrev Nondegenerate (s : S _[n + 1]) : Prop := ¬ IsDegenerate s
 
+-- `0013`
 lemma image_degen_of_degen (f : S ⟶ T) (s : S _[n + 1]) (h : IsDegenerate s) :
     IsDegenerate (f.app _ s) where
   exists_simplex := by
@@ -21,10 +22,24 @@ lemma image_degen_of_degen (f : S ⟶ T) (s : S _[n + 1]) (h : IsDegenerate s) :
     rw [hx]
     exact congr_fun (f.naturality (SimplexCategory.σ n).op) x
 
-lemma degen_of_image_degen_mono (f : S ⟶ T) [Mono f]
-    (s : S _[n + 1]) (h : IsDegenerate (f.app _ s)) :
+-- `0013`
+lemma degen_of_image_degen_mono (f : S ⟶ T) [hf : Mono f]
+    (s : S _[n + 1]) (h : IsDegenerate (f.app (.op [n + 1]) s)) :
     IsDegenerate s where
-  exists_simplex := sorry
+  exists_simplex := by
+    obtain ⟨a, ha⟩ := h.exists_simplex
+    have := (mono_iff_injective _).1 (((NatTrans.mono_iff_mono_app _ _).1 hf) (Opposite.op [n + 1]))
+    dsimp [σ] at ha ⊢
+    sorry
+
+lemma _04ZN (f : S ⟶ T) :
+    (∀ (n : ℕ) (t : T _[n + 1]) (ht : Nondegenerate t), t ∈ Set.range (f.app _)) → Epi f := by
+  intro h
+  rw [NatTrans.epi_iff_epi_app]
+  intro m
+  rw [epi_iff_surjective]
+  intro Tm
+  sorry
 
 abbrev SimplicialSubset (S : SSet) := Subpresheaf S
 
@@ -32,7 +47,7 @@ namespace SimplicialSubset
 
 variable (A B : SimplicialSubset S)
 
---#synth (Mono (Subpresheaf.ι A))
+--#synth Mono A.ι
 
 def union : SimplicialSubset S where
   obj n := A.obj n ⊔ B.obj n
@@ -74,18 +89,29 @@ def mono_iso (f : S ⟶ T) [h : Mono f] : S ≅ (imagePresheaf f).toPresheaf whe
       intros n m g
       ext x
       simp only [imagePresheaf, Subpresheaf.toPresheaf, types_comp_apply, Subtype.mk.injEq]
-      exact FunctorToTypes.naturality S T f g x
-  }
+      exact FunctorToTypes.naturality S T f g x }
   inv := {
-    app := fun n x ↦ Exists.choose x.2
-    naturality := by
-      intro n m g
+    app := fun n ⟨x, hx⟩ ↦ Exists.choose hx
+    naturality := fun n m g ↦ by
       ext x
-      rw [NatTrans.mono_iff_mono_app] at h
-      have := (mono_iff_injective _).1 (h n)
-      simp
-      sorry
-  }
+      apply (mono_iff_injective _).1 (((NatTrans.mono_iff_mono_app _ _).1 h) m)
+      dsimp only [types_comp_apply, Subpresheaf.toPresheaf_obj, imagePresheaf_obj,
+        Subpresheaf.toPresheaf_map_coe]
+      let a := ((imagePresheaf f).toPresheaf.map g x).property
+      rw [a.choose_spec, ← types_comp_apply (S.map g) (f.app m),
+        congr_fun (f.naturality g) x.property.choose, types_comp_apply, x.property.choose_spec]
+      dsimp only [imagePresheaf_obj, Subpresheaf.toPresheaf_map_coe] }
+  hom_inv_id := by
+    ext n x
+    apply (mono_iff_injective _).1 (((NatTrans.mono_iff_mono_app _ _).1 h) n)
+    exact Exists.choose_spec (Set.mem_range_self x)
+  inv_hom_id := by
+    ext n x
+    dsimp at x
+    change
+        ⟨f.app n (Exists.choose x.2), Set.mem_range_self (Exists.choose x.property)⟩ = x
+    congr
+    exact Exists.choose_spec x.2
 
 variable (S : SSet) (k : ℕ)
 
@@ -113,8 +139,12 @@ def skeleton : SimplicialSubset S where
   obj n := skeleton_subset S k (len n.unop)
   map := by
     intro n n' g s ⟨m, hm, τ, f, hf⟩
-    simp
-    sorry
+    refine ⟨m, hm, τ, standardSimplex.map g.unop ≫ f, ?_⟩
+    rw [Category.assoc, ← hf]
+    ext l x
+    change S.map x.down.op (S.map g s) =
+      S.map ((standardSimplex.map g.unop).app l x).down.op s
+    simp [standardSimplex, uliftFunctor]
 
 abbrev Sk (k : ℕ) (S : SSet) : SSet := (skeleton S k).toPresheaf
 
