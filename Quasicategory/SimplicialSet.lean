@@ -1,6 +1,7 @@
 import Mathlib.AlgebraicTopology.SimplicialSet
 import Mathlib.CategoryTheory.Sites.Subsheaf
 import Quasicategory.Terminal
+import Quasicategory.KInjective.WellOrderContinuous
 
 open CategoryTheory GrothendieckTopology SimplicialObject Simplicial
 
@@ -46,6 +47,10 @@ abbrev SimplicialSubset (S : SSet) := Subpresheaf S
 namespace SimplicialSubset
 
 variable (A B : SimplicialSubset S)
+
+def empty (S : SSet) : SimplicialSubset S where
+  obj _ := ∅
+  map _ _ x := x
 
 --#synth Mono A.ι
 
@@ -113,7 +118,7 @@ def mono_iso (f : S ⟶ T) [h : Mono f] : S ≅ (imagePresheaf f).toPresheaf whe
     congr
     exact Exists.choose_spec x.2
 
-variable (S : SSet) (k : ℕ)
+variable (S : SSet)
 
 open SimplexCategory
 
@@ -121,21 +126,22 @@ def hom_of_le (m k : ℕ) (h : m ≤ k) :
     ([m] : SimplexCategory) ⟶ [k] :=
   Hom.mk ⟨fun x ↦ Fin.castLE (Nat.add_le_add_right h 1) x, fun _ _ h ↦ h⟩
 
-def HasFactorization (n : ℕ) (s : S _[n]) : Prop :=
-  ∃ (m : ℕ) (_ : m ≤ k) (τ : S _[m]) (f : Δ[n] ⟶ Δ[m]),
+-- m < k so that we get empty skeleton for k = 0
+def HasFactorization (k n : ℕ) (s : S _[n]) : Prop :=
+  ∃ (m : ℕ) (_ : m < k) (τ : S _[m]) (f : Δ[n] ⟶ Δ[m]),
     (S.yonedaEquiv _).symm s = f ≫ ((yonedaEquiv S _).symm τ)
 
 -- skₖ(S)ₙ
 def skeleton_subset (k n : ℕ) : Set (S _[n]) :=
   { s : S _[n] | HasFactorization S k n s }
 
-lemma _0016 (h : n ≤ k) : ⊤ ⊆ skeleton_subset S k n :=
+lemma _0016 (h : n < k) : ⊤ ⊆ skeleton_subset S k n :=
     fun s _ ↦ ⟨n, h, s, 𝟙 _, by aesop⟩
 
 lemma _0500 (h : l ≤ k) : skeleton_subset S l n ⊆ skeleton_subset S k n :=
     fun _ ⟨m, hm, τ, f, hf⟩ ↦ ⟨m, le_trans hm h, τ, f, hf⟩
 
-def skeleton : SimplicialSubset S where
+def skeleton (k : ℕ) : SimplicialSubset S where
   obj n := skeleton_subset S k (len n.unop)
   map := by
     intro n n' g s ⟨m, hm, τ, f, hf⟩
@@ -146,9 +152,56 @@ def skeleton : SimplicialSubset S where
       S.map ((standardSimplex.map g.unop).app l x).down.op s
     simp [standardSimplex, uliftFunctor]
 
+-- want to have Sk(-1, S) = ∅ as bottom element
 abbrev Sk (k : ℕ) (S : SSet) : SSet := (skeleton S k).toPresheaf
 
-lemma _0018 (h : k < 0) : Sk k S = SSet.empty := by aesop
+lemma _0018 (h : k < 1) : Sk k S = SSet.empty := by
+  sorry
+
+def subset_functor : ℕ ⥤ SimplicialSubset S where
+  obj k := skeleton S k
+  map f := ⟨⟨fun n ↦ @_0500 n.unop.len S _ _ f.le⟩⟩
+
+def sset_functor' : SimplicialSubset S ⥤ SSet where
+  obj := Subpresheaf.toPresheaf
+  map f := Subpresheaf.homOfLe f.le
+
+def sset_functor : ℕ ⥤ SSet := subset_functor S ⋙ sset_functor' S
+
+def sset_cocone : Limits.Cocone (sset_functor S) where
+  pt := S
+  ι := { app := fun k ↦ (skeleton S k).ι }
+
+-- Subpresheaf.ι (empty S)
+-- lemma test : (sset_cocone S).ι.app ⊥ = Subpresheaf.ι (empty S)
+
+def iscolimit : Limits.IsColimit (sset_cocone S) where
+  desc c := {
+    app := fun n s ↦ (c.ι.app (n.unop.len + 1)).app n ⟨s, ⟨n.unop.len, Nat.lt.base _, s, 𝟙 _, rfl⟩⟩
+    naturality := by
+      intro k m f
+      ext (x : S.obj k)
+      simp [sset_cocone]
+      sorry }
+  fac := sorry
+  uniq := sorry
+
+instance sset_functor.WellOrderContinuous : Functor.WellOrderContinuous (sset_functor S) where
+  nonempty_isColimit α h := ⟨{
+    desc := fun c ↦ {
+      app := sorry }
+  }⟩
+/-
+class IsStableUnderTransfiniteCompositionOfShape (β : Type*) [LinearOrder β] [IsWellOrder β (· < ·)] [OrderBot β] : Prop where
+  condition (F : β ⥤ C) [F.WellOrderContinuous] (hF : ∀ (a : β) (_ : a < wellOrderSucc a), W (F.map (homOfLE (self_le_wellOrderSucc a))))
+    (c : Cocone F) (hc : IsColimit c) : W (c.ι.app ⊥)
+
+def temp {S : SSet} {n : SimplexCategoryᵒᵖ} (s : (cocone S).pt.obj n) :
+    ((sset_functor S).obj (Opposite.unop n).len).obj n := ⟨s, ⟨_, le_rfl, s, 𝟙 _, rfl⟩⟩
+-/
+
+-- if X ⊆ S, then we should have S = ∪ X(k), where X(k) = X ∪ Skₖ(S)
+-- so if i : A → B is a monomorphism, then A ≅ im(i) ⊆ B, so B = ∪ im(i)(k)
 
 end SimplicialSubset
 
