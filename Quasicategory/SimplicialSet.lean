@@ -162,6 +162,10 @@ def subset_functor : ℕ ⥤ SimplicialSubset S where
   obj k := skeleton S k
   map f := ⟨⟨fun n ↦ @_0500 n.unop.len S _ _ f.le⟩⟩
 
+def subset_union_functor (X : SimplicialSubset S) : ℕ ⥤ SimplicialSubset S where
+  obj k := (skeleton S k) ⊔ X
+  map f := sorry
+
 def sset_functor' : SimplicialSubset S ⥤ SSet where
   obj := Subpresheaf.toPresheaf
   map f := Subpresheaf.homOfLe f.le
@@ -174,6 +178,12 @@ def sset_cocone : Limits.Cocone (sset_functor S) where
 
 -- Subpresheaf.ι (empty S)
 -- lemma test : (sset_cocone S).ι.app ⊥ = Subpresheaf.ι (empty S)
+-- Subpresheaf.ext
+
+@[ext]
+lemma dumb (n : SimplexCategoryᵒᵖ) (x y : ((sset_functor S).obj (n.unop.len + 1)).obj n) : x.1 = y.1 → x = y := by
+  dsimp [sset_functor, sset_functor'] at x y
+  aesop
 
 def iscolimit : Limits.IsColimit (sset_cocone S) where
   desc c := {
@@ -186,11 +196,8 @@ def iscolimit : Limits.IsColimit (sset_cocone S) where
   fac := sorry
   uniq := sorry
 
-instance sset_functor.WellOrderContinuous : Functor.WellOrderContinuous (sset_functor S) where
-  nonempty_isColimit α h := ⟨{
-    desc := fun c ↦ {
-      app := sorry }
-  }⟩
+instance sset_functor.WellOrderContinuous : Functor.WellOrderContinuous (sset_functor S) := by infer_instance
+
 /-
 class IsStableUnderTransfiniteCompositionOfShape (β : Type*) [LinearOrder β] [IsWellOrder β (· < ·)] [OrderBot β] : Prop where
   condition (F : β ⥤ C) [F.WellOrderContinuous] (hF : ∀ (a : β) (_ : a < wellOrderSucc a), W (F.map (homOfLE (self_le_wellOrderSucc a))))
