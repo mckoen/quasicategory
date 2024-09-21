@@ -4,6 +4,7 @@ import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 import Quasicategory.InternalHom
 import Quasicategory.Terminal
 import Quasicategory.SimplicialSet
+import Mathlib.CategoryTheory.Limits.FilteredColimitCommutesFiniteLimit
 
 namespace SSet
 
@@ -46,52 +47,119 @@ instance monomorphisms.StableUnderCobaseChange : StableUnderCobaseChange (monomo
   letI _ : Adhesive SSet := adhesive_functor
   exact Adhesive.mono_of_isPushout_of_mono_right P
 
+section mono_proof
+
+variable {β : Type*} [h1 : LinearOrder β] [h2 : IsWellOrder β (· < ·)] [h3 : OrderBot β]
+
+variable {F : β ⥤ SSet} [h : F.WellOrderContinuous]
+  (hF : ∀ (a : β) (_ : a < wellOrderSucc a), (monomorphisms SSet) (F.toPrefunctor.map (homOfLE (self_le_wellOrderSucc a))))
+  {c : Limits.Cocone F} (hc : Limits.IsColimit c)
+
+variable (γ : β)
+
+instance has_bot (not_bot : γ ≠ ⊥) : OrderBot {b | b < γ} where
+  bot := ⟨⊥, Ne.bot_lt' (id (Ne.symm not_bot))⟩ -- only if γ is not ⊥
+  bot_le _ := OrderBot.bot_le _
+
+instance has_bot' [IsWellOrderLimitElement γ] : OrderBot {b | b < γ} :=
+  has_bot γ (IsWellOrderLimitElement.neq_bot γ)
+
+example [IsWellOrderLimitElement γ] :
+    (F.map (homOfLE bot_le)) = ((F.coconeOfFunctorToOver (PrincipalSeg.ofElement (· < ·) γ).functorToOver).ι.app ⊥) := rfl
+
+-- obviously can be golfed
+instance isfilt [hγ : IsWellOrderLimitElement γ] : IsFiltered {b | b < γ} where
+  cocone_objs := by
+    intro ⟨x, hx⟩ ⟨y, hy⟩
+    cases h2.trichotomous x y with
+    | inl h =>
+      obtain ⟨z, hz⟩ := hγ.not_succ y hy
+      use ⟨z, hz.2⟩
+      refine ⟨homOfLE ?_, homOfLE ?_, trivial⟩
+      have := (le_of_lt (lt_trans h hz.1))
+      exact this
+      exact le_of_lt hz.1
+    | inr h =>
+      cases h with
+      | inl h =>
+        obtain ⟨z, hz⟩ := hγ.not_succ y hy
+        use ⟨z, hz.2⟩
+        refine ⟨homOfLE ?_, homOfLE ?_, trivial⟩
+        have := le_of_lt hz.1
+        rw [← h] at this
+        exact this
+        exact le_of_lt hz.1
+      | inr h =>
+        obtain ⟨z, hz⟩ := hγ.not_succ x hx
+        use ⟨z, hz.2⟩
+        refine ⟨homOfLE ?_, homOfLE ?_, trivial⟩
+        exact le_of_lt hz.1
+        have := (le_of_lt (lt_trans h hz.1))
+        exact this
+  cocone_maps := fun ⟨x, hx⟩ ⟨y, hy⟩ _ _ ↦ by
+    obtain ⟨z, hz⟩ := hγ.not_succ y hy
+    refine ⟨⟨z, hz.2⟩, ⟨homOfLE (le_of_lt hz.1), rfl⟩⟩
+  nonempty := by simp [IsWellOrderLimitElement.not_bot]
+
 /-
-def transfinite_monos_aux (α : Ordinal) (F : {β | β ≤ α} ⥤ SSet) : Ordinal → Prop := fun γ ↦
-  (hγ : γ ≤ α) → monomorphisms SSet (F.map (zero_to γ hγ))
-
-instance transfinite_monos
-    (X Y : SSet) (f : X ⟶ Y)
-    (α : Ordinal)
-    (F : {β | β ≤ α} ⥤ SSet) (hF : Limits.PreservesColimits F)
-    (hS : ∀ (β : Ordinal) (hβ : β < α), monomorphisms SSet (F.map (to_succ hβ))) :
-    ∀ {γ} (hγ : γ ≤ α), monomorphisms SSet (F.map (zero_to γ hγ)) := by
-  intro γ hγ
-  refine @Ordinal.limitRecOn (transfinite_monos_aux α F) γ ?_ ?_ ?_ hγ
-  all_goals dsimp [transfinite_monos_aux]
-  · intro; simp [zero_to]; exact instMonoId _
-  · intro o IH (succ_le : o + 1 ≤ α)
-    have o_lt : o < α := Order.succ_le_iff.mp succ_le
-    have : (F.map (zero_to (Order.succ o) succ_le)) = (F.map (zero_to o (le_of_lt o_lt))) ≫
-        (F.map (to_succ o_lt)) := by
-      suffices (zero_to (Order.succ o) succ_le) = (zero_to o (le_of_lt o_lt)) ≫ (to_succ o_lt) by
-        aesop
-      simp only [Set.coe_setOf, Set.mem_setOf_eq, zero_to, to_succ, homOfLE_comp]
-    rw [this]
-    have a := IH (le_of_lt o_lt)
-    have b := hS o o_lt
-    exact @CategoryTheory.mono_comp SSet _ _ _ _
-      (F.map (zero_to o (le_of_lt o_lt))) a (F.map (to_succ o_lt)) b
-  · simp only [monomorphisms.iff]
-    intro o ho IH o_le
-    sorry -- because monomorphisms are closed under filtered colimits?
--- o is colimit of o' < o, and ∀ o' < o we have f_o'_0 : F(0) ⟶ F(o') is a Mono.
--- {o' | o' < o} is a filtered category (as a directed set), so o is a filtered colimit
--- F preserves colimits, so F(o) is a filtered colimit of F(o') for o' < o
--- since each F(0) ⟶ F(o') is a Mono, also F(0) ⟶ F(o) is a Mono
-
-  intro X Y f hf
-  induction hf with
-  | mk α F hF hS => exact transfinite_monos X Y f α F hF hS (le_refl α)
+def filteredfunctor [hγ : IsWellOrderLimitElement γ] : {b | b < γ} ⥤ SSet where
+  obj x := (F.map (homOfLE (@bot_le _ _ _ x)))
+  map := _
 -/
 
-instance monomorphisms.isStableUnderTransfiniteCompositionOfShape (β : Type u_1)
-    (h1 : LinearOrder β) (h2 : IsWellOrder β fun x y ↦ x < y) (h3 : OrderBot β) :
+-- this is functor {b | b < x} ⥤ SSet, for which we have a cocone which is a filtered colimit
+--((PrincipalSeg.ofElement (fun x x_1 ↦ x < x_1) x).functorToOver ⋙
+--    Over.forget (PrincipalSeg.ofElement (fun x x_1 ↦ x < x_1) x).top ⋙ F)
+
+-- show that F(⊥) ⟶ F(γ) is a monomorphism for all (γ : β)
+instance aux1 : monomorphisms SSet (F.map (homOfLE (@bot_le _ _ _ γ))) := by
+  apply WellFounded.induction h2.wf γ
+  intro x ih
+  cases eq_bot_or_eq_succ_or_isWellOrderLimitElement x with
+  | inl h0 =>
+    have : monomorphisms SSet (F.map (homOfLE (@bot_le _ _ _ ⊥))) := by
+      simp only [homOfLE_refl, CategoryTheory.Functor.map_id, monomorphisms.iff]
+      exact instMonoId (F.obj ⊥)
+    convert this
+  | inr h =>
+    cases h with
+    | inl hsucc =>
+      obtain ⟨b, ⟨hb1, hb2⟩⟩ := hsucc
+      rw [hb1] at hb2 ih
+      have := @mono_comp SSet _ _ _ _ _ (ih b hb2) _ (hF b hb2)
+      rw [← Functor.map_comp, homOfLE_comp] at this
+      convert this
+    | inr hlim =>
+      let filt := ((PrincipalSeg.ofElement (· < ·) x).functorToOver ⋙ Over.forget (PrincipalSeg.ofElement (· < ·) x).top ⋙ F) --functor
+      let cocone : Limits.Cocone filt := (F.coconeOfFunctorToOver (PrincipalSeg.ofElement (· < ·) x).functorToOver) --cocone over functor
+      obtain ⟨hd : Limits.IsColimit cocone⟩ := h.nonempty_isColimit (PrincipalSeg.ofElement (· < ·) x) --filtered colimit
+      change monomorphisms SSet ((cocone).ι.app ⊥) -- filt(⊥) ⟶ filt(x)
+      have : ∀ y : {b | b < x}, monomorphisms SSet (filt.map (homOfLE (OrderBot.bot_le y))) := fun ⟨y, hy⟩ ↦ ih y hy
+      refine @preserves_mono_of_preservesLimit _ _ _ _ _ _ _ _ ?_ sorry
+      refine @Limits.PreservesLimitsOfShape.preservesLimit _ _ _ _ _ _ _ ?_ _
+      --refine @Limits.filteredColimPreservesFiniteLimits Limits.WalkingCospan
+      /-
+      refine @NatTrans.mono_of_mono_app _ _ _ _ _ _ _ ?_
+      intro k
+      rw [mono_iff_injective]
+      intro a b h
+      dsimp [cocone] at a b h
+      -/
+      sorry
+
+#check Limits.filteredColimPreservesFiniteLimits
+--(J := Limits.WalkingCospan)
+-- we have a functor `{b | b < x} ⥤ SSet`, given by `b ↦ F(b)` and a colimit cocone for this
+-- this is a filtered colimit. Each `F(⊥) ⟶ F(b)` is a mono, and filtered colimits preserve monos
+-- so `F(⊥) ⟶ F(x)` is a mono
+
+instance monomorphisms.isStableUnderTransfiniteCompositionOfShape :
     (monomorphisms SSet).IsStableUnderTransfiniteCompositionOfShape β where
-  condition := by
-    intro F hf h c hc
+  condition F h hF c hc := by
     sorry
 
+end mono_proof
+/-
 instance monomorphisms.IsStableUnderTransfiniteComposition :
     IsStableUnderTransfiniteComposition (monomorphisms SSet) where
   id_mem _ := instMonoId _
@@ -124,16 +192,6 @@ lemma succ_mem_thing (S : MorphismProperty SSet) (hS : S.WeaklySaturated) (h : �
   dsimp [sset_union_functor, subset_union_functor, sset_functor]
   sorry
 
-def zerofunctor (X : SSet) : Fin 1 ⥤ SSet where
-  obj _ := X
-  map _ := 𝟙 X
-
-instance (X : SSet) : X.zerofunctor.WellOrderContinuous := sorry
-
-example  (S : MorphismProperty SSet) (hS : S.WeaklySaturated) (X : SSet) : sorry := by
-  have := (hS.IsStableUnderTransfiniteComposition.isStableUnderTransfiniteCompositionOfShape (Fin 1)).condition (zerofunctor X)
-  sorry
-
 open SimplicialSubset GrothendieckTopology in
 -- `0077` (b) monomorphisms are generated by boundary inclusions
 lemma contains_mono_iff_contains_boundaryInclusion
@@ -153,8 +211,8 @@ lemma contains_mono_iff_contains_boundaryInclusion
     congr
     rw [empty_union_image i]
   change S ((mono_iso i).hom ≫ (imagePresheaf i).ι)
-  -- need that weakly saturated contain all isomorphisms. then composition with isomorphism gives i
-  sorry
+  exact hS.IsStableUnderTransfiniteComposition.comp_mem (mono_iso i).hom (imagePresheaf i).ι
+    (WeaklySaturated_contains_iso S (mono_iso i).hom (isomorphisms.infer_property (mono_iso i).hom)) H
 
 /- `006Y` trivial Kan fibration iff rlp wrt all monomorphisms -/
 lemma trivialKanFibration_eq_rlp_monomorphisms :
@@ -253,3 +311,4 @@ lemma contains_innerAnodyne_iff_contains_pushout_maps
     (S : MorphismProperty SSet) (hS : WeaklySaturated S) :
     (∀ m, S (to_B (boundaryInclusion m))) ↔ (∀ {X Y : SSet} (p : X ⟶ Y) (hp : innerAnodyne p), S p) := by
   refine ⟨sorry, fun h m ↦ h _ (monoPushout_innerAnodyne (boundaryInclusion m))⟩
+-/

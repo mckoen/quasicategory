@@ -176,6 +176,10 @@ class WeaklySaturated (P : MorphismProperty C) : Prop :=
 instance llp_weakly_saturated (T : MorphismProperty C) : WeaklySaturated T.llp :=
   ⟨llp_pushout, llp_retract, llp_transfinite_comp⟩
 
+/-- weakly saturated classes contain all isomorphisms. -/
+lemma WeaklySaturated_contains_iso (T : MorphismProperty C) [hT: WeaklySaturated T] (p : X ⟶ Y) :
+    (isomorphisms C) p → T p := sorry
+
 end MorphismProperty
 
 end CategoryTheory
