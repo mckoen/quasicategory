@@ -135,10 +135,12 @@ instance aux1 : monomorphisms SSet (F.map (homOfLE (@bot_le _ _ _ γ))) := by
       obtain ⟨hd : Limits.IsColimit cocone⟩ := h.nonempty_isColimit (PrincipalSeg.ofElement (· < ·) x) --filtered colimit
       change monomorphisms SSet ((cocone).ι.app ⊥) -- filt(⊥) ⟶ filt(x)
       have : ∀ y : {b | b < x}, monomorphisms SSet (filt.map (homOfLE (OrderBot.bot_le y))) := fun ⟨y, hy⟩ ↦ ih y hy
+
+
+      /-
       refine @preserves_mono_of_preservesLimit _ _ _ _ _ _ _ _ ?_ sorry
       refine @Limits.PreservesLimitsOfShape.preservesLimit _ _ _ _ _ _ _ ?_ _
-      --refine @Limits.filteredColimPreservesFiniteLimits Limits.WalkingCospan
-      /-
+      refine @Limits.filteredColimPreservesFiniteLimits Limits.WalkingCospan
       refine @NatTrans.mono_of_mono_app _ _ _ _ _ _ _ ?_
       intro k
       rw [mono_iff_injective]
@@ -147,7 +149,6 @@ instance aux1 : monomorphisms SSet (F.map (homOfLE (@bot_le _ _ _ γ))) := by
       -/
       sorry
 
-#check Limits.filteredColimPreservesFiniteLimits
 --(J := Limits.WalkingCospan)
 -- we have a functor `{b | b < x} ⥤ SSet`, given by `b ↦ F(b)` and a colimit cocone for this
 -- this is a filtered colimit. Each `F(⊥) ⟶ F(b)` is a mono, and filtered colimits preserve monos
@@ -159,12 +160,12 @@ instance monomorphisms.isStableUnderTransfiniteCompositionOfShape :
     sorry
 
 end mono_proof
-/-
+
 instance monomorphisms.IsStableUnderTransfiniteComposition :
     IsStableUnderTransfiniteComposition (monomorphisms SSet) where
   id_mem _ := instMonoId _
   comp_mem f g hf hg := @mono_comp _ _ _ _ _ f hf g hg
-  isStableUnderTransfiniteCompositionOfShape :=
+  isStableUnderTransfiniteCompositionOfShape _ :=
     monomorphisms.isStableUnderTransfiniteCompositionOfShape
 
 -- `0077` (a) monomorphisms are weakly saturated
@@ -187,9 +188,9 @@ lemma empty_union_image (i : A ⟶ B) : skeleton B 0 ⊔ imagePresheaf i = image
 open SimplicialSubset GrothendieckTopology in
 lemma succ_mem_thing (S : MorphismProperty SSet) (hS : S.WeaklySaturated) (h : ∀ (n : ℕ), S (boundaryInclusion n))
     {A B : SSet} (i : A ⟶ B) [hi : Mono i] :
-    ∀ a < wellOrderSucc a, S ((sset_union_functor B (imagePresheaf i)).map (homOfLE (self_le_wellOrderSucc a))) := by
+    ∀ a < wellOrderSucc a, S ((skeleton_union_functor' B (imagePresheaf i)).map (homOfLE (self_le_wellOrderSucc a))) := by
   intro a ha
-  dsimp [sset_union_functor, subset_union_functor, sset_functor]
+  dsimp [skeleton_union_functor, skeleton_union_functor', sset_functor]
   sorry
 
 open SimplicialSubset GrothendieckTopology in
@@ -201,13 +202,13 @@ lemma contains_mono_iff_contains_boundaryInclusion
   refine ⟨?_, fun h n ↦ h (boundaryInclusion n)⟩
   intro h A B i hi
   have := (hS.IsStableUnderTransfiniteComposition.isStableUnderTransfiniteCompositionOfShape ℕ).condition
-    (sset_union_functor B (imagePresheaf i)) (succ_mem_thing S hS h i) (skeleton_union_cocone B (imagePresheaf i)) (skeleton_union_cocone_iscolimit B (imagePresheaf i))
+    (skeleton_union_functor' B (imagePresheaf i)) (succ_mem_thing S hS h i) (skeleton_union_cocone B (imagePresheaf i)) (skeleton_union_cocone_iscolimit B (imagePresheaf i))
   dsimp [SimplicialSubset.skeleton_union_cocone] at this
   have H : S (Subpresheaf.ι (imagePresheaf i)) := by
     convert this
     swap
     rw [empty_union_image i]
-    dsimp [sset_union_functor, sset_functor, subset_union_functor]
+    dsimp [skeleton_union_functor, sset_functor, skeleton_union_functor']
     congr
     rw [empty_union_image i]
   change S ((mono_iso i).hom ≫ (imagePresheaf i).ι)
@@ -311,4 +312,3 @@ lemma contains_innerAnodyne_iff_contains_pushout_maps
     (S : MorphismProperty SSet) (hS : WeaklySaturated S) :
     (∀ m, S (to_B (boundaryInclusion m))) ↔ (∀ {X Y : SSet} (p : X ⟶ Y) (hp : innerAnodyne p), S p) := by
   refine ⟨sorry, fun h m ↦ h _ (monoPushout_innerAnodyne (boundaryInclusion m))⟩
--/

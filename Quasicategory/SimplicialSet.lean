@@ -170,10 +170,26 @@ lemma _0018 (h : k < 1) : skeleton S k = SimplicialSubset.empty S := by
   ext
   refine ⟨fun ⟨l, ⟨hl, _⟩⟩ ↦ by aesop, fun h ↦ by exfalso; exact Set.not_mem_empty _ h⟩
 
+-- functor sending simplicial subsets to simplicial sets
+@[simps]
+def sset_functor : SimplicialSubset S ⥤ SSet where
+  obj := Subpresheaf.toPresheaf
+  map f := Subpresheaf.homOfLe f.le
+
 -- functor sending k to k-th skeleton (as subset)
-def subset_functor : ℕ ⥤ SimplicialSubset S where
+@[simps]
+def skeleton_functor : ℕ ⥤ SimplicialSubset S where
   obj k := skeleton S k
   map f := ⟨⟨fun n ↦ _0500 S n.unop.len f.le⟩⟩
+
+-- functor sending k to k-th skeleton as a simplicial set
+@[simps!]
+def skeleton_functor' : ℕ ⥤ SSet := skeleton_functor S ⋙ sset_functor S
+
+-- the cone with pt S given by the skeletons of S
+def skeleton_cocone : Limits.Cocone (skeleton_functor' S) where
+  pt := S
+  ι := { app := fun k ↦ (skeleton S k).ι }
 
 -- functor sending k to union of B with k-th skeleton
 def skeleton_union_functor (B : SimplicialSubset S) : ℕ ⥤ SimplicialSubset S where
@@ -184,22 +200,9 @@ def skeleton_union_functor (B : SimplicialSubset S) : ℕ ⥤ SimplicialSubset S
     | inl h => left; exact _0500 S k.unop.len f.le h
     | inr h => right; exact h
 
--- functor sending simplicial subsets to simplicial sets
-def sset_functor : SimplicialSubset S ⥤ SSet where
-  obj := Subpresheaf.toPresheaf
-  map f := Subpresheaf.homOfLe f.le
-
--- functor sending k to k-th skeleton as a simplicial set
-def skeleton_functor : ℕ ⥤ SSet := subset_functor S ⋙ sset_functor S
-
 -- functor sending k to union of B with k-th skeleton as a simplicial set
 def skeleton_union_functor' (B : SimplicialSubset S) : ℕ ⥤ SSet :=
   skeleton_union_functor S B ⋙ sset_functor S
-
--- the cone with pt S given by the skeletons of S
-def skeleton_cocone : Limits.Cocone (skeleton_functor S) where
-  pt := S
-  ι := { app := fun k ↦ (skeleton S k).ι }
 
 -- the cone with point S given by the unions of B with all the skeletons
 def skeleton_union_cocone (B : SimplicialSubset S) : Limits.Cocone (skeleton_union_functor' S B) where
@@ -215,16 +218,26 @@ lemma dumbext (n : SimplexCategoryᵒᵖ) (x y : ((skeleton_functor S).obj (n.un
   dsimp [skeleton_functor, sset_functor] at x y
   aesop
 
+@[simps!]
+def aux1 (n : SimplexCategoryᵒᵖ) (s : S.obj n) :
+    (skeleton S (n.unop.len + 1)).obj n := .mk _ (_0016 S (Nat.lt.base _) (Set.mem_univ s))
+
 -- the skeleton cocone is a colimit
 def skeleton_cocone_iscolimit : Limits.IsColimit (skeleton_cocone S) where
   desc c := {
-    app := fun n s ↦ (c.ι.app (n.unop.len + 1)).app n (.mk _ (_0016 S (Nat.lt.base _) (Set.mem_univ s)))
+    app := fun n s ↦ (c.ι.app (n.unop.len + 1)).app n (aux1 S n s)
     naturality := by
       intro k m f
       ext (x : S.obj k)
       simp [skeleton_cocone]
       sorry }
-  fac := sorry
+  fac := by
+    intro c j
+    ext k x
+    dsimp
+    change ((c.ι.app ((Opposite.unop k).len + 1)).app k (aux1 S k ((((skeleton_cocone S).ι.app j).app k x) ))) = _
+    simp [skeleton_cocone]
+    sorry
   uniq := sorry
 
 -- the skeleton union cocone is a colimit
@@ -235,16 +248,9 @@ def skeleton_union_cocone_iscolimit (B : SimplicialSubset S) : Limits.IsColimit 
       intro k m f
       ext (x : S.obj k)
       dsimp [skeleton_union_cocone]
-      have := f.unop.toOrderHom.toFun
       sorry }
   fac := sorry
   uniq := sorry
-
-instance skeleton_union_functor.WellOrderContinuous (B : SimplicialSubset S) : Functor.WellOrderContinuous (skeleton_union_functor' S B) := by infer_instance
-
-lemma succ_mono_statement (B : SimplicialSubset S) : ∀ (n : ℕ) (_ : a < wellOrderSucc a), Mono ((skeleton_union_functor' S B).map (homOfLE (self_le_wellOrderSucc a))) := by
-  intro n ha
-  sorry
 
 /-
 class IsStableUnderTransfiniteCompositionOfShape (β : Type*) [LinearOrder β] [IsWellOrder β (· < ·)] [OrderBot β] : Prop where
