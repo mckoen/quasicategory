@@ -107,6 +107,8 @@ def filteredfunctor [hγ : IsWellOrderLimitElement γ] : {b | b < γ} ⥤ SSet w
   map := _
 -/
 
+--colimitLimitIso
+
 -- this is functor {b | b < x} ⥤ SSet, for which we have a cocone which is a filtered colimit
 --((PrincipalSeg.ofElement (fun x x_1 ↦ x < x_1) x).functorToOver ⋙
 --    Over.forget (PrincipalSeg.ofElement (fun x x_1 ↦ x < x_1) x).top ⋙ F)
@@ -138,6 +140,9 @@ instance aux1 : monomorphisms SSet (F.map (homOfLE (@bot_le _ _ _ γ))) := by
 
 
       /-
+
+  F : Ord → Type preserves filter colim, x : Ord a limit ordinal, so x ≅ colim_{y < x} y
+  so F(colim) ≅ F(x)
       refine @preserves_mono_of_preservesLimit _ _ _ _ _ _ _ _ ?_ sorry
       refine @Limits.PreservesLimitsOfShape.preservesLimit _ _ _ _ _ _ _ ?_ _
       refine @Limits.filteredColimPreservesFiniteLimits Limits.WalkingCospan
@@ -149,7 +154,6 @@ instance aux1 : monomorphisms SSet (F.map (homOfLE (@bot_le _ _ _ γ))) := by
       -/
       sorry
 
---(J := Limits.WalkingCospan)
 -- we have a functor `{b | b < x} ⥤ SSet`, given by `b ↦ F(b)` and a colimit cocone for this
 -- this is a filtered colimit. Each `F(⊥) ⟶ F(b)` is a mono, and filtered colimits preserve monos
 -- so `F(⊥) ⟶ F(x)` is a mono

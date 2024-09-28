@@ -10,7 +10,12 @@ namespace SSet
 variable {S T : SSet} {n : ℕ}
 
 structure IsDegenerate (s : S _[n + 1]) : Prop where
-  exists_simplex : ∃ (x : S _[n]), s = (S.σ n) x
+  exists_simplex : ∃ (x : S _[n]), s = (S.σ n) x --not right, could be any degeneracy map
+
+/-
+inductive IsDegenerate : {n : ℕ} → (s : S _[n]) → Prop
+  | mk {n : ℕ} (i : Fin n) (s : S _[n]) : IsDegenerate (σi s)
+-/
 
 abbrev Nondegenerate (s : S _[n + 1]) : Prop := ¬ IsDegenerate s
 
@@ -43,7 +48,7 @@ lemma _04ZN (f : S ⟶ T) :
   sorry
 
 class dim_le (k : ℕ) (S : SSet) : Prop where
-  condition : ∀ (n : ℕ) (s : S _[n + 1]), Nondegenerate s → (n + 1) ≤ k
+  condition : ∀ (n : ℕ) (s : S _[n + 1]), n + 1 ≤ k → IsDegenerate s
 
 abbrev SimplicialSubset (S : SSet) := Subpresheaf S
 
@@ -53,6 +58,10 @@ variable (A B : SimplicialSubset S)
 
 def empty (S : SSet) : SimplicialSubset S where
   obj _ := ∅
+  map _ _ x := x
+
+def top (S : SSet) : SimplicialSubset S where
+  obj _ := Set.univ
   map _ _ x := x
 
 --#synth Mono A.ι
@@ -158,8 +167,20 @@ def skeleton (k : ℕ) : SimplicialSubset S where
 -- want to have Sk(-1, S) = ∅ as bottom element
 abbrev Sk (k : ℕ) (S : SSet) : SSet := (skeleton S k).toPresheaf
 
+/-- degenerate simplices are exactly those in the skeleton -/
+lemma _0011 (s : S _[n + 1]) : IsDegenerate s ↔ s ∈ (skeleton S k).obj (.op [n + 1]) := by
+  sorry
+
 lemma _0017 (s : S _[n + 1]) (h : Nondegenerate s) :
     s ∈ (skeleton S k).obj (.op [n + 1]) ↔ n + 1 ≤ k := sorry
+
+def skeletonIso (k : ℕ) (hS : dim_le k S) : top S ≅ (skeleton S k) where
+  hom := by
+    refine ⟨⟨?_⟩⟩
+    intro n Sn _
+    --cases IsDegenerate Sn
+    sorry
+  inv := sorry
 
 /-- collection of nondegenerate simplices -/
 def nd_simplex_map (n : ℕ) (s : S _[n + 1]) (hs : Nondegenerate s) :
