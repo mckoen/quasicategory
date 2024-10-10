@@ -147,16 +147,18 @@ def hom_of_le (m k : ℕ) (h : m ≤ k) :
   Hom.mk ⟨fun x ↦ Fin.castLE (Nat.add_le_add_right h 1) x, fun _ _ h ↦ h⟩
 -/
 
--- want to somehow say the skeleton is empty for k < 0
+-- want to say the skeleton is empty for k < 0
+-- we shift everything by 1 so that skel is empty for k = 0
 def HasFactorization (k n : ℕ) (s : S _[n]) : Prop :=
-  ∃ (m : ℕ) (_ : m ≤ k) (τ : S _[m]) (f : Δ[n] ⟶ Δ[m]),
+  ∃ (m : ℕ) (_ : m < k) (τ : S _[m]) (f : Δ[n] ⟶ Δ[m]),
     (S.yonedaEquiv [n]).symm s = f ≫ (S.yonedaEquiv [m]).symm τ
 
--- skₖ(S)ₙ
+-- skₖ₋₁(S)ₙ
 def skeleton_subset (k n : ℕ) : Set (S _[n]) :=
   { s : S _[n] | HasFactorization S k n s }
 
-lemma _0016 (h : n ≤ k) : ⊤ ≤ skeleton_subset S k n :=
+-- skₖ₋₁(S)ₙ = S _[n] for n < k (since n ≤ k - 1)
+lemma _0016 (h : n < k) : ⊤ ≤ skeleton_subset S k n :=
   fun s _ ↦ ⟨n, h, s, 𝟙 _, by aesop⟩
 
 lemma _0500 (n : ℕ) (h : l ≤ k) : skeleton_subset S l n ≤ skeleton_subset S k n :=
@@ -173,42 +175,47 @@ def skeleton (k : ℕ) : SimplicialSubset S where
       S.map ((standardSimplex.map g.unop).app l x).down.op s
     simp [standardSimplex, uliftFunctor]
 
--- want to have Sk(-1, S) = ∅ as bottom element
+lemma _0018 : S.skeleton 0 = SimplicialSubset.empty S := by
+  ext
+  refine ⟨fun ⟨l, ⟨hl, _⟩⟩ ↦ by aesop, fun h ↦ by exfalso; exact Set.not_mem_empty _ h⟩
+
 def Sk (k : ℕ) : SSet := (S.skeleton k).toPresheaf
 
 def Sk.ι (k : ℕ) : S.Sk k ⟶ S := (S.skeleton k).ι
 
-/-- an n-simplex is degenerate iff it is in skₖ(S)ₙ for some k < n. -/
-lemma _0011 (s : S _[n]) : IsDegenerate s ↔ (∃ (k : ℕ) (_ : k < n), s ∈ (S.skeleton k).obj (.op [n])) := by
+/-- an n-simplex is degenerate iff it is in skₖ₋₁(S)ₙ for some k ≤ n. -/
+lemma _0011 (s : S _[n]) : IsDegenerate s ↔ (∃ (k : ℕ) (_ : k ≤ n), s ∈ (S.skeleton k).obj (.op [n])) := by
   refine ⟨?_, ?_⟩
   · intro h
     induction h with
     | mk m x i =>
-    refine ⟨m, Nat.lt.base m, m, le_rfl, x, standardSimplex.map (SimplexCategory.σ i), (Equiv.symm_apply_eq (S.yonedaEquiv [m + 1])).mpr rfl⟩
+    refine ⟨m + 1, le_rfl, m, Nat.lt.base m, x, standardSimplex.map (SimplexCategory.σ i), (Equiv.symm_apply_eq (S.yonedaEquiv [m + 1])).mpr rfl⟩
   · sorry
 
-/-- a nondegenerate n-simplex is in skₖ(S)ₙ iff n ≤ K (i.e., iff skₖ(S)ₙ = Sₙ) -/
-lemma _0017 (s : S _[n]) (hs : Nondegenerate s) : s ∈ (S.skeleton k).obj (.op [n]) ↔ n ≤ k := by
+/-- a nondegenerate n-simplex is in skₖ₋₁(S)ₙ iff n < k (i.e., iff skₖ₋₁(S)ₙ = Sₙ) -/
+lemma _0017 (s : S _[n]) (hs : Nondegenerate s) : s ∈ (S.skeleton k).obj (.op [n]) ↔ n < k := by
   refine ⟨?_, fun h ↦ _0016 S h (Set.mem_univ s)⟩
   intro h
   by_contra h'
   apply hs
-  rw [not_le] at h'
+  rw [not_lt] at h'
   rw [_0011]
   use k
 
 -- the k-skeleton has dimension ≤ k
-instance (k : ℕ) : (S.Sk k).dim_le k where
+instance (k : ℕ) : (S.Sk k).dim_le (k - 1) where
   condition := by
     intro n ⟨s, hs⟩ hk
     by_contra h
     have : Nondegenerate s := by
       sorry
     rw [_0017 S s this] at hs
-    rw [← not_le] at hk
-    exact hk hs
+    have : k ≤ n := Nat.le_of_pred_lt hk
+    rw [← not_lt] at this
+    exact this hs
 
-def skeletonIso (k : ℕ) (hS : S.dim_le k) : SimplicialSubset.top S ≅ (S.skeleton k) where
+-- if S has dim ≤ k then S ≅ skₖ(S)
+def skeletonIso (k : ℕ) (hS : S.dim_le k) : SimplicialSubset.top S ≅ (S.skeleton (k + 1)) where
   hom := by
     refine ⟨⟨?_⟩⟩
     intro ⟨n⟩ (s : S _[n.len]) _
@@ -216,22 +223,23 @@ def skeletonIso (k : ℕ) (hS : S.dim_le k) : SimplicialSubset.top S ≅ (S.skel
     · rename_i h
       sorry
     · rename_i h
-      apply (@_0017 S n.len k s h).2
+      apply (@_0017 S n.len (k + 1) s h).2
       have := hS.condition n.len s
       rw [← not_imp_not] at this
       by_contra h'
-      rw [not_le] at h'
+      rw [not_lt] at h'
       exact this h h'
   inv := LE.le.hom (fun _ _ _ ↦ _root_.trivial)
 
-def boundaryIsoSkeleton (n : ℕ) : ∂Δ[n] ≅ (Δ[n].Sk (n - 1)) where
+/--  ∂Δ[n] ≅ skₙ₋₁(Δ[n]) -/
+def boundaryIsoSkeleton (n : ℕ) : ∂Δ[n] ≅ (Δ[n].Sk n) where
   hom := sorry
   inv := sorry
 
 instance boundary_dim (k : ℕ) : ∂Δ[k].dim_le (k - 1) := sorry
 
-def skeleton_hom_equiv {S T : SSet} (h : T.dim_le k) : (T ⟶ S.Sk k) ≃ (T ⟶ S) where
-  toFun f := f ≫ (S.skeleton k).ι
+def skeleton_hom_equiv {S T : SSet} (h : T.dim_le k) : (T ⟶ S.Sk (k + 1)) ≃ (T ⟶ S) where
+  toFun f := f ≫ (S.skeleton (k + 1)).ι
   invFun f := {
     app := fun n t ↦ by
       sorry
@@ -240,13 +248,15 @@ def skeleton_hom_equiv {S T : SSet} (h : T.dim_le k) : (T ⟶ S.Sk k) ≃ (T ⟶
   right_inv := sorry
 
 -- can also be shown using skeleton_hom_equiv
-/-- every k simplex determines a map Δ[k] ⟶ (S.Sk k) -/
-def simplex_map {S : SSet} (s : S _[k]) : Δ[k] ⟶ (S.Sk k) :=
+/-- every k simplex determines a map Δ[k] ⟶ skₖ(S) -/
+def simplex_map {S : SSet} (s : S _[k]) : Δ[k] ⟶ (S.Sk (k + 1)) :=
   (yonedaEquiv _ _).symm (⟨s, _0016 S le_rfl (Set.mem_univ s)⟩)
 
-/-- simplex_map induces ∂Δ[k] ⟶ (S.Sk (k - 1)) -/
-def simplex_boundary_map  (s : S _[k]) : ∂Δ[k] ⟶ (S.Sk (k - 1)) :=
-  (skeleton_hom_equiv (boundary_dim k)).symm ((boundaryInclusion k) ≫ (simplex_map s) ≫ (S.skeleton k).ι)
+/-- simplex_map induces ∂Δ[k] ⟶ skₖ₋₁(S) (assuming 1 ≤ k) -/
+def simplex_boundary_map (h1 : 1 ≤ k) (s : S _[k]) : ∂Δ[k] ⟶ (S.Sk k) := by
+  have := (skeleton_hom_equiv (boundary_dim k)).symm ((boundaryInclusion k) ≫ (simplex_map s) ≫ (S.skeleton (k + 1)).ι)
+  convert this
+  exact (Nat.sub_eq_iff_eq_add h1).mp rfl
 
 lemma _0014 (s : Δ[n] ⟶ S) : ∃ (α : ([n] : SimplexCategory) ⟶ [m]) (τ : Δ[m] ⟶ S),
     Function.Surjective α.toOrderHom ∧ Nondegenerate (yonedaEquiv _ _ τ) ∧ s = standardSimplex.map α ≫ τ := sorry
@@ -257,11 +267,14 @@ def nd_simplex_map (s : S _[k]) (hs : Nondegenerate s) :
     Δ[k] ⟶ (S.Sk k) := sorry
 -/
 
-/-
-lemma _0018 : S.skeleton 0 = SimplicialSubset.empty S := by
-  ext
-  refine ⟨fun ⟨l, ⟨hl, _⟩⟩ ↦ by aesop, fun h ↦ by exfalso; exact Set.not_mem_empty _ h⟩
--/
+-- should be generalized
+lemma empty_union_image (i : A ⟶ B) : skeleton B 0 ⊔ imagePresheaf i = imagePresheaf i := by
+  rw [_0018]
+  dsimp [SimplicialSubset.empty]
+  ext n Bn
+  change Bn ∈ (∅ ⊔ (imagePresheaf i).obj n) ↔ _
+  simp only [imagePresheaf_obj, Set.le_eq_subset, Set.empty_subset, sup_of_le_right,
+    Set.mem_range]
 
 -- functor sending simplicial subsets to simplicial sets
 @[simps]
@@ -269,13 +282,13 @@ def sset_functor : SimplicialSubset S ⥤ SSet where
   obj := Subpresheaf.toPresheaf
   map f := Subpresheaf.homOfLe f.le
 
--- functor sending k to k-th skeleton (as subset)
+-- functor sending k to (k - 1)-th skeleton (as subset)
 @[simps]
 def skeleton_functor : ℕ ⥤ SimplicialSubset S where
   obj k := S.skeleton k
   map f := ⟨⟨fun n ↦ _0500 S n.unop.len f.le⟩⟩
 
--- functor sending k to k-th skeleton as a simplicial set
+-- functor sending k to (k - 1)-th skeleton as a simplicial set
 @[simps!]
 def skeleton_functor' : ℕ ⥤ SSet := skeleton_functor S ⋙ sset_functor S
 
@@ -284,7 +297,7 @@ def skeleton_cocone : Limits.Cocone (skeleton_functor' S) where
   pt := S
   ι := { app := fun k ↦ (S.skeleton k).ι }
 
--- functor sending k to union of B with k-th skeleton
+-- functor sending k to union of B with (k - 1)-th skeleton
 def skeleton_union_functor (B : SimplicialSubset S) : ℕ ⥤ SimplicialSubset S where
   obj k := (S.skeleton k) ⊔ B
   map f := by
@@ -293,7 +306,7 @@ def skeleton_union_functor (B : SimplicialSubset S) : ℕ ⥤ SimplicialSubset S
     | inl h => left; exact _0500 S k.unop.len f.le h
     | inr h => right; exact h
 
--- functor sending k to union of B with k-th skeleton as a simplicial set
+-- functor sending k to union of B with (k - 1)-th skeleton as a simplicial set
 def skeleton_union_functor' (B : SimplicialSubset S) : ℕ ⥤ SSet :=
   skeleton_union_functor S B ⋙ sset_functor S
 
@@ -312,13 +325,13 @@ lemma dumbext (n : SimplexCategoryᵒᵖ) (x y : ((skeleton_functor S).obj (n.un
   aesop
 
 @[simps!]
-def aux1 (n : SimplexCategoryᵒᵖ) (s : S.obj n) :
-    (S.skeleton (n.unop.len + 1)).obj n := .mk _ (_0016 S (Nat.le_succ _) (Set.mem_univ s))
+def skltonaux1 (n : SimplexCategoryᵒᵖ) (s : S.obj n) :
+    (S.skeleton (n.unop.len + 1)).obj n := .mk _ (_0016 S (Nat.lt.base _) (Set.mem_univ s))
 
 -- the skeleton cocone is a colimit
 def skeleton_cocone_iscolimit : Limits.IsColimit (skeleton_cocone S) where
   desc c := {
-    app := fun n s ↦ (c.ι.app (n.unop.len + 1)).app n (aux1 S n s)
+    app := fun n s ↦ (c.ι.app (n.unop.len + 1)).app n (skltonaux1 S n s)
     naturality := by
       intro k m f
       ext (x : S.obj k)
@@ -328,7 +341,7 @@ def skeleton_cocone_iscolimit : Limits.IsColimit (skeleton_cocone S) where
     intro c j
     ext k x
     dsimp
-    change ((c.ι.app ((Opposite.unop k).len + 1)).app k (aux1 S k ((((skeleton_cocone S).ι.app j).app k x) ))) = _
+    change ((c.ι.app ((Opposite.unop k).len + 1)).app k (skltonaux1 S k ((((skeleton_cocone S).ι.app j).app k x) ))) = _
     simp [skeleton_cocone]
     sorry
   uniq := sorry
@@ -336,7 +349,7 @@ def skeleton_cocone_iscolimit : Limits.IsColimit (skeleton_cocone S) where
 -- the skeleton union cocone is a colimit
 def skeleton_union_cocone_iscolimit (B : SimplicialSubset S) : Limits.IsColimit (skeleton_union_cocone S B) where
   desc c := {
-    app := fun n s ↦ (c.ι.app (n.unop.len + 1)).app n ⟨s, by left; exact ⟨n.unop.len, Nat.le_succ _, s, 𝟙 _, rfl⟩⟩
+    app := fun n s ↦ (c.ι.app (n.unop.len + 1)).app n ⟨s, by left; exact ⟨n.unop.len, Nat.lt.base _, s, 𝟙 _, rfl⟩⟩
     naturality := by
       intro k m f
       ext (x : S.obj k)

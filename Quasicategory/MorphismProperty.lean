@@ -1,7 +1,6 @@
 import Mathlib.CategoryTheory.Comma.Arrow
 import Mathlib.CategoryTheory.MorphismProperty.Basic
 import Mathlib.CategoryTheory.MorphismProperty.Limits
---import Quasicategory.Transfinite
 import Quasicategory.KInjective.WellOrderContinuous
 import Quasicategory.KInjective.Lifting
 

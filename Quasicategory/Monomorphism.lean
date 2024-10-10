@@ -67,59 +67,51 @@ instance has_bot' [IsWellOrderLimitElement γ] : OrderBot {b | b < γ} :=
 example [IsWellOrderLimitElement γ] :
     (F.map (homOfLE bot_le)) = ((F.coconeOfFunctorToOver (PrincipalSeg.ofElement (· < ·) γ).functorToOver).ι.app ⊥) := rfl
 
--- obviously can be golfed
 instance isfilt [hγ : IsWellOrderLimitElement γ] : IsFiltered {b | b < γ} where
   cocone_objs := by
     intro ⟨x, hx⟩ ⟨y, hy⟩
     cases h2.trichotomous x y with
     | inl h =>
       obtain ⟨z, hz⟩ := hγ.not_succ y hy
-      use ⟨z, hz.2⟩
-      refine ⟨homOfLE ?_, homOfLE ?_, trivial⟩
-      have := (le_of_lt (lt_trans h hz.1))
-      exact this
-      exact le_of_lt hz.1
+      refine ⟨⟨z, hz.2⟩, homOfLE ?_, (le_of_lt hz.1).hom, trivial⟩
+      convert (le_of_lt (lt_trans h hz.1))
     | inr h =>
       cases h with
       | inl h =>
         obtain ⟨z, hz⟩ := hγ.not_succ y hy
-        use ⟨z, hz.2⟩
-        refine ⟨homOfLE ?_, homOfLE ?_, trivial⟩
+        refine ⟨⟨z, hz.2⟩, homOfLE ?_, (le_of_lt hz.1).hom, trivial⟩
         have := le_of_lt hz.1
         rw [← h] at this
         exact this
-        exact le_of_lt hz.1
       | inr h =>
         obtain ⟨z, hz⟩ := hγ.not_succ x hx
-        use ⟨z, hz.2⟩
-        refine ⟨homOfLE ?_, homOfLE ?_, trivial⟩
-        exact le_of_lt hz.1
-        have := (le_of_lt (lt_trans h hz.1))
-        exact this
+        refine ⟨⟨z, hz.2⟩, (le_of_lt hz.1).hom, homOfLE ?_, trivial⟩
+        convert (le_of_lt (lt_trans h hz.1))
   cocone_maps := fun ⟨x, hx⟩ ⟨y, hy⟩ _ _ ↦ by
     obtain ⟨z, hz⟩ := hγ.not_succ y hy
-    refine ⟨⟨z, hz.2⟩, ⟨homOfLE (le_of_lt hz.1), rfl⟩⟩
+    refine ⟨⟨z, hz.2⟩, ⟨(le_of_lt hz.1).hom, rfl⟩⟩
   nonempty := by simp [IsWellOrderLimitElement.not_bot]
 
-/-
-def filteredfunctor [hγ : IsWellOrderLimitElement γ] : {b | b < γ} ⥤ SSet where
-  obj x := (F.map (homOfLE (@bot_le _ _ _ x)))
-  map := _
--/
-
---colimitLimitIso
-
--- this is functor {b | b < x} ⥤ SSet, for which we have a cocone which is a filtered colimit
---((PrincipalSeg.ofElement (fun x x_1 ↦ x < x_1) x).functorToOver ⋙
---    Over.forget (PrincipalSeg.ofElement (fun x x_1 ↦ x < x_1) x).top ⋙ F)
+-- when `x : β` is a limit element, `Over.forgetCocone x` is a colimit
+def forgetCoconeColimit (x : β) (h : IsWellOrderLimitElement x) : Limits.IsColimit (Over.forgetCocone x) where
+  desc c := {
+    down := {
+      down := by
+        by_contra h'
+        rw [not_le] at h'
+        obtain ⟨y, hy1, hy2⟩ := h.not_succ _ h'
+        have := (c.ι.app (Over.mk (le_of_lt hy2).hom)).le
+        dsimp at this
+        rw [← not_le] at hy1
+        exact hy1 this } }
 
 -- show that F(⊥) ⟶ F(γ) is a monomorphism for all (γ : β)
-instance aux1 : monomorphisms SSet (F.map (homOfLE (@bot_le _ _ _ γ))) := by
+instance monoaux1 : monomorphisms SSet (F.map (bot_le (a := γ).hom)) := by
   apply WellFounded.induction h2.wf γ
   intro x ih
   cases eq_bot_or_eq_succ_or_isWellOrderLimitElement x with
   | inl h0 =>
-    have : monomorphisms SSet (F.map (homOfLE (@bot_le _ _ _ ⊥))) := by
+    have : monomorphisms SSet (F.map (bot_le (a := ⊥)).hom) := by
       simp only [homOfLE_refl, CategoryTheory.Functor.map_id, monomorphisms.iff]
       exact instMonoId (F.obj ⊥)
     convert this
@@ -132,35 +124,17 @@ instance aux1 : monomorphisms SSet (F.map (homOfLE (@bot_le _ _ _ γ))) := by
       rw [← Functor.map_comp, homOfLE_comp] at this
       convert this
     | inr hlim =>
-      let filt := ((PrincipalSeg.ofElement (· < ·) x).functorToOver ⋙ Over.forget (PrincipalSeg.ofElement (· < ·) x).top ⋙ F) --functor
+      let filt := ((PrincipalSeg.ofElement (· < ·) x).functorToOver ⋙ Over.forget x ⋙ F) --functor
       let cocone : Limits.Cocone filt := (F.coconeOfFunctorToOver (PrincipalSeg.ofElement (· < ·) x).functorToOver) --cocone over functor
       obtain ⟨hd : Limits.IsColimit cocone⟩ := h.nonempty_isColimit (PrincipalSeg.ofElement (· < ·) x) --filtered colimit
-      change monomorphisms SSet ((cocone).ι.app ⊥) -- filt(⊥) ⟶ filt(x)
-      have : ∀ y : {b | b < x}, monomorphisms SSet (filt.map (homOfLE (OrderBot.bot_le y))) := fun ⟨y, hy⟩ ↦ ih y hy
-
-
-      /-
-
-  F : Ord → Type preserves filter colim, x : Ord a limit ordinal, so x ≅ colim_{y < x} y
-  so F(colim) ≅ F(x)
-      refine @preserves_mono_of_preservesLimit _ _ _ _ _ _ _ _ ?_ sorry
-      refine @Limits.PreservesLimitsOfShape.preservesLimit _ _ _ _ _ _ _ ?_ _
-      refine @Limits.filteredColimPreservesFiniteLimits Limits.WalkingCospan
-      refine @NatTrans.mono_of_mono_app _ _ _ _ _ _ _ ?_
-      intro k
-      rw [mono_iff_injective]
-      intro a b h
-      dsimp [cocone] at a b h
-      -/
+      --change monomorphisms SSet ((cocone).ι.app ⊥)
+      --change monomorphisms SSet ((F.mapCocone (Over.forgetCocone x)).ι.app (Over.mk bot_le.hom))
       sorry
-
--- we have a functor `{b | b < x} ⥤ SSet`, given by `b ↦ F(b)` and a colimit cocone for this
--- this is a filtered colimit. Each `F(⊥) ⟶ F(b)` is a mono, and filtered colimits preserve monos
--- so `F(⊥) ⟶ F(x)` is a mono
 
 instance monomorphisms.isStableUnderTransfiniteCompositionOfShape :
     (monomorphisms SSet).IsStableUnderTransfiniteCompositionOfShape β where
   condition F h hF c hc := by
+    have := monoaux1 hF
     sorry
 
 end mono_proof
@@ -178,17 +152,7 @@ instance monomorphisms.WeaklySaturated : WeaklySaturated (monomorphisms SSet) :=
     monomorphisms.StableUnderRetracts,
     monomorphisms.IsStableUnderTransfiniteComposition⟩
 
--- should be moved to other file and made more general
-open SimplicialSubset GrothendieckTopology in
-lemma empty_union_image (i : A ⟶ B) : skeleton B 0 ⊔ imagePresheaf i = imagePresheaf i := by
-  rw [_0018 _ zero_lt_one]
-  dsimp [SimplicialSubset.empty]
-  ext n Bn
-  change Bn ∈ (∅ ⊔ (imagePresheaf i).obj n) ↔ _
-  simp only [imagePresheaf_obj, Set.le_eq_subset, Set.empty_subset, sup_of_le_right,
-    Set.mem_range]
-
--- need pushout construction for this
+-- need skeleta pushout construction for this, this is showing B(k - 1) ↪ B(k) is a mono
 open SimplicialSubset GrothendieckTopology in
 lemma succ_mem_thing (S : MorphismProperty SSet) (hS : S.WeaklySaturated) (h : ∀ (n : ℕ), S (boundaryInclusion n))
     {A B : SSet} (i : A ⟶ B) [hi : Mono i] :
@@ -207,7 +171,7 @@ lemma contains_mono_iff_contains_boundaryInclusion
   intro h A B i hi
   have := (hS.IsStableUnderTransfiniteComposition.isStableUnderTransfiniteCompositionOfShape ℕ).condition
     (skeleton_union_functor' B (imagePresheaf i)) (succ_mem_thing S hS h i) (skeleton_union_cocone B (imagePresheaf i)) (skeleton_union_cocone_iscolimit B (imagePresheaf i))
-  dsimp [SimplicialSubset.skeleton_union_cocone] at this
+  dsimp [SSet.skeleton_union_cocone] at this
   have H : S (Subpresheaf.ι (imagePresheaf i)) := by
     convert this
     swap
