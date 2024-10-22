@@ -93,48 +93,28 @@ variable {S : SSet}
 
 open SimplexCategory
 
--- how to prove things are degenerate?
 inductive IsDegenerate : {n : ℕ} → (s : S _[n]) → Prop
   | mk (n : ℕ) (x : S _[n]) (i : Fin (n + 1)) : IsDegenerate (S.σ i x)
 
 abbrev Nondegenerate {S : SSet} (s : S _[n]) : Prop := ¬ IsDegenerate s
 
--- `0013`
+-- `0013`, image of degenerate simplex is degenerate
 lemma image_degen_of_degen (f : S ⟶ T) (s : S _[n]) (h : IsDegenerate s) :
-    IsDegenerate (f.app _ s) := by
+    IsDegenerate (f.app (.op [n]) s) := by
   induction h with
   | mk m s i =>
-  sorry
-  /-
-  exists_simplex := by
-    obtain ⟨x, hx⟩ := h.exists_simplex
-    use f.app _ x
-    rw [hx]
-    exact congr_fun (f.naturality (SimplexCategory.σ n).op) x
-  -/
+  have := congr_fun (f.naturality (SimplexCategory.σ i).op) s
+  dsimp [SimplicialObject.σ] at this ⊢
+  rw [this]
+  apply IsDegenerate.mk
 
 -- `0013`
 lemma degen_of_image_degen_mono (f : S ⟶ T) [hf : Mono f]
     (s : S _[n]) (h : IsDegenerate (f.app (.op [n]) s)) :
     IsDegenerate s := sorry
-  /-
-  exists_simplex := by
-    obtain ⟨a, ha⟩ := h.exists_simplex
-    have := (mono_iff_injective _).1 (((NatTrans.mono_iff_mono_app _ _).1 hf) (Opposite.op [n + 1]))
-    dsimp [σ] at ha ⊢
-    sorry
-  -/
 
 lemma _04ZN (f : S ⟶ T) :
     (∀ (n : ℕ) (t : T _[n]) (ht : Nondegenerate t), t ∈ Set.range (f.app _)) → Epi f := sorry
-  /-
-  intro h
-  rw [NatTrans.epi_iff_epi_app]
-  intro m
-  rw [epi_iff_surjective]
-  intro Tm
-  sorry
-  -/
 
 variable (S : SSet)
 
@@ -161,9 +141,11 @@ def skeleton_subset (k n : ℕ) : Set (S _[n]) :=
 lemma _0016 (h : n < k) : ⊤ ≤ skeleton_subset S k n :=
   fun s _ ↦ ⟨n, h, s, 𝟙 _, by aesop⟩
 
+-- skₗ₋₁(S)ₙ ⊆ skₖ₋₁(S)ₙ for l ≤ k
 lemma _0500 (n : ℕ) (h : l ≤ k) : skeleton_subset S l n ≤ skeleton_subset S k n :=
   fun _ ⟨m, hm, τ, f, hf⟩ ↦ ⟨m, le_trans hm h, τ, f, hf⟩
 
+-- the skeleton as a simplicial subset
 def skeleton (k : ℕ) : SimplicialSubset S where
   obj n := skeleton_subset S k (len n.unop)
   map := by
@@ -175,13 +157,26 @@ def skeleton (k : ℕ) : SimplicialSubset S where
       S.map ((standardSimplex.map g.unop).app l x).down.op s
     simp [standardSimplex, uliftFunctor]
 
+-- the 0-skeleton is empty
 lemma _0018 : S.skeleton 0 = SimplicialSubset.empty S := by
   ext
   refine ⟨fun ⟨l, ⟨hl, _⟩⟩ ↦ by aesop, fun h ↦ by exfalso; exact Set.not_mem_empty _ h⟩
 
+-- the skeleton as a simplicial set
 def Sk (k : ℕ) : SSet := (S.skeleton k).toPresheaf
 
 def Sk.ι (k : ℕ) : S.Sk k ⟶ S := (S.skeleton k).ι
+
+def SkSucc : S.Sk k ⟶ S.Sk (k + 1) :=
+  Subpresheaf.homOfLe <| fun n ↦ S._0500 n.unop.len (Nat.le_succ k)
+
+lemma lt_then_not_surj (n m : ℕ) (τ : Fin n →o Fin m) (h : m < n) :
+    ¬ Function.Injective τ := by
+  sorry
+
+lemma lt_then_factor_through_σ (n m : ℕ) (h : m < n) (τ : ([n + 1] : SimplexCategory) ⟶ [m]) :
+    ∃ i α, τ = (SimplexCategory.σ i) ≫ α := by
+  sorry
 
 /-- an n-simplex is degenerate iff it is in skₖ₋₁(S)ₙ for some k ≤ n. -/
 lemma _0011 (s : S _[n]) : IsDegenerate s ↔ (∃ (k : ℕ) (_ : k ≤ n), s ∈ (S.skeleton k).obj (.op [n])) := by
@@ -190,7 +185,26 @@ lemma _0011 (s : S _[n]) : IsDegenerate s ↔ (∃ (k : ℕ) (_ : k ≤ n), s �
     induction h with
     | mk m x i =>
     refine ⟨m + 1, le_rfl, m, Nat.lt.base m, x, standardSimplex.map (SimplexCategory.σ i), (Equiv.symm_apply_eq (S.yonedaEquiv [m + 1])).mpr rfl⟩
-  · sorry
+  · intro ⟨k, hk, m, hm, σ', (τ : Δ[n] ⟶ Δ[m]), (hf : (S.yonedaEquiv [n]).symm s = τ ≫ (S.yonedaEquiv [m]).symm σ')⟩
+    -- m < n, so τ cannot be injective on vertices, so τ factors through some σ map.
+
+    /-
+    have equ' : ([n - 1 + 1] : SimplexCategory) = ([n] : SimplexCategory) := sorry
+    have equ : (([n] : SimplexCategory) ⟶ [m]) = (([n - 1 + 1] : SimplexCategory) ⟶ [m]) := congrFun (congrArg Quiver.Hom (id (Eq.symm equ'))) [m]
+    --have equ'' : Δ[n] = Δ[n - 1 + 1] := congrArg standardSimplex.obj (id (Eq.symm equ'))
+    let τ' := standardSimplex.objEquiv _ _ (yonedaEquiv _ _ τ)
+    rw [equ] at τ'
+    obtain ⟨i, α, hiα⟩ := lt_then_factor_through_σ _ _ sorry τ'
+    --rw [equ''] at τ
+    rw [← equ] at τ'
+    have : (yonedaEquiv _ _).symm ((standardSimplex.objEquiv _ _).symm τ') = τ := sorry
+    rw [← this] at hf
+    apply_fun (fun f ↦ (S.yonedaEquiv [n]) f) at hf
+    simp at hf
+    rw [hf]
+    -/
+
+    sorry
 
 /-- a nondegenerate n-simplex is in skₖ₋₁(S)ₙ iff n < k (i.e., iff skₖ₋₁(S)ₙ = Sₙ) -/
 lemma _0017 (s : S _[n]) (hs : Nondegenerate s) : s ∈ (S.skeleton k).obj (.op [n]) ↔ n < k := by
@@ -202,34 +216,34 @@ lemma _0017 (s : S _[n]) (hs : Nondegenerate s) : s ∈ (S.skeleton k).obj (.op 
   rw [_0011]
   use k
 
--- the k-skeleton has dimension ≤ k
+-- the (k - 1)-skeleton has dimension ≤ (k - 1)
 instance (k : ℕ) : (S.Sk k).dim_le (k - 1) where
   condition := by
     intro n ⟨s, hs⟩ hk
     by_contra h
     have : Nondegenerate s := by
+      --obtain ⟨m, t, i, hi⟩ := h'
       sorry
     rw [_0017 S s this] at hs
     have : k ≤ n := Nat.le_of_pred_lt hk
     rw [← not_lt] at this
     exact this hs
 
--- if S has dim ≤ k then S ≅ skₖ(S)
-def skeletonIso (k : ℕ) (hS : S.dim_le k) : SimplicialSubset.top S ≅ (S.skeleton (k + 1)) where
-  hom := by
-    refine ⟨⟨?_⟩⟩
-    intro ⟨n⟩ (s : S _[n.len]) _
-    by_cases (IsDegenerate s)
-    · rename_i h
-      sorry
-    · rename_i h
-      apply (@_0017 S n.len (k + 1) s h).2
-      have := hS.condition n.len s
-      rw [← not_imp_not] at this
-      by_contra h'
-      rw [not_lt] at h'
-      exact this h h'
-  inv := LE.le.hom (fun _ _ _ ↦ _root_.trivial)
+-- if S has dim ≤ k then S = skₖ(S)
+def skeletonEq (k : ℕ) (hS : S.dim_le k) : SimplicialSubset.top S = (S.skeleton (k + 1)) := by
+  ext n (s : S _[n.unop.len])
+  refine ⟨fun _ ↦ ?_, fun _ ↦ _root_.trivial⟩
+  by_cases (IsDegenerate s)
+  · rename_i h
+    have := hS.condition
+    sorry
+  · rename_i h
+    apply (_0017 S s h).2
+    have := hS.condition n.unop.len s
+    rw [← not_imp_not] at this
+    by_contra h'
+    rw [not_lt] at h'
+    exact this h h'
 
 /--  ∂Δ[n] ≅ skₙ₋₁(Δ[n]) -/
 def boundaryIsoSkeleton (n : ℕ) : ∂Δ[n] ≅ (Δ[n].Sk n) where
@@ -238,11 +252,67 @@ def boundaryIsoSkeleton (n : ℕ) : ∂Δ[n] ≅ (Δ[n].Sk n) where
 
 instance boundary_dim (k : ℕ) : ∂Δ[k].dim_le (k - 1) := sorry
 
+/-
+inductive ndFac : {n : ℕ} → (s : Δ[n] ⟶ S) → Prop
+  | mk (m : ℕ) (α : ([n] : SimplexCategory) ⟶ [m]) (τ : Δ[m] ⟶ S) : ndFac (standardSimplex.map α ≫ τ)
+-/
+
+def fac_nat_subset {S : SSet} (s : Δ[n] ⟶ S) : Set ℕ :=
+  { m | ∃ (α : ([n] : SimplexCategory) ⟶ [m]) (τ : Δ[m] ⟶ S), s = standardSimplex.map α ≫ τ}
+
+instance (s : Δ[n] ⟶ S) : Nonempty (fac_nat_subset s) := ⟨⟨n, 𝟙 _, s, by aesop⟩⟩
+
+noncomputable
+instance : DecidablePred fun x ↦ x ∈ (fac_nat_subset s) := Classical.decPred fun x ↦ x ∈ fac_nat_subset s
+
+--#check Nat.Subtype.orderBot (fac_nat_subset s)
+
+--#check (⊥ : (fac_nat_subset s))
+
+--#check  (⊥ : fac_nat_subset s).property.2
+
+-- `0014`
+noncomputable
+def min_nat {S : SSet} (s : Δ[n] ⟶ S) : ℕ := (⊥ : (fac_nat_subset s)).val
+
+noncomputable
+def facα {S : SSet} (s : Δ[n] ⟶ S) : ([n] : SimplexCategory) ⟶ [min_nat s] := Exists.choose (⊥ : (fac_nat_subset s)).property
+
+noncomputable
+def facτ {S : SSet} (s : Δ[n] ⟶ S) : Δ[min_nat s] ⟶ S := Exists.choose (Exists.choose_spec (⊥ : fac_nat_subset s).property)
+
+lemma fac_eq {S : SSet} (s : Δ[n] ⟶ S) : s = standardSimplex.map (facα s) ≫ facτ s := Exists.choose_spec (Exists.choose_spec (⊥ : fac_nat_subset s).property)
+
+-- if α were not surjective, then we could find a smaller m by taking the image of α
+lemma α_surj {S : SSet} (s : Δ[n] ⟶ S) : Function.Surjective (facα s).toOrderHom := sorry
+
+-- τ is nondegenerate otherwise we could find a smaller m
+lemma τ_nondegen {S : SSet} (s : Δ[n] ⟶ S) : Nondegenerate (yonedaEquiv _ _ (facτ s)) := sorry
+
+-- `001A`
+noncomputable
 def skeleton_hom_equiv {S T : SSet} (h : T.dim_le k) : (T ⟶ S.Sk (k + 1)) ≃ (T ⟶ S) where
   toFun f := f ≫ (S.skeleton (k + 1)).ι
   invFun f := {
-    app := fun n t ↦ by
-      sorry
+    app := fun n (t : T _[n.unop.len]) ↦ by
+      by_cases (Nondegenerate t)
+      · rename_i h'
+        have := h.condition n.unop.len t
+        rw [← not_imp_not] at this
+        exact ⟨f.app n t, S._0016 (Nat.gt_of_not_le (this h')) (Set.mem_univ _)⟩
+      · rename_i h'
+        simp only [not_not] at h'
+        let t' : Δ[n.unop.len] ⟶ T := (yonedaEquiv _ _).symm t
+        have := h.condition (min_nat t') (yonedaEquiv _ _ (facτ t'))
+        rw [← not_imp_not] at this
+        --have := this (τ_nondegen t')
+        --rw [not_lt] at this
+        have : min_nat t' < k + 1 := Nat.gt_of_not_le (this (τ_nondegen t'))
+        have := (S._0016 this (Set.mem_univ (f.app _ (yonedaEquiv _ _ (facτ t')))))
+        --have := _0017 T (yonedaEquiv _ _ t') (τ_nondegen t')
+        sorry
+      /-
+      -/
   }
   left_inv := sorry
   right_inv := sorry
@@ -253,19 +323,73 @@ def simplex_map {S : SSet} (s : S _[k]) : Δ[k] ⟶ (S.Sk (k + 1)) :=
   (yonedaEquiv _ _).symm (⟨s, _0016 S le_rfl (Set.mem_univ s)⟩)
 
 /-- simplex_map induces ∂Δ[k] ⟶ skₖ₋₁(S) (assuming 1 ≤ k) -/
-def simplex_boundary_map (h1 : 1 ≤ k) (s : S _[k]) : ∂Δ[k] ⟶ (S.Sk k) := by
+noncomputable
+def simplex_boundary_map {S : SSet} (h1 : 1 ≤ k) (s : S _[k]) : ∂Δ[k] ⟶ (S.Sk k) := by
   have := (skeleton_hom_equiv (boundary_dim k)).symm ((boundaryInclusion k) ≫ (simplex_map s) ≫ (S.skeleton (k + 1)).ι)
   convert this
   exact (Nat.sub_eq_iff_eq_add h1).mp rfl
 
-lemma _0014 (s : Δ[n] ⟶ S) : ∃ (α : ([n] : SimplexCategory) ⟶ [m]) (τ : Δ[m] ⟶ S),
-    Function.Surjective α.toOrderHom ∧ Nondegenerate (yonedaEquiv _ _ τ) ∧ s = standardSimplex.map α ≫ τ := sorry
+variable (k : ℕ) (hk : 1 ≤ k)
 
-/-
-/-- every nondegenerate k simplex determines a map Δ[k] ⟶ (S.Sk k) -/
-def nd_simplex_map (s : S _[k]) (hs : Nondegenerate s) :
-    Δ[k] ⟶ (S.Sk k) := sorry
--/
+def nd : Set (S _[k]) := { s | Nondegenerate s }
+
+def nd_map1 : ((S.nd k) : Type*) → SSet := fun _ ↦ Δ[k]
+
+def nd_map2 : ((S.nd k) : Type*) → SSet := fun _ ↦ ∂Δ[k]
+
+noncomputable
+-- coproduct of Δ[k] indexed by nondegenerate k-simplices
+def smplx_coprod : SSet := ∐ (S.nd_map1 k)
+
+noncomputable
+-- coproduct of ∂Δ[k] indexed by nondegenerate k-simplices
+def bndry_coprod : SSet := ∐ (S.nd_map2 k)
+
+noncomputable
+-- map between the above coproducts induced by the boundary inclusion
+def coprod_map : (S.bndry_coprod k) ⟶ (S.smplx_coprod k) :=
+  Limits.Sigma.desc <| fun b ↦ boundaryInclusion k ≫ (Limits.Sigma.ι (S.nd_map1 k) b)
+
+noncomputable
+-- map from simplex coproduct to the k-skeleton induced by each nondegenerate simplex
+def coprod_to_smplx : (S.smplx_coprod k) ⟶ (S.Sk (k + 1)) :=
+  Limits.Sigma.desc <| fun b ↦ simplex_map b
+
+noncomputable
+-- map from boundary coproduct to the (k-1)-skeleton induced by each nondegenerate simplex
+def coprod_to_bndry : (S.bndry_coprod k) ⟶ (S.Sk k) :=
+  Limits.Sigma.desc <| fun b ↦ simplex_boundary_map hk b
+
+lemma coprod_square_commutes :
+    (S.coprod_to_bndry k hk) ≫ S.SkSucc = (S.coprod_map k) ≫ (S.coprod_to_smplx k) := by
+  apply Limits.Sigma.hom_ext
+  intro b
+  ext n x
+  simp [coprod_map, coprod_to_smplx, coprod_to_bndry]
+  sorry
+
+noncomputable
+-- the pushout cocone of the above square
+def skPushoutCocone : Limits.PushoutCocone (S.coprod_to_bndry k hk) (S.coprod_map k) :=
+  .mk (S.SkSucc) (S.coprod_to_smplx k) (coprod_square_commutes S k hk)
+
+noncomputable
+-- the pushout cocone on the level of objects
+def skPushoutCoconeObj (n : SimplexCategoryᵒᵖ) : Limits.PushoutCocone ((S.coprod_to_bndry k hk).app n) ((S.coprod_map k).app n) :=
+  .mk (S.SkSucc.app n) ((S.coprod_to_smplx k).app n) (congr_app (coprod_square_commutes S k hk) n)
+
+def skIsoPushout : (S.Sk (k + 1)).obj n ≅ (Limits.Types.Pushout ((S.coprod_to_bndry k hk).app n) ((S.coprod_map k).app n)) := sorry
+
+#check Limits.Types.Pushout.isColimitCocone
+
+def skPushoutObj : Limits.IsColimit (skPushoutCoconeObj S k hk n) where
+  desc := sorry
+
+def skPushout : Limits.IsColimit (skPushoutCocone S k hk) := by
+  refine ⟨?_, sorry, sorry⟩
+  intro s
+
+  sorry
 
 -- should be generalized
 lemma empty_union_image (i : A ⟶ B) : skeleton B 0 ⊔ imagePresheaf i = imagePresheaf i := by
@@ -357,6 +481,8 @@ def skeleton_union_cocone_iscolimit (B : SimplicialSubset S) : Limits.IsColimit 
       sorry }
   fac := sorry
   uniq := sorry
+
+
 
 /-
 class IsStableUnderTransfiniteCompositionOfShape (β : Type*) [LinearOrder β] [IsWellOrder β (· < ·)] [OrderBot β] : Prop where
