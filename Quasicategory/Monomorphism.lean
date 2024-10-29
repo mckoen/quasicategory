@@ -269,6 +269,10 @@ def to_B {A B : SSet} (i : A ⟶ B) : (generalPushout i).cocone.pt ⟶ Δ[2] ⊗
 def Δ_pushout (m : ℕ) :=
   generalPushout (boundaryInclusion m)
 
+-- pushout in proof `0079` (for retract diagram)
+def Λ_pushout (m : ℕ) (i : Fin (m + 1)) :=
+  generalPushout (hornInclusion m i)
+
 -- the cocone with point `Δ[2] ⊗ Δ[m]` given by boundary inclusions
 noncomputable
 def Δ_cocone (m : ℕ) := B_cocone (boundaryInclusion m)
@@ -281,6 +285,11 @@ def Λ_cocone (m : ℕ) (i : Fin (m + 1)) := B_cocone (hornInclusion m i)
 noncomputable
 def to_Δ (m : ℕ) : (Δ_pushout m).cocone.pt ⟶ Δ[2] ⊗ Δ[m] :=
   (Δ_pushout m).isColimit.desc (Δ_cocone m)
+
+-- induced morphism from pushout to `Δ[2] ⊗ Δ[m]` given by `Λ_cocone`
+noncomputable
+def to_Λ (m : ℕ) (i : Fin (m + 1)) : (Λ_pushout m i).cocone.pt ⟶ Δ[2] ⊗ Δ[m] :=
+  (Λ_pushout m i).desc (Δ[2] ◁ (hornInclusion m i)) ((hornInclusion 2 1) ▷ Δ[m]) rfl
 
 inductive bdryPushout : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk ⦃m : ℕ⦄ : bdryPushout (to_Δ m)
@@ -355,52 +364,81 @@ def _007F_s (n : ℕ) (i : Fin (n + 1)) : Δ[n] ⟶ Δ[2] ⊗ Δ[n] :=
 def _007F_s_restricted (n : ℕ) (i : Fin (n + 1)) : Λ[n, i] ⟶ Δ[2] ⊗ Λ[n, i]  :=
   FunctorToTypes.prod.lift (_007F_horn_map n i) (𝟙 _)
 
-variable (n : ℕ) (i : Fin (n + 1))
+noncomputable
+def _007F_horn_to_pushout (n : ℕ) (i : Fin (n + 1)) : Λ[n, i] ⟶ (Λ_pushout n i).cocone.pt :=
+  _007F_s_restricted n i ≫ (Limits.pushout.inl (hornInclusion 2 1 ▷ Λ[n, i]) (Λ[2, 1] ◁ hornInclusion n i))
 
-#check (hornInclusion 2 1 ▷ Λ[n, i])
+lemma leftSqCommAux (n : ℕ) (i : Fin (n + 1)) :
+    _007F_s_restricted n i ≫ Δ[2] ◁ (hornInclusion n i) = (hornInclusion n i) ≫ _007F_s n i := rfl
 
-#check generalPushout (hornInclusion n i)
+lemma leftSqComm (n : ℕ) (i : Fin (n + 1)) : _007F_horn_to_pushout n i ≫ to_Λ n i = (hornInclusion n i) ≫ _007F_s n i := by
+  rw [← leftSqCommAux]
+  dsimp [_007F_horn_to_pushout, to_Λ]
+  rw [Category.assoc, IsPushout.inl_desc]
 
+-- monotone proof is done but really bad
 def _007F_r_aux (i : Fin (n + 1)) : Fin (n + 1) × Fin 3 →o Fin (n + 1) where
   toFun := fun ⟨j, k⟩ ↦
     if _ : ((j : ℕ) < i ∧ k = 0) ∨ ((j : ℕ) > i ∧ k = 2) then j else i
-  monotone' := by
+  monotone' := sorry /- by
     intro ⟨j, k⟩ ⟨j', k'⟩ ⟨(hj : j ≤ j'), (hk : k ≤ k')⟩
-    sorry
-    /-
     cases Nat.lt.isWellOrder.trichotomous j i with
     | inl h =>
       have a : j < i := h
       have b : j ≤ i := Fin.le_of_lt h
       have c : ¬ i < j := Lean.Omega.Fin.not_lt.mpr b
       fin_cases k; all_goals fin_cases k'
-      · aesop
-      · aesop
-      · aesop
-      · aesop
-      · aesop
-      · simp
+      pick_goal 6
+      · simp only [Fin.val_fin_lt, Fin.mk_one, Fin.isValue, one_ne_zero, and_false, gt_iff_lt,
+        Fin.reduceEq, or_self, ↓reduceDIte, Fin.reduceFinMk, and_true, false_or, dite_eq_ite,
+        ge_iff_le]
         by_cases i < j'; all_goals rename_i h'; simp only [h', ↓reduceIte, le_refl, le_of_lt]
-      · aesop
-      · aesop
-      · simp
+      pick_goal 8
+      · simp only [Fin.val_fin_lt, Fin.reduceFinMk, Fin.isValue, Fin.reduceEq, and_false,
+        gt_iff_lt, c, and_true, or_self, ↓reduceDIte, false_or, dite_eq_ite, ge_iff_le]
         by_cases i < j'; all_goals rename_i h'; simp only [h', ↓reduceIte, le_refl, le_of_lt]
+      all_goals aesop
     | inr h => cases h with
     | inl h =>
-      simp
-      by_cases j' < i; all_goals rename_i h'
-      · sorry
-      simp [h']
-      sorry
-    | inr h => sorry
-    -/
+      have := Fin.eq_of_val_eq h
+      aesop
+    | inr h =>
+      have a : i < j := h
+      have b : i ≤ j := Fin.le_of_lt h
+      have c : ¬ j < i := Lean.Omega.Fin.not_lt.mpr b
+      fin_cases k; all_goals fin_cases k'
+      · simp only [Fin.val_fin_lt, c, Fin.zero_eta, Fin.isValue, and_true, gt_iff_lt, Fin.reduceEq,
+        and_false, or_self, ↓reduceDIte, or_false, dite_eq_ite, ge_iff_le]
+        have := le_trans b hj
+        aesop
+      · simp only [Fin.val_fin_lt, c, Fin.zero_eta, Fin.isValue, and_true, gt_iff_lt, Fin.reduceEq,
+        and_false, or_self, ↓reduceDIte, Fin.mk_one, one_ne_zero, le_refl]
+      · simp only [Fin.val_fin_lt, c, Fin.zero_eta, Fin.isValue, and_true, gt_iff_lt, Fin.reduceEq,
+        and_false, or_self, ↓reduceDIte, Fin.reduceFinMk, false_or, dite_eq_ite, ge_iff_le]
+        by_cases i < j'; all_goals rename_i h'; simp only [h', ↓reduceIte, le_refl, le_of_lt]
+      · aesop
+      · aesop
+      · simp only [Fin.val_fin_lt, Fin.mk_one, Fin.isValue, one_ne_zero, and_false, gt_iff_lt,
+        Fin.reduceEq, or_self, ↓reduceDIte, Fin.reduceFinMk, and_true, false_or, dite_eq_ite,
+        ge_iff_le]
+        by_cases i < j'; all_goals rename_i h'; simp only [h', ↓reduceIte, le_refl]
+        exact le_of_lt h'
+      · aesop
+      · aesop
+      · simp only [Fin.val_fin_lt, Fin.reduceFinMk, Fin.isValue, Fin.reduceEq, and_false,
+        gt_iff_lt, a, and_self, or_true, ↓reduceDIte, and_true, false_or, dite_eq_ite, ge_iff_le]
+        by_cases i < j'; all_goals rename_i h'
+        · simp only [h', ↓reduceIte, hj]
+        · simp only [h', ↓reduceIte]
+          rw [not_lt] at h'
+          exact le_trans hj h' -/
 
--- not very nice
 open standardSimplex SimplexCategory in
 def map_mk_from_prod (f : Fin (n + 1) × Fin (m + 1) →o Fin (k + 1)) : FunctorToTypes.prod Δ[n] Δ[m] ⟶ Δ[k] := by
-  refine ⟨fun x ⟨c, d⟩ ↦ ⟨mkHom ⟨fun a ↦ f (c.down.toOrderHom a, d.down.toOrderHom a), ?_⟩⟩, ?_⟩
-  sorry
-  sorry
+  refine ⟨fun x ⟨c, d⟩ ↦ ⟨mkHom ⟨fun a ↦ f ((asOrderHom c) a, (asOrderHom d) a), ?_⟩⟩, ?_⟩
+  · intro j k hjk
+    exact f.monotone ⟨(asOrderHom c).monotone hjk, (asOrderHom d).monotone hjk⟩
+  · aesop
 
 -- on vertices j k map to
 -- j if (j < i) ∧ (k = 0)
