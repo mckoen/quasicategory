@@ -9,20 +9,6 @@ open CategoryTheory Simplicial MorphismProperty MonoidalCategory MonoidalClosed
 
 section _0079
 
--- pushout in `0079`,
--- inclusions of this into `Δ[2] ⊗ Δ[m]` generate the WSC of inner anodyne morphisms (`007F` (b))
-def Δ_pushout (m : ℕ) :=
-  monoPushout (boundaryInclusion m)
-
--- the cocone with point `Δ[2] ⊗ Δ[m]` given by the 4 natural maps
-noncomputable
-def Δ_cocone (m : ℕ) := B_cocone (boundaryInclusion m)
-
--- induced morphism from pushout to `Δ[2] ⊗ Δ[m]` given by `Δ_cocone`
-noncomputable
-def to_Δ (m : ℕ) : (Δ_pushout m).cocone.pt ⟶ Δ[2] ⊗ Δ[m] :=
-  (Δ_pushout m).isColimit.desc (Δ_cocone m)
-
 lemma S_cocone_aux (S : SSet) (m : ℕ)
     (α : ∂Δ[m] ⟶ (Fun.obj (Opposite.op Δ[2])).obj S)
     (β : Δ[m] ⟶ (Fun.obj (Opposite.op Λ[2, 1])).obj S)
@@ -218,7 +204,7 @@ end _0079
 instance horn_tkf_iff_quasicat (S : SSet.{0}) : Quasicategory S ↔
     trivialKanFibration ((Fun.map (hornInclusion 2 1).op).app S) := by
   rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_rlp_proj, class_rlp_iff_llp_morphism]
-  have := contains_innerAnodyne_iff_contains_pushout_maps.{0,1} _ (llp_weakly_saturated (MorphismClass S.proj))
+  have := contains_innerAnodyne_iff_contains_pushout_maps.{0} _ (llp_weakly_saturated (MorphismClass S.proj))
   rw [← this]
   refine ⟨?_, ?_⟩
   · intro h _ _ p hp
