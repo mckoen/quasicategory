@@ -70,7 +70,7 @@ lemma aux1 (S : SSet) (m : ℕ)
     ∀ (j : Limits.WalkingSpan), (Δ_pushout m).cocone.ι.app j ≫ to_Δ m ≫ MonoidalClosed.uncurry lift =
       (S.S_cocone m sq).ι.app j := by
   intro j
-  simp only [Fin.isValue, Functor.const_obj_obj, to_Δ, Δ_cocone, Limits.IsColimit.fac_assoc,
+  simp only [Fin.isValue, Functor.const_obj_obj, to_Δ, to_B, Δ_cocone, Limits.IsColimit.fac_assoc,
     Limits.PushoutCocone.mk_pt, Limits.PushoutCocone.mk_ι_app, Limits.span_zero, S_cocone]
   rw [← congrArg MonoidalClosed.uncurry fac_left]
   cases j
@@ -204,7 +204,7 @@ end _0079
 instance horn_tkf_iff_quasicat (S : SSet.{0}) : Quasicategory S ↔
     trivialKanFibration ((Fun.map (hornInclusion 2 1).op).app S) := by
   rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_rlp_proj, class_rlp_iff_llp_morphism]
-  have := contains_innerAnodyne_iff_contains_pushout_maps _ (llp_weakly_saturated (MorphismClass S.proj))
+  have := _007F.contains_innerAnodyne_iff_contains_pushout_maps _ (llp_weakly_saturated (MorphismClass S.proj))
   rw [← this]
   refine ⟨?_, ?_⟩
   · intro h _ _ p hp

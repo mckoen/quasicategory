@@ -105,6 +105,7 @@ def forgetCoconeColimit (h : IsWellOrderLimitElement γ) : Limits.IsColimit (Ove
 -- prove for ordinals by lurie
 -- genl using
 -- Ordinal.limitRecOn
+/-
 instance monoaux1 : monomorphisms SSet (F.map (bot_le (a := γ).hom)) := by
   apply WellFounded.induction h2.wf γ
   intro x ih
@@ -129,12 +130,12 @@ instance monoaux1 : monomorphisms SSet (F.map (bot_le (a := γ).hom)) := by
       --change Mono ((cocone).ι.app ⊥)
       --change Mono ((F.mapCocone (Over.forgetCocone x)).ι.app (Over.mk bot_le.hom))
       sorry
+-/
 
 -- show for all γ satisfying same thing as γ, whisker by γ ⥤ β, then bot γ ↦ bot β from << (ordinal equivalence), conclude with special case β = γ
 instance monomorphisms.isStableUnderTransfiniteCompositionOfShape :
     (monomorphisms SSet).IsStableUnderTransfiniteCompositionOfShape β where
   condition F h hF c hc := by
-    have := monoaux1 hF
     sorry
 
 end mono_proof
@@ -265,37 +266,37 @@ def B_cocone {A B : SSet} (i : A ⟶ B) :
     Limits.PushoutCocone (hornInclusion 2 1 ▷ A) (Λ[2, 1] ◁ i) :=
   Limits.PushoutCocone.mk (Δ[2] ◁ i) (hornInclusion 2 1 ▷ B) rfl
 
--- induced morphism from the pushout to `Δ[2] ⊗ B` given by `B_cocone`
+-- induced morphism from the pushout to `Δ[2] ⊗ B`
 noncomputable
 def to_B {A B : SSet} (i : A ⟶ B) : (generalPushout i).cocone.pt ⟶ Δ[2] ⊗ B :=
-  (generalPushout i).isColimit.desc (B_cocone i)
+  (generalPushout i).desc (Δ[2] ◁ i) (hornInclusion 2 1 ▷ B) rfl
 
+----------------
 -- pushout in `0079`,
 -- inclusions of this into `Δ[2] ⊗ Δ[m]` generate the WSC of inner anodyne morphisms (`007F` (b))
 def Δ_pushout (m : ℕ) :=
   generalPushout (boundaryInclusion m)
 
--- pushout in proof `0079` (for retract diagram)
-def Λ_pushout (m : ℕ) (i : Fin (m + 1)) :=
-  generalPushout (hornInclusion m i)
-
 -- the cocone with point `Δ[2] ⊗ Δ[m]` given by boundary inclusions
 noncomputable
 def Δ_cocone (m : ℕ) := B_cocone (boundaryInclusion m)
-
--- the cocone with point `Δ[2] ⊗ Δ[m]` given by horn inclusions
-noncomputable
-def Λ_cocone (m : ℕ) (i : Fin (m + 1)) := B_cocone (hornInclusion m i)
 
 -- induced morphism from pushout to `Δ[2] ⊗ Δ[m]` given by `Δ_cocone`
 noncomputable
 def to_Δ (m : ℕ) : (Δ_pushout m).cocone.pt ⟶ Δ[2] ⊗ Δ[m] :=
   (Δ_pushout m).isColimit.desc (Δ_cocone m)
+----------------
+
+
+-- pushout in proof `0079` (for retract diagram)
+def Λ_pushout (m : ℕ) (i : Fin (m + 1)) :=
+  generalPushout (hornInclusion m i)
+
 
 -- induced morphism from pushout to `Δ[2] ⊗ Δ[m]` given by `Λ_cocone`
 noncomputable
 def to_Λ (m : ℕ) (i : Fin (m + 1)) : (Λ_pushout m i).cocone.pt ⟶ Δ[2] ⊗ Δ[m] :=
-  (Λ_pushout m i).desc (Δ[2] ◁ (hornInclusion m i)) ((hornInclusion 2 1) ▷ Δ[m]) rfl
+  to_B (hornInclusion m i)
 
 inductive bdryPushout : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk ⦃m : ℕ⦄ : bdryPushout (to_Δ m)
@@ -303,21 +304,25 @@ inductive bdryPushout : {X Y : SSet} → (X ⟶ Y) → Prop
 /-- the class inclusions from pushouts to `Δ[2] ⊗ Δ[m]` -/
 def bdryPushoutClass : MorphismProperty SSet := fun _ _ p ↦ bdryPushout p
 
+section _007F
+
+namespace _007F
+
 -- T = WeaklySaturatedOf bdryPushoutClass
 -- S is the class of all morphism `i : A → B` such that the induced pushout is in T
-def _007F_a_S : MorphismProperty SSet := fun _ _ i ↦ (WeaklySaturatedClassOf.{0} bdryPushoutClass) (to_B i)
+def S : MorphismProperty SSet := fun _ _ i ↦ (WeaklySaturatedClassOf.{0} bdryPushoutClass) (to_B i)
 
-lemma _007F_a_S_contains_bdry_incl : ∀ (n : ℕ), _007F_a_S (boundaryInclusion n) := fun _ ↦ by
+lemma S_contains_bdry_incl : ∀ (n : ℕ), S (boundaryInclusion n) := fun _ ↦ by
   apply WeaklySaturatedOf.of
   apply bdryPushout.mk
 
 -- S is weakly saturated because T is. closure under retracts and pushouts can be shown,
 -- not sure about composition
-instance _007F_a_S_WeaklySaturated : WeaklySaturated _007F_a_S := sorry
+instance S_WeaklySaturated : WeaklySaturated S := sorry
 
-lemma _007F_a_S_contains_monos : ∀ {A B : SSet.{0}} (i : A ⟶ B) [Mono i], _007F_a_S i := by
-  have := _007F_a_S_contains_bdry_incl
-  rw [contains_mono_iff_contains_boundaryInclusion _007F_a_S _007F_a_S_WeaklySaturated] at this
+lemma S_contains_monos : ∀ {A B : SSet.{0}} (i : A ⟶ B) [Mono i], S i := by
+  have := S_contains_bdry_incl
+  rw [contains_mono_iff_contains_boundaryInclusion S S_WeaklySaturated] at this
   intro _ _ i _
   exact this i
 
@@ -327,7 +332,7 @@ lemma innerAnodyne_eq_innerHorn : innerAnodyne.{0} = (WeaklySaturatedClassOf.{0}
 -- 0 if j < i
 -- 1 if j = i
 -- 2 if j > i
-def _007F_s_aux (i : Fin (n + 1)) : Fin (n + 1) →o Fin 3 where
+def s_aux (i : Fin (n + 1)) : Fin (n + 1) →o Fin 3 where
   toFun j :=   if _ : (j : ℕ) < i then 0 else if _ : (j : ℕ) = i then 1 else 2
   monotone' j k h := by
     dsimp only [dite_eq_ite]
@@ -353,91 +358,66 @@ def _007F_s_aux (i : Fin (n + 1)) : Fin (n + 1) →o Fin 3 where
         exact this
       simp only [a, ↓reduceIte, b, Fin.isValue, c, d, le_refl]
 
-def _007F_standard_map (n : ℕ) (i : Fin (n + 1)) : Δ[n] ⟶ Δ[2] :=
-  standardSimplex.map (SimplexCategory.mkHom (_007F_s_aux i))
+def standard_map (n : ℕ) (i : Fin (n + 1)) : Δ[n] ⟶ Δ[2] :=
+  standardSimplex.map (SimplexCategory.mkHom (s_aux i))
 
 -- the above map restricted to the horn
-def _007F_horn_map (n : ℕ) (i : Fin (n + 1)) : Λ[n, i] ⟶ Δ[2] :=
-  (hornInclusion n i) ≫ (_007F_standard_map n i)
+def horn_map (n : ℕ) (i : Fin (n + 1)) : Λ[n, i] ⟶ Δ[2] :=
+  (hornInclusion n i) ≫ (standard_map n i)
 
 -- on vertices j maps to
 -- (j, 0) if j < i
 -- (j, 1) if j = i
 -- (j, 2) if j > i
-def _007F_s (n : ℕ) (i : Fin (n + 1)) : Δ[n] ⟶ Δ[2] ⊗ Δ[n] :=
-  FunctorToTypes.prod.lift (_007F_standard_map n i) (𝟙 _)
+def s (n : ℕ) (i : Fin (n + 1)) : Δ[n] ⟶ Δ[2] ⊗ Δ[n] :=
+  FunctorToTypes.prod.lift (standard_map n i) (𝟙 _)
 
-def _007F_s_restricted (n : ℕ) (i : Fin (n + 1)) : Λ[n, i] ⟶ Δ[2] ⊗ Λ[n, i]  :=
-  FunctorToTypes.prod.lift (_007F_horn_map n i) (𝟙 _)
+def s_restricted (n : ℕ) (i : Fin (n + 1)) : Λ[n, i] ⟶ Δ[2] ⊗ Λ[n, i]  :=
+  FunctorToTypes.prod.lift (horn_map n i) (𝟙 _)
 
 noncomputable
-def _007F_horn_to_pushout (n : ℕ) (i : Fin (n + 1)) : Λ[n, i] ⟶ (Λ_pushout n i).cocone.pt :=
-  _007F_s_restricted n i ≫ (Limits.pushout.inl (hornInclusion 2 1 ▷ Λ[n, i]) (Λ[2, 1] ◁ hornInclusion n i))
+def horn_to_pushout (n : ℕ) (i : Fin (n + 1)) : Λ[n, i] ⟶ (Λ_pushout n i).cocone.pt :=
+  s_restricted n i ≫ (Limits.pushout.inl (hornInclusion 2 1 ▷ Λ[n, i]) (Λ[2, 1] ◁ hornInclusion n i))
 
 lemma leftSqCommAux (n : ℕ) (i : Fin (n + 1)) :
-    _007F_s_restricted n i ≫ Δ[2] ◁ (hornInclusion n i) = (hornInclusion n i) ≫ _007F_s n i := rfl
+    s_restricted n i ≫ Δ[2] ◁ (hornInclusion n i) = (hornInclusion n i) ≫ s n i := rfl
 
-lemma leftSqComm (n : ℕ) (i : Fin (n + 1)) : _007F_horn_to_pushout n i ≫ to_Λ n i = (hornInclusion n i) ≫ _007F_s n i := by
+lemma leftSqComm (n : ℕ) (i : Fin (n + 1)) : horn_to_pushout n i ≫ to_Λ n i = (hornInclusion n i) ≫ s n i := by
   rw [← leftSqCommAux]
-  dsimp [_007F_horn_to_pushout, to_Λ]
+  dsimp [horn_to_pushout, to_Λ, to_B]
   rw [Category.assoc, IsPushout.inl_desc]
 
--- monotone proof is done but really bad
-def _007F_r_aux (i : Fin (n + 1)) : Fin 3 × Fin (n + 1) →o Fin (n + 1) where
+def r_aux (i : Fin (n + 1)) : Fin 3 × Fin (n + 1) →o Fin (n + 1) where
   toFun := fun ⟨k, j⟩ ↦
     if _ : ((j : ℕ) < i ∧ k = 0) ∨ ((j : ℕ) > i ∧ k = 2) then j else i
-  monotone' := sorry /- by
-    intro ⟨j, k⟩ ⟨j', k'⟩ ⟨(hj : j ≤ j'), (hk : k ≤ k')⟩
+  monotone' := by
+    intro ⟨k, j⟩ ⟨k', j'⟩ ⟨(hk : k ≤ k'), (hj : j ≤ j')⟩
     cases Nat.lt.isWellOrder.trichotomous j i with
     | inl h =>
-      have a : j < i := h
-      have b : j ≤ i := Fin.le_of_lt h
-      have c : ¬ i < j := Lean.Omega.Fin.not_lt.mpr b
+      have : ¬ i < j := Lean.Omega.Fin.not_lt.mpr (Fin.le_of_lt h)
       fin_cases k; all_goals fin_cases k'
-      pick_goal 6
-      · simp only [Fin.val_fin_lt, Fin.mk_one, Fin.isValue, one_ne_zero, and_false, gt_iff_lt,
+      all_goals simp only [Fin.val_fin_lt, Fin.mk_one, Fin.isValue, one_ne_zero, and_false, gt_iff_lt,
         Fin.reduceEq, or_self, ↓reduceDIte, Fin.reduceFinMk, and_true, false_or, dite_eq_ite,
-        ge_iff_le]
-        by_cases i < j'; all_goals rename_i h'; simp only [h', ↓reduceIte, le_refl, le_of_lt]
+        ge_iff_le, this]
+      pick_goal 6
+      · by_cases i < j'; all_goals rename_i h'; simp only [h', ↓reduceIte, le_refl, le_of_lt]
       pick_goal 8
-      · simp only [Fin.val_fin_lt, Fin.reduceFinMk, Fin.isValue, Fin.reduceEq, and_false,
-        gt_iff_lt, c, and_true, or_self, ↓reduceDIte, false_or, dite_eq_ite, ge_iff_le]
-        by_cases i < j'; all_goals rename_i h'; simp only [h', ↓reduceIte, le_refl, le_of_lt]
+      · by_cases i < j'; all_goals rename_i h'; simp only [h', ↓reduceIte, le_refl, le_of_lt]
       all_goals aesop
     | inr h => cases h with
-    | inl h =>
-      have := Fin.eq_of_val_eq h
-      aesop
+    | inl h => have := Fin.eq_of_val_eq h; aesop
     | inr h =>
-      have a : i < j := h
-      have b : i ≤ j := Fin.le_of_lt h
-      have c : ¬ j < i := Lean.Omega.Fin.not_lt.mpr b
+      have : i < j' := lt_of_lt_of_le h hj
+      have : i ≤ j' := le_of_lt this
       fin_cases k; all_goals fin_cases k'
-      · simp only [Fin.val_fin_lt, c, Fin.zero_eta, Fin.isValue, and_true, gt_iff_lt, Fin.reduceEq,
-        and_false, or_self, ↓reduceDIte, or_false, dite_eq_ite, ge_iff_le]
-        have := le_trans b hj
-        aesop
-      · simp only [Fin.val_fin_lt, c, Fin.zero_eta, Fin.isValue, and_true, gt_iff_lt, Fin.reduceEq,
-        and_false, or_self, ↓reduceDIte, Fin.mk_one, one_ne_zero, le_refl]
-      · simp only [Fin.val_fin_lt, c, Fin.zero_eta, Fin.isValue, and_true, gt_iff_lt, Fin.reduceEq,
-        and_false, or_self, ↓reduceDIte, Fin.reduceFinMk, false_or, dite_eq_ite, ge_iff_le]
-        by_cases i < j'; all_goals rename_i h'; simp only [h', ↓reduceIte, le_refl, le_of_lt]
-      · aesop
-      · aesop
-      · simp only [Fin.val_fin_lt, Fin.mk_one, Fin.isValue, one_ne_zero, and_false, gt_iff_lt,
-        Fin.reduceEq, or_self, ↓reduceDIte, Fin.reduceFinMk, and_true, false_or, dite_eq_ite,
-        ge_iff_le]
-        by_cases i < j'; all_goals rename_i h'; simp only [h', ↓reduceIte, le_refl]
-        exact le_of_lt h'
-      · aesop
-      · aesop
-      · simp only [Fin.val_fin_lt, Fin.reduceFinMk, Fin.isValue, Fin.reduceEq, and_false,
-        gt_iff_lt, a, and_self, or_true, ↓reduceDIte, and_true, false_or, dite_eq_ite, ge_iff_le]
-        by_cases i < j'; all_goals rename_i h'
-        · simp only [h', ↓reduceIte, hj]
-        · simp only [h', ↓reduceIte]
-          rw [not_lt] at h'
-          exact le_trans hj h' -/
+      all_goals simp only [Fin.mk_one, one_ne_zero, le_refl,Fin.val_fin_lt,
+        Lean.Omega.Fin.not_lt.mpr (Fin.le_of_lt h), Fin.zero_eta, Fin.isValue, and_true, gt_iff_lt, Fin.reduceEq,
+        and_false, or_self, ↓reduceDIte, Fin.reduceFinMk, or_false, false_or, dite_eq_ite, ge_iff_le, h]
+      pick_goal 3
+      · by_cases i < j'; all_goals rename_i h'; aesop
+      pick_goal 5
+      · by_cases i < j'; all_goals rename_i h'; aesop
+      all_goals aesop
 
 open standardSimplex SimplexCategory in
 def map_mk_from_prod (f : Fin (n + 1) × Fin (m + 1) →o Fin (k + 1)) : Δ[n] ⊗ Δ[m] ⟶ Δ[k] := by
@@ -450,49 +430,40 @@ def map_mk_from_prod (f : Fin (n + 1) × Fin (m + 1) →o Fin (k + 1)) : Δ[n] �
 -- j if (j < i) ∧ (k = 0)
 -- j if (j > i) ∧ (k = 2)
 -- i if (j = i) ∨ (k = 1)
-def _007F_r (n : ℕ) (i : Fin (n + 1)) : Δ[2] ⊗ Δ[n] ⟶ Δ[n] := map_mk_from_prod (_007F_r_aux i)
+def r (n : ℕ) (i : Fin (n + 1)) : Δ[2] ⊗ Δ[n] ⟶ Δ[n] := map_mk_from_prod (r_aux i)
 
 -- r restricted along Λ[2, 1]
 noncomputable
-def _007F_r_restrict_horn_2 : Λ[2, 1] ⊗ Δ[n] ⟶ Λ[n, i] where
+def r_restrict_horn_2 : Λ[2, 1] ⊗ Δ[n] ⟶ Λ[n, i] where
   app k := by
     intro ⟨⟨x, hx⟩, y⟩
-    refine ⟨((hornInclusion 2 1) ▷ Δ[n] ≫ _007F_r n i).app k ⟨⟨x, hx⟩, y⟩, ?_⟩
-    simp [_007F_r, _007F_r_aux]
-    intro h
-    apply hx
+    refine ⟨((hornInclusion 2 1) ▷ Δ[n] ≫ r n i).app k ⟨⟨x, hx⟩, y⟩, ?_⟩
     sorry
 
 -- r restricted along Λ[n, i]
 noncomputable
-def _007F_r_restrict_horn_n : Δ[2] ⊗ Λ[n, i] ⟶ Λ[n, i] where
+def r_restrict_horn_n : Δ[2] ⊗ Λ[n, i] ⟶ Λ[n, i] where
   app k := by
     intro ⟨x, ⟨y, hy⟩⟩
-    refine ⟨(Δ[2] ◁ (hornInclusion n i) ≫ _007F_r n i).app k ⟨x, ⟨y, hy⟩⟩, ?_⟩
+    refine ⟨(Δ[2] ◁ (hornInclusion n i) ≫ r n i).app k ⟨x, ⟨y, hy⟩⟩, ?_⟩
     sorry
-
-variable (n : ℕ) (i : Fin (n + 1))
-
-lemma restrict_apply1 : _007F_r_restrict_horn_n ≫ hornInclusion n i = Δ[2] ◁ (hornInclusion n i) ≫ _007F_r n i := rfl
-
-lemma restrict_apply2 : _007F_r_restrict_horn_2 ≫ hornInclusion n i = (hornInclusion 2 1) ▷ Δ[n] ≫ _007F_r n i := rfl
 
 open standardSimplex SimplexCategory in
 noncomputable
-def _007F_pushout_to_horn (n : ℕ) (i : Fin (n + 1)) : (Λ_pushout n i).cocone.pt ⟶ Λ[n, i] :=
-  Limits.pushout.desc _007F_r_restrict_horn_n _007F_r_restrict_horn_2 rfl
+def pushout_to_horn (n : ℕ) (i : Fin (n + 1)) : (Λ_pushout n i).cocone.pt ⟶ Λ[n, i] :=
+  Limits.pushout.desc r_restrict_horn_n r_restrict_horn_2 rfl
 
-lemma rightSqComm : _007F_pushout_to_horn n i ≫ hornInclusion n i = to_Λ n i ≫ _007F_r n i := by
-  dsimp [_007F_pushout_to_horn, to_Λ]
+lemma rightSqComm (n : ℕ) (i : Fin (n + 1)) : pushout_to_horn n i ≫ hornInclusion n i = to_Λ n i ≫ r n i := by
+  dsimp [pushout_to_horn, to_Λ, to_B]
   apply Limits.pushout.hom_ext; all_goals aesop
 
-lemma r_comp_s (n : ℕ) (i : Fin (n + 1)) : _007F_s n i ≫ _007F_r n i = 𝟙 Δ[n] := by
-  let r' := _007F_r_aux i
-  let s' : Fin (n + 1) →o Fin 3 × Fin (n + 1) := (_007F_s_aux i).prod (OrderHom.id)
+lemma r_comp_s (n : ℕ) (i : Fin (n + 1)) : s n i ≫ r n i = 𝟙 Δ[n] := by
+  let r' := r_aux i
+  let s' : Fin (n + 1) →o Fin 3 × Fin (n + 1) := (s_aux i).prod (OrderHom.id)
   let f : Fin (n + 1) →o Fin (n + 1) := OrderHom.comp r' s'
   have a : f = OrderHom.id := by
     ext x
-    simp [f, r', s', _007F_s_aux, _007F_r_aux]
+    simp [f, r', s', s_aux, r_aux]
     cases Nat.lt.isWellOrder.trichotomous x i with
     | inl h => aesop
     | inr h => cases h with
@@ -519,30 +490,32 @@ lemma r_comp_s (n : ℕ) (i : Fin (n + 1)) : _007F_s n i ≫ _007F_r n i = 𝟙 
           obtain ⟨left, right⟩ := h_2
           exfalso
           exact left right
-  have : _007F_s n i ≫ _007F_r n i = standardSimplex.map (SimplexCategory.mkHom f) := by
+  have : s n i ≫ r n i = standardSimplex.map (SimplexCategory.mkHom f) := by
     ext
     congr -- why does this work
   rw [this, a]
   aesop
 
-lemma restricted_r_comp_s : _007F_horn_to_pushout n i ≫ _007F_pushout_to_horn n i = 𝟙 Λ[n, i] := by
+lemma restricted_r_comp_s (n : ℕ) (i : Fin (n + 1)) : horn_to_pushout n i ≫ pushout_to_horn n i = 𝟙 Λ[n, i] := by
+  dsimp [horn_to_pushout, pushout_to_horn]
+  rw [Category.assoc, Limits.pushout.inl_desc]
   ext k ⟨x, hx⟩
-  change (Limits.pushout.desc _007F_r_restrict_horn_n _007F_r_restrict_horn_2 _).app k
-    ((Limits.pushout.inl (hornInclusion 2 1 ▷ Λ[n, i]) (Λ[2, 1] ◁ hornInclusion n i)).app k
-      ((_007F_standard_map n i).app k x, ⟨x, hx⟩)) =
-  ⟨x, hx⟩
-  sorry
+  change r_restrict_horn_n.app k ((horn_map n i).app k ⟨x, hx⟩, ⟨x, hx⟩) = ⟨x, hx⟩
+  simp [r_restrict_horn_n]
+  congr
+  have := congr_fun (congr_app (r_comp_s n i) k) x
+  aesop
 
 noncomputable
-instance hornRetract : IsRetract (hornInclusion n i) (to_Λ n i) where
+instance hornRetract (n : ℕ) (i : Fin (n + 1)) : IsRetract (hornInclusion n i) (to_Λ n i) where
   i := {
-    left := _007F_horn_to_pushout n i
-    right := _007F_s n i
+    left := horn_to_pushout n i
+    right := s n i
     w := leftSqComm n i
   }
   r := {
-    left := _007F_pushout_to_horn n i
-    right := _007F_r n i
+    left := pushout_to_horn n i
+    right := r n i
     w := rightSqComm n i
   }
   retract := Arrow.hom_ext _ _ (restricted_r_comp_s n i) (r_comp_s n i)
@@ -560,13 +533,13 @@ lemma innerAnodyne_eq_T : innerAnodyne.{0} = (WeaklySaturatedClassOf.{0} bdryPus
   | @mk n i h0 hn =>
     apply WeaklySaturatedOf.retract -- reduces to showing horn inclusion is a retract of a boundary pushout maps
     · exact hornRetract (n + 2) i
-    · exact _007F_a_S_contains_monos (hornInclusion (n + 2) i)
+    · exact S_contains_monos (hornInclusion (n + 2) i)
 
 -- `007F` (a)
 lemma monoPushout_innerAnodyne {A B : SSet} (i : A ⟶ B) [hi : Mono i] :
     innerAnodyne.{0} (to_B i) := by
   rw [innerAnodyne_eq_T]
-  apply _007F_a_S_contains_monos
+  apply S_contains_monos
 
 -- `007F` (b)
 -- inner Anodyne morphisms are generated by the pushout maps given in `to_Δ`
@@ -580,3 +553,5 @@ lemma contains_innerAnodyne_iff_contains_pushout_maps
   intro _ _ _ hf
   induction hf with
   | @mk m => exact h m
+
+end _007F
