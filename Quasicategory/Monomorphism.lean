@@ -153,7 +153,7 @@ instance monomorphisms.WeaklySaturated : WeaklySaturated (monomorphisms SSet) :=
     monomorphisms.StableUnderRetracts,
     monomorphisms.IsStableUnderTransfiniteComposition⟩
 
--- need skeleta pushout construction for this, this is showing B(k - 1) ↪ B(k) is a mono
+-- need skeleta pushout construction for this, this is showing B(k - 1) ↪ B(k) is contained in S
 open SimplicialSubset GrothendieckTopology in
 lemma succ_mem_thing (S : MorphismProperty SSet) (hS : S.WeaklySaturated) (h : ∀ (n : ℕ), S (boundaryInclusion n))
     {A B : SSet} (i : A ⟶ B) [hi : Mono i] :
@@ -432,13 +432,53 @@ def map_mk_from_prod (f : Fin (n + 1) × Fin (m + 1) →o Fin (k + 1)) : Δ[n] �
 -- i if (j = i) ∨ (k = 1)
 def r (n : ℕ) (i : Fin (n + 1)) : Δ[2] ⊗ Δ[n] ⟶ Δ[n] := map_mk_from_prod (r_aux i)
 
+variable (n : ℕ) (i : Fin (n + 1)) (h0 : 0 < i) (hn : i < Fin.last n)
+
 -- r restricted along Λ[2, 1]
 noncomputable
 def r_restrict_horn_2 : Λ[2, 1] ⊗ Δ[n] ⟶ Λ[n, i] where
   app k := by
     intro ⟨⟨x, hx⟩, y⟩
     refine ⟨((hornInclusion 2 1) ▷ Δ[n] ≫ r n i).app k ⟨⟨x, hx⟩, y⟩, ?_⟩
-    sorry
+    rw [Set.ne_univ_iff_exists_not_mem] at hx ⊢
+    obtain ⟨a, ha⟩ := hx
+    fin_cases a
+    · simp only [Nat.reduceAdd, Fin.zero_eta, Fin.isValue, Set.union_singleton, Set.mem_insert_iff,
+        zero_ne_one, Set.mem_range, false_or, not_exists] at ha
+      use 0
+      simp only [Fin.isValue, Nat.reduceAdd, ne_eq, Set.union_singleton, Set.mem_insert_iff,
+        Set.mem_range, not_or, not_exists]
+      refine ⟨Fin.ne_of_lt h0, fun j h ↦ ?_⟩
+      change (fun a ↦
+                if (asOrderHom y) a < i ∧ (asOrderHom x) a = 0 ∨ i < (asOrderHom y) a ∧ (asOrderHom x) a = 2 then
+                  (asOrderHom y) a
+                else i) j = 0 at h
+      by_cases (asOrderHom y) j < i; all_goals rename_i h'
+      · by_cases (asOrderHom x) j = 0; all_goals rename_i h''
+        · exact ha j h''
+        · aesop
+      · aesop
+    · aesop
+    · simp only [Nat.reduceAdd, Fin.reduceFinMk, Fin.isValue, Set.union_singleton,
+        Set.mem_insert_iff, Fin.reduceEq, Set.mem_range, false_or, not_exists] at ha
+      use Fin.last n
+      simp only [Fin.isValue, Nat.reduceAdd, ne_eq, Set.union_singleton, Set.mem_insert_iff,
+        Set.mem_range, not_or, not_exists]
+      refine ⟨Fin.ne_of_gt hn, fun j h ↦ ?_⟩
+      change (fun a ↦
+                if (asOrderHom y) a < i ∧ (asOrderHom x) a = 0 ∨ i < (asOrderHom y) a ∧ (asOrderHom x) a = 2 then
+                  (asOrderHom y) a
+                else i) j = Fin.last n at h
+      by_cases (asOrderHom y) j < i; all_goals rename_i h'
+      · by_cases (asOrderHom x) j = 0; all_goals rename_i h''
+        · simp only [h', Nat.reduceAdd, h'', Fin.isValue, and_self, Fin.reduceEq, and_false,
+          or_false, ↓reduceIte, Fin.natCast_eq_last] at h
+          rw [h] at h'
+          exact absurd (lt_trans h' hn) (Fin.not_lt.mpr (Fin.le_last _))
+        · simp_all only [Nat.reduceAdd, Fin.isValue, Set.union_singleton, ne_eq, Fin.natCast_eq_last, and_false,
+          or_self, ↓reduceIte, lt_self_iff_false]
+      · simp_all only [Nat.reduceAdd, Fin.isValue, Set.union_singleton, ne_eq, Fin.natCast_eq_last, false_and,
+        and_false, or_self, ↓reduceIte, not_lt, Fin.last_le_iff, lt_self_iff_false]
 
 -- r restricted along Λ[n, i]
 noncomputable
@@ -450,10 +490,10 @@ def r_restrict_horn_n : Δ[2] ⊗ Λ[n, i] ⟶ Λ[n, i] where
 
 open standardSimplex SimplexCategory in
 noncomputable
-def pushout_to_horn (n : ℕ) (i : Fin (n + 1)) : (Λ_pushout n i).cocone.pt ⟶ Λ[n, i] :=
-  Limits.pushout.desc r_restrict_horn_n r_restrict_horn_2 rfl
+def pushout_to_horn : (Λ_pushout n i).cocone.pt ⟶ Λ[n, i] :=
+  Limits.pushout.desc (r_restrict_horn_n n i) (r_restrict_horn_2 n i h0 hn) rfl
 
-lemma rightSqComm (n : ℕ) (i : Fin (n + 1)) : pushout_to_horn n i ≫ hornInclusion n i = to_Λ n i ≫ r n i := by
+lemma rightSqComm : pushout_to_horn n i h0 hn ≫ hornInclusion n i = to_Λ n i ≫ r n i := by
   dsimp [pushout_to_horn, to_Λ, to_B]
   apply Limits.pushout.hom_ext; all_goals aesop
 
@@ -490,35 +530,33 @@ lemma r_comp_s (n : ℕ) (i : Fin (n + 1)) : s n i ≫ r n i = 𝟙 Δ[n] := by
           obtain ⟨left, right⟩ := h_2
           exfalso
           exact left right
-  have : s n i ≫ r n i = standardSimplex.map (SimplexCategory.mkHom f) := by
-    ext
-    congr -- why does this work
+  have : s n i ≫ r n i = standardSimplex.map (SimplexCategory.mkHom f) := rfl
   rw [this, a]
   aesop
 
-lemma restricted_r_comp_s (n : ℕ) (i : Fin (n + 1)) : horn_to_pushout n i ≫ pushout_to_horn n i = 𝟙 Λ[n, i] := by
+lemma restricted_r_comp_s : horn_to_pushout n i ≫ pushout_to_horn n i h0 hn = 𝟙 Λ[n, i] := by
   dsimp [horn_to_pushout, pushout_to_horn]
   rw [Category.assoc, Limits.pushout.inl_desc]
   ext k ⟨x, hx⟩
-  change r_restrict_horn_n.app k ((horn_map n i).app k ⟨x, hx⟩, ⟨x, hx⟩) = ⟨x, hx⟩
+  change (r_restrict_horn_n n i).app k ((horn_map n i).app k ⟨x, hx⟩, ⟨x, hx⟩) = ⟨x, hx⟩
   simp [r_restrict_horn_n]
   congr
   have := congr_fun (congr_app (r_comp_s n i) k) x
   aesop
 
 noncomputable
-instance hornRetract (n : ℕ) (i : Fin (n + 1)) : IsRetract (hornInclusion n i) (to_Λ n i) where
+instance hornRetract : IsRetract (hornInclusion n i) (to_Λ n i) where
   i := {
     left := horn_to_pushout n i
     right := s n i
     w := leftSqComm n i
   }
   r := {
-    left := pushout_to_horn n i
+    left := pushout_to_horn n i h0 hn
     right := r n i
-    w := rightSqComm n i
+    w := rightSqComm n i h0 hn
   }
-  retract := Arrow.hom_ext _ _ (restricted_r_comp_s n i) (r_comp_s n i)
+  retract := Arrow.hom_ext _ _ (restricted_r_comp_s n i h0 hn) (r_comp_s n i)
 
 -- need to show inner anodyne = wsc generated by inner horn inclusions
 -- the class inner anodyne morphisms is the weakly saturated class generated by the pushout maps given in `to_Δ`
@@ -532,7 +570,7 @@ lemma innerAnodyne_eq_T : innerAnodyne.{0} = (WeaklySaturatedClassOf.{0} bdryPus
   induction hg with
   | @mk n i h0 hn =>
     apply WeaklySaturatedOf.retract -- reduces to showing horn inclusion is a retract of a boundary pushout maps
-    · exact hornRetract (n + 2) i
+    · exact hornRetract (n + 2) i h0 hn
     · exact S_contains_monos (hornInclusion (n + 2) i)
 
 -- `007F` (a)
