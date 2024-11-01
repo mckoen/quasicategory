@@ -9,6 +9,18 @@ open CategoryTheory Simplicial MorphismProperty MonoidalCategory MonoidalClosed
 
 section _0079
 
+def Δ_pushout (m : ℕ) :=
+  pushoutProduct_IsPushout (boundaryInclusion m) (hornInclusion 2 1)
+
+noncomputable
+def Δ_cocone (m : ℕ) :
+    Limits.PushoutCocone (hornInclusion 2 1 ▷ ∂Δ[m]) (Λ[2, 1] ◁ (boundaryInclusion m)) :=
+  Limits.PushoutCocone.mk (Δ[2] ◁ (boundaryInclusion m)) (hornInclusion 2 1 ▷ Δ[m]) rfl
+
+noncomputable
+def Δ_pushoutProduct (m : ℕ) : (Δ_pushout m).cocone.pt ⟶ Δ[2] ⊗ Δ[m] :=
+  (Δ_pushout m).isColimit.desc (Δ_cocone m)
+
 lemma S_cocone_aux (S : SSet) (m : ℕ)
     (α : ∂Δ[m] ⟶ (Fun.obj (Opposite.op Δ[2])).obj S)
     (β : Δ[m] ⟶ (Fun.obj (Opposite.op Λ[2, 1])).obj S)
@@ -56,9 +68,9 @@ lemma newSquare (S : SSet) (m : ℕ)
     {α : ∂Δ[m] ⟶ (Fun.obj (Opposite.op Δ[2])).obj S}
     {β : Δ[m] ⟶ (Fun.obj (Opposite.op Λ[2, 1])).obj S}
     (sq : CommSq α (boundaryInclusion m) ((Fun.map (hornInclusion 2 1).op).app S) β) :
-    CommSq (to_S S m sq) (to_Δ m) S.proj (Δ[2] ⊗ Δ[m]).proj :=
+    CommSq (to_S S m sq) (Δ_pushoutProduct m) S.proj (Δ[2] ⊗ Δ[m]).proj :=
   CommSq.mk (Limits.IsTerminal.hom_ext ptIsTerminal
-    ((to_S S m sq) ≫ S.proj) ((to_Δ m) ≫ (Δ[2] ⊗ Δ[m]).proj))
+    ((to_S S m sq) ≫ S.proj) ((Δ_pushoutProduct m) ≫ (Δ[2] ⊗ Δ[m]).proj))
 
 lemma aux1 (S : SSet) (m : ℕ)
     (α : ∂Δ[m] ⟶ (Fun.obj (Opposite.op Δ[2])).obj S)
@@ -67,10 +79,10 @@ lemma aux1 (S : SSet) (m : ℕ)
     (lift : Δ[m] ⟶ (Fun.obj (Opposite.op Δ[2])).obj S)
     (fac_left : boundaryInclusion m ≫ lift = α)
     (fac_right : lift ≫ (Fun.map (hornInclusion 2 1).op).app S = β) :
-    ∀ (j : Limits.WalkingSpan), (Δ_pushout m).cocone.ι.app j ≫ to_Δ m ≫ MonoidalClosed.uncurry lift =
+    ∀ (j : Limits.WalkingSpan), (Δ_pushout m).cocone.ι.app j ≫ Δ_pushoutProduct m ≫ MonoidalClosed.uncurry lift =
       (S.S_cocone m sq).ι.app j := by
   intro j
-  simp only [Fin.isValue, Functor.const_obj_obj, to_Δ, to_B, Δ_cocone, Limits.IsColimit.fac_assoc,
+  simp only [Fin.isValue, Functor.const_obj_obj, Δ_pushoutProduct, Δ_cocone, Limits.IsColimit.fac_assoc,
     Limits.PushoutCocone.mk_pt, Limits.PushoutCocone.mk_ι_app, Limits.span_zero, S_cocone]
   rw [← congrArg MonoidalClosed.uncurry fac_left]
   cases j
@@ -106,7 +118,7 @@ lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)
   · intro ⟨lift, fac_left, fac_right⟩
     refine ⟨MonoidalClosed.uncurry lift, ?_, ?_⟩
     · refine ((Δ_pushout m).isColimit.uniq
-        (S_cocone S m sq) (to_Δ m ≫ MonoidalClosed.uncurry lift) ?_).trans
+        (S_cocone S m sq) (Δ_pushoutProduct m ≫ MonoidalClosed.uncurry lift) ?_).trans
         ((Δ_pushout m).isColimit.uniq (S_cocone S m sq) (S.to_S m sq) ?_).symm
       · exact aux1 S m α β sq lift fac_left fac_right
       · exact aux2 S m α β sq
@@ -121,8 +133,8 @@ lemma sqLift_of_newSqLift (S : SSet) (m : ℕ)
     (newSquare S m sq).HasLift → sq.HasLift := by
   · intro ⟨lift, fac_left, _⟩
     have S' := (Δ_pushout m).isColimit.uniq (S_cocone S m sq) (to_S S m sq) (aux2 S m α β sq)
-    have Δ' := (Δ_pushout m).isColimit.uniq (Δ_cocone m) (to_Δ m) (by simp only [Fin.isValue,
-      Δ_cocone, Limits.PushoutCocone.mk_pt, Functor.const_obj_obj, to_Δ, Limits.IsColimit.fac,
+    have Δ' := (Δ_pushout m).isColimit.uniq (Δ_cocone m) (Δ_pushoutProduct m) (by simp only [Fin.isValue,
+      Δ_cocone, Limits.PushoutCocone.mk_pt, Functor.const_obj_obj, Δ_pushoutProduct, Limits.IsColimit.fac,
       Limits.PushoutCocone.mk_ι_app, Limits.span_zero, implies_true])
     refine ⟨MonoidalClosed.curry lift, ?_, ?_⟩
     all_goals apply_fun MonoidalClosed.uncurry
@@ -173,12 +185,12 @@ def newSq (S : SSet) (m : ℕ)
 lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)
     (f : (Δ_pushout m).cocone.pt ⟶ S)
     (g : Δ[2] ⊗ Δ[m] ⟶ Δ[0])
-    (sq : CommSq f (to_Δ m) S.proj g) :
+    (sq : CommSq f (Δ_pushoutProduct m) S.proj g) :
     (newSq S m f).HasLift → sq.HasLift := by
   intro ⟨lift, fac_left, fac_right⟩
   use MonoidalClosed.uncurry lift
   · refine ((Δ_pushout m).isColimit.uniq
-      (S_cocone S m ((newSq S m f))) (to_Δ m ≫ MonoidalClosed.uncurry lift) ?_).trans
+      (S_cocone S m ((newSq S m f))) (Δ_pushoutProduct m ≫ MonoidalClosed.uncurry lift) ?_).trans
       ((Δ_pushout m).isColimit.uniq (S_cocone S m (newSq S m f)) f ?_).symm
     · exact aux1 S m (MonoidalClosed.curry ((Δ_pushout m).cocone.inl ≫ f))
         (MonoidalClosed.curry ((Δ_pushout m).cocone.inr ≫ f)) (newSq S m f) lift fac_left fac_right

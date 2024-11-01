@@ -118,8 +118,11 @@ lemma _04ZN (f : S ⟶ T) :
 
 variable (S : SSet)
 
+/-- a simplicial set has dimension ≤ `k` if every `n`-simplex is degenerate for `n > k`. -/
 class dim_le (k : ℕ) : Prop where
   condition : ∀ (n : ℕ) (s : S _[n]), k < n → IsDegenerate s
+
+-- need lemma about dimension being preserved under isomorphism
 
 /-
 def hom_of_le (m k : ℕ) (h : m ≤ k) :
@@ -127,25 +130,28 @@ def hom_of_le (m k : ℕ) (h : m ≤ k) :
   Hom.mk ⟨fun x ↦ Fin.castLE (Nat.add_le_add_right h 1) x, fun _ _ h ↦ h⟩
 -/
 
--- want to say the skeleton is empty for k < 0
--- we shift everything by 1 so that skel is empty for k = 0
-def HasFactorization (k n : ℕ) (s : S _[n]) : Prop :=
+-- want skeleton empty for k < 0: instead shift everything by 1 so that skel is empty for k = 0
+-- should this be a class/structure?
+/-- proposition stating that an `n`-simplex factors through an `m`-simplex with `m ≤ k` -/
+def HasFactorization {S : SSet} (k : ℕ) {n : ℕ} (s : S _[n]) : Prop :=
   ∃ (m : ℕ) (_ : m < k) (τ : S _[m]) (f : Δ[n] ⟶ Δ[m]),
     (S.yonedaEquiv [n]).symm s = f ≫ (S.yonedaEquiv [m]).symm τ
 
--- skₖ₋₁(S)ₙ
+/-- `skₖ₋₁(S)ₙ` as a subset of `S _[n]` -/
 def skeleton_subset (k n : ℕ) : Set (S _[n]) :=
-  { s : S _[n] | HasFactorization S k n s }
+  { s : S _[n] | HasFactorization k s }
 
--- skₖ₋₁(S)ₙ = S _[n] for n < k (since n ≤ k - 1)
+-- `0016`
+/-- `skₖ₋₁(S)ₙ = S _[n]` for `n < k` (since n ≤ k - 1) -/
 lemma _0016 (h : n < k) : ⊤ ≤ skeleton_subset S k n :=
   fun s _ ↦ ⟨n, h, s, 𝟙 _, by aesop⟩
 
--- skₗ₋₁(S)ₙ ⊆ skₖ₋₁(S)ₙ for l ≤ k
+-- `0500`
+/-- `skₗ₋₁(S)ₙ ⊆ skₖ₋₁(S)ₙ` for `l ≤ k` -/
 lemma _0500 (n : ℕ) (h : l ≤ k) : skeleton_subset S l n ≤ skeleton_subset S k n :=
   fun _ ⟨m, hm, τ, f, hf⟩ ↦ ⟨m, le_trans hm h, τ, f, hf⟩
 
--- the skeleton as a simplicial subset
+/-- `skₖ₋₁(S)` as a simplicial subset -/
 def skeleton (k : ℕ) : SimplicialSubset S where
   obj n := skeleton_subset S k (len n.unop)
   map := by
@@ -157,16 +163,18 @@ def skeleton (k : ℕ) : SimplicialSubset S where
       S.map ((standardSimplex.map g.unop).app l x).down.op s
     simp [standardSimplex, uliftFunctor]
 
--- the 0-skeleton is empty
+/-- `sk₋₁(S)` is empty. -/
 lemma _0018 : S.skeleton 0 = SimplicialSubset.empty S := by
   ext
   refine ⟨fun ⟨l, ⟨hl, _⟩⟩ ↦ by aesop, fun h ↦ by exfalso; exact Set.not_mem_empty _ h⟩
 
--- the skeleton as a simplicial set
+/-- `skₖ₋₁(S)` as a simplicial set -/
 def Sk (k : ℕ) : SSet := (S.skeleton k).toPresheaf
 
-def Sk.ι (k : ℕ) : S.Sk k ⟶ S := (S.skeleton k).ι
+/-- the inclusion `skₖ₋₁(S) ↪ S` -/
+abbrev Sk.ι (k : ℕ) : S.Sk k ⟶ S := (S.skeleton k).ι
 
+/-- the inclusion `skₖ₋₁(S) ↪ skₖ(S)` -/
 def SkSucc : S.Sk k ⟶ S.Sk (k + 1) :=
   Subpresheaf.homOfLe <| fun n ↦ S._0500 n.unop.len (Nat.le_succ k)
 
@@ -178,7 +186,7 @@ lemma lt_then_factor_through_σ (n m : ℕ) (h : m < n) (τ : ([n + 1] : Simplex
     ∃ i α, τ = (SimplexCategory.σ i) ≫ α := by
   sorry
 
-/-- an n-simplex is degenerate iff it is in skₖ₋₁(S)ₙ for some k ≤ n. -/
+/-- an `n`-simplex is degenerate iff it is in `skₖ₋₁(S)ₙ` for some `k ≤ n`. -/
 lemma _0011 (s : S _[n]) : IsDegenerate s ↔ (∃ (k : ℕ) (_ : k ≤ n), s ∈ (S.skeleton k).obj (.op [n])) := by
   refine ⟨?_, ?_⟩
   · intro h
@@ -206,7 +214,7 @@ lemma _0011 (s : S _[n]) : IsDegenerate s ↔ (∃ (k : ℕ) (_ : k ≤ n), s �
 
     sorry
 
-/-- a nondegenerate n-simplex is in skₖ₋₁(S)ₙ iff n < k (i.e., iff skₖ₋₁(S)ₙ = Sₙ) -/
+/-- a nondegenerate `n`-simplex is in `skₖ₋₁(S)ₙ` iff `n < k`. (i.e., iff `skₖ₋₁(S)ₙ = Sₙ`) -/
 lemma _0017 (s : S _[n]) (hs : Nondegenerate s) : s ∈ (S.skeleton k).obj (.op [n]) ↔ n < k := by
   refine ⟨?_, fun h ↦ _0016 S h (Set.mem_univ s)⟩
   intro h
@@ -216,7 +224,7 @@ lemma _0017 (s : S _[n]) (hs : Nondegenerate s) : s ∈ (S.skeleton k).obj (.op 
   rw [_0011]
   use k
 
--- the (k - 1)-skeleton has dimension ≤ (k - 1)
+/-- `skₖ₋₁(S)` has dimension ≤ `k - 1` -/
 instance (k : ℕ) : (S.Sk k).dim_le (k - 1) where
   condition := by
     intro n ⟨s, hs⟩ hk
@@ -229,7 +237,7 @@ instance (k : ℕ) : (S.Sk k).dim_le (k - 1) where
     rw [← not_lt] at this
     exact this hs
 
--- if S has dim ≤ k then S = skₖ(S)
+/-- if `S` has dimension ≤ k then `S = skₖ(S)` (as simplicial subsets). -/
 def skeletonEq (k : ℕ) (hS : S.dim_le k) : SimplicialSubset.top S = (S.skeleton (k + 1)) := by
   ext n (s : S _[n.unop.len])
   refine ⟨fun _ ↦ ?_, fun _ ↦ _root_.trivial⟩
@@ -245,11 +253,12 @@ def skeletonEq (k : ℕ) (hS : S.dim_le k) : SimplicialSubset.top S = (S.skeleto
     rw [not_lt] at h'
     exact this h h'
 
-/--  ∂Δ[n] ≅ skₙ₋₁(Δ[n]) -/
-def boundaryIsoSkeleton (n : ℕ) : ∂Δ[n] ≅ (Δ[n].Sk n) where
+/-- `∂Δ[k] ≅ skₖ₋₁(Δ[k])` -/
+def boundaryIsoSkeleton (k : ℕ) : ∂Δ[k] ≅ (Δ[k].Sk k) where
   hom := sorry
   inv := sorry
 
+/-- `∂Δ[n]` has dimension ≤ `k - 1` -/
 instance boundary_dim (k : ℕ) : ∂Δ[k].dim_le (k - 1) := sorry
 
 /-
@@ -290,6 +299,7 @@ lemma α_surj {S : SSet} (s : Δ[n] ⟶ S) : Function.Surjective (facα s).toOrd
 lemma τ_nondegen {S : SSet} (s : Δ[n] ⟶ S) : Nondegenerate (yonedaEquiv _ _ (facτ s)) := sorry
 
 -- `001A`
+/-- if `T` has dimension ≤ `k`, then `(T ⟶ skₖ(S)) ≃ (T ⟶ S)` -/
 noncomputable
 def skeleton_hom_equiv {S T : SSet} (h : T.dim_le k) : (T ⟶ S.Sk (k + 1)) ≃ (T ⟶ S) where
   toFun f := f ≫ (S.skeleton (k + 1)).ι
@@ -318,11 +328,11 @@ def skeleton_hom_equiv {S T : SSet} (h : T.dim_le k) : (T ⟶ S.Sk (k + 1)) ≃ 
   right_inv := sorry
 
 -- can also be shown using skeleton_hom_equiv
-/-- every k simplex determines a map Δ[k] ⟶ skₖ(S) -/
+/-- every `k`-simplex determines a map `Δ[k] ⟶ skₖ(S)` -/
 def simplex_map {S : SSet} (s : S _[k]) : Δ[k] ⟶ (S.Sk (k + 1)) :=
   (yonedaEquiv _ _).symm (⟨s, _0016 S le_rfl (Set.mem_univ s)⟩)
 
-/-- simplex_map induces ∂Δ[k] ⟶ skₖ₋₁(S) (assuming 1 ≤ k) -/
+/-- every `k`-simplex determines a map `∂Δ[k] ⟶ skₖ₋₁(S)` (assuming `1 ≤ k`) -/
 noncomputable
 def simplex_boundary_map {S : SSet} (h1 : 1 ≤ k) (s : S _[k]) : ∂Δ[k] ⟶ (S.Sk k) := by
   have := (skeleton_hom_equiv (boundary_dim k)).symm ((boundaryInclusion k) ≫ (simplex_map s) ≫ (S.skeleton (k + 1)).ι)
@@ -331,6 +341,7 @@ def simplex_boundary_map {S : SSet} (h1 : 1 ≤ k) (s : S _[k]) : ∂Δ[k] ⟶ (
 
 variable (k : ℕ) (hk : 1 ≤ k)
 
+/-- The nondegenerate `k`-simplices as a subset of `S _[k]`. -/
 def nd : Set (S _[k]) := { s | Nondegenerate s }
 
 def nd_map1 : ((S.nd k) : Type*) → SSet := fun _ ↦ Δ[k]
@@ -431,6 +442,7 @@ def skeleton_union_functor (B : SimplicialSubset S) : ℕ ⥤ SimplicialSubset S
     | inr h => right; exact h
 
 -- functor sending k to union of B with (k - 1)-th skeleton as a simplicial set
+-- to avoid defining 0-th skeleton as ∅, could define as sending 0 ↦ ∅ ∪ B, somehow
 def skeleton_union_functor' (B : SimplicialSubset S) : ℕ ⥤ SSet :=
   skeleton_union_functor S B ⋙ sset_functor S
 
