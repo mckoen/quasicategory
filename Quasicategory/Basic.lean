@@ -43,17 +43,17 @@ def InnerHornInclusions : MorphismProperty SSet := fun _ _ p ↦ InnerHornInclus
 
 /- a morphism is a trivial Kan fibration if it has the right lifting property wrt
   every boundary inclusion  `∂Δ[n] ⟶ Δ[n]`. -/
-def trivialKanFibration : MorphismProperty SSet := fun _ _ p ↦ BoundaryInclusions.rlp p
+abbrev trivialKanFibration := BoundaryInclusions.rlp
 
-def kanFibration : MorphismProperty SSet := fun _ _ p ↦ HornInclusions.rlp p
+abbrev kanFibration := HornInclusions.rlp
 
-def leftFibration : MorphismProperty SSet := fun _ _ p ↦ LeftHornInclusions.rlp p
+abbrev leftFibration := LeftHornInclusions.rlp
 
-def rightFibration : MorphismProperty SSet := fun _ _ p ↦ RightHornInclusions.rlp p
+abbrev rightFibration := RightHornInclusions.rlp
 
 /- a morphism is an inner fibration if it has the right lifting property wrt
   every inner horn inclusion  `Λ[n, i] ⟶ Δ[n]`. -/
-def innerFibration : MorphismProperty SSet := fun _ _ p ↦ InnerHornInclusions.rlp p
+abbrev innerFibration := InnerHornInclusions.rlp
 
 -- left fibrations are inner fibrations
 lemma innerFibration_of_leftFibration {X Y : SSet} (p : X ⟶ Y) (hp : leftFibration p) :
@@ -91,19 +91,17 @@ instance quasicategory_of_innerFibration {X Y : SSet} (p : X ⟶ Y) (hp : innerF
 /- a morphism is inner anodyne if it has the left lifting property wrt all inner fibrations. -/
 abbrev innerAnodyne := innerFibration.llp
 
-/- inner horn inclusions are inner anodyne. -/
-lemma innerAnodyne_of_innerHorn
-    ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (h0 : 0 < i) (hn : i < Fin.last (n+2)) :
-    innerAnodyne (hornInclusion (n+2) i) := fun _ _ _ h ↦ h (.mk h0 hn)
+lemma innerHorn_le_innerAnodyne : InnerHornInclusions ≤ innerAnodyne := fun _ _ _ hp ↦ by
+  induction hp with
+  | mk h0 hn => exact fun _ _ _ h ↦ h (.mk h0 hn)
 
--- innerAnodyne = llp(rlp(inner horn inclusions)) is WSC gen. by inner horn inclusions
-lemma contains_innerAnodyne_iff_contains_inner_horn
-    (S : MorphismProperty SSet) (hS : WeaklySaturated S) :
-    (∀ ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (_h0 : 0 < i) (_hn : i < Fin.last (n+2)), S (hornInclusion (n+2) i))
-      ↔ (∀ {X Y : SSet} (p : X ⟶ Y) (hp : innerAnodyne p), S p) := by
-  refine ⟨?_, fun h n i _h0 _hn ↦ h (hornInclusion (n + 2) i) (innerAnodyne_of_innerHorn _h0 _hn)⟩
-  sorry
+lemma innerAnodyne_eq :
+    innerAnodyne = WeaklySaturatedClassOf InnerHornInclusions := by
+  ext X Y p
+  refine ⟨?_, minimalWeaklySaturated innerAnodyne _ innerHorn_le_innerAnodyne (llp_weakly_saturated _) p⟩
+  · sorry -- small object argument?
 
+/-
 -- `01C3` aux
 def bijection_on_vertices : MorphismProperty SSet.{0} := fun A B _ ↦
   ∃ (f : A _[0] → B _[0]), Function.Bijective f
@@ -125,6 +123,7 @@ def innerAnodyneVerticesEquiv {X Y : SSet} (p : X ⟶ Y) (hp : innerAnodyne p) :
     bijection_on_vertices bijection_on_vertices.WeaklySaturated).1
   exact inner_horn_bij_on_vertices
   exact hp
+-/
 
 -- extension property wrt every inner anodyne morphism is equivalent to S ⟶ Δ[0] having RLP wrt
 -- every inner anodyne morphism
@@ -152,14 +151,16 @@ instance quasicat_iff_extension_wrt_innerAnodyne {S : SSet.{0}} :
     (∀ {A B} (i : A ⟶ B) (_ : innerAnodyne i) (f₀ : A ⟶ S), ∃ (f : B ⟶ S), f₀ = i ≫ f) ↔
     Quasicategory S := by
   refine ⟨fun h ↦
-    ⟨fun n i σ₀ h0 hn ↦ h (hornInclusion (n + 2) i) (innerAnodyne_of_innerHorn h0 hn) σ₀⟩, ?_⟩
+    ⟨fun n i σ₀ h0 hn ↦ h _ (innerHorn_le_innerAnodyne (hornInclusion (n + 2) i) (.mk h0 hn)) σ₀⟩, ?_⟩
   intro hS
-  rw [extension_iff_rlp_proj, class_rlp_iff_llp_morphism]
-  apply (contains_innerAnodyne_iff_contains_inner_horn.{0,1} (MorphismClass S.proj).llp
-    (llp_weakly_saturated (MorphismClass S.proj))).1
-  intro n i h0 hn X Y p hp
+  rw [extension_iff_rlp_proj, class_rlp_iff_llp_morphism, innerAnodyne_eq]
+  intro _ _ _
+  refine minimalWeaklySaturated.{0} ((MorphismClass S.proj).llp) InnerHornInclusions ?_ (llp_weakly_saturated _) _
+  intro _ _ i hi
+  induction hi with | mk h0 hn =>
+  intro _ _ f hf
+  induction hf with | mk =>
   constructor
   intro σ₀ _ sq
-  induction hp
   obtain ⟨l, hl⟩ := hS.hornFilling h0 hn σ₀
   exact ⟨l, hl.symm, Limits.IsTerminal.hom_ext ptIsTerminal _ _⟩
