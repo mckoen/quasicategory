@@ -87,6 +87,11 @@ def mono_iso (f : S ⟶ T) [h : Mono f] : S ≅ (imagePresheaf f).toPresheaf whe
     congr
     exact Exists.choose_spec x.2
 
+/-- an n-simplex of S determines a simplicial subset by taking the image
+of Δ[n] ⟶ S. -/
+def simplex_subset (s : S _[n]) : SimplicialSubset S :=
+  imagePresheaf ((yonedaEquiv S [n]).symm s)
+
 end SimplicialSubset
 
 variable {S : SSet}
@@ -129,6 +134,16 @@ def hom_of_le (m k : ℕ) (h : m ≤ k) :
     ([m] : SimplexCategory) ⟶ [k] :=
   Hom.mk ⟨fun x ↦ Fin.castLE (Nat.add_le_add_right h 1) x, fun _ _ h ↦ h⟩
 -/
+
+-- category structure on factorizations
+
+-- given Δ[n] ⟶ S, define a structure which is the data of a factorization
+
+structure FacStruct {S : SSet} (σ : Δ[n] ⟶ S) where
+  m : ℕ
+  α : ([n] : SimplexCategory) ⟶ [m]
+  τ : Δ[m] ⟶ S
+  fac : σ = standardSimplex.map α ≫ τ
 
 -- want skeleton empty for k < 0: instead shift everything by 1 so that skel is empty for k = 0
 -- should this be a class/structure?
@@ -178,8 +193,12 @@ abbrev Sk.ι (k : ℕ) : S.Sk k ⟶ S := (S.skeleton k).ι
 def SkSucc : S.Sk k ⟶ S.Sk (k + 1) :=
   Subpresheaf.homOfLe <| fun n ↦ S._0500 n.unop.len (Nat.le_succ k)
 
-lemma lt_then_not_surj (n m : ℕ) (τ : Fin n →o Fin m) (h : m < n) :
-    ¬ Function.Injective τ := by
+lemma not_inj_of_lt (n m : ℕ) (τ : Fin n →o Fin m) (h0 : 0 < n) (hm : m < n) :
+    ¬ Function.Injective τ := fun h ↦ by
+  have := τ.monotone
+  dsimp [Monotone] at this
+  dsimp [Function.Injective] at h
+
   sorry
 
 lemma lt_then_factor_through_σ (n m : ℕ) (h : m < n) (τ : ([n + 1] : SimplexCategory) ⟶ [m]) :
@@ -274,29 +293,38 @@ instance (s : Δ[n] ⟶ S) : Nonempty (fac_nat_subset s) := ⟨⟨n, 𝟙 _, s, 
 noncomputable
 instance : DecidablePred fun x ↦ x ∈ (fac_nat_subset s) := Classical.decPred fun x ↦ x ∈ fac_nat_subset s
 
---#check Nat.Subtype.orderBot (fac_nat_subset s)
-
---#check (⊥ : (fac_nat_subset s))
-
---#check  (⊥ : fac_nat_subset s).property.2
-
 -- `0014`
-noncomputable
-def min_nat {S : SSet} (s : Δ[n] ⟶ S) : ℕ := (⊥ : (fac_nat_subset s)).val
 
 noncomputable
-def facα {S : SSet} (s : Δ[n] ⟶ S) : ([n] : SimplexCategory) ⟶ [min_nat s] := Exists.choose (⊥ : (fac_nat_subset s)).property
+def m_fac {S : SSet} (s : Δ[n] ⟶ S) : ℕ := (⊥ : fac_nat_subset s)
+
+lemma m_fac_le {S : SSet} (s : Δ[n] ⟶ S) : m_fac s ≤ n := by
+  by_contra h
+  rw [not_le] at h
+  exact not_lt_bot (a := (⟨n, 𝟙 _, s, by aesop⟩ : fac_nat_subset s)) h
 
 noncomputable
-def facτ {S : SSet} (s : Δ[n] ⟶ S) : Δ[min_nat s] ⟶ S := Exists.choose (Exists.choose_spec (⊥ : fac_nat_subset s).property)
+def α_fac {S : SSet} (s : Δ[n] ⟶ S) : ([n] : SimplexCategory) ⟶ [m_fac s] := Exists.choose (⊥ : (fac_nat_subset s)).property
 
-lemma fac_eq {S : SSet} (s : Δ[n] ⟶ S) : s = standardSimplex.map (facα s) ≫ facτ s := Exists.choose_spec (Exists.choose_spec (⊥ : fac_nat_subset s).property)
+noncomputable
+def τ_fac {S : SSet} (s : Δ[n] ⟶ S) : Δ[m_fac s] ⟶ S := Exists.choose (Exists.choose_spec (⊥ : fac_nat_subset s).property)
+
+lemma fac_eq {S : SSet} (s : Δ[n] ⟶ S) : s = standardSimplex.map (α_fac s) ≫ τ_fac s := Exists.choose_spec (Exists.choose_spec (⊥ : fac_nat_subset s).property)
 
 -- if α were not surjective, then we could find a smaller m by taking the image of α
-lemma α_surj {S : SSet} (s : Δ[n] ⟶ S) : Function.Surjective (facα s).toOrderHom := sorry
+lemma α_surj {S : SSet} (s : Δ[n] ⟶ S) : Function.Surjective (α_fac s).toOrderHom := sorry
 
--- τ is nondegenerate otherwise we could find a smaller m
-lemma τ_nondegen {S : SSet} (s : Δ[n] ⟶ S) : Nondegenerate (yonedaEquiv _ _ (facτ s)) := sorry
+-- `τ : Δ[m] ⟶ S` is nondegenerate (as an element of `S _[m]`)
+-- otherwise we could find a smaller m
+lemma τ_nondegen {S : SSet} {n : ℕ} (s : Δ[n] ⟶ S) (s' : S _[m]) (hm : m = m_fac s)
+    (τ : Δ[m] ⟶ S) --(hτ : τ = τ_fac s)
+    (h : s' = S.yonedaEquiv [m] τ) :
+    Nondegenerate s' := by
+  intro h'
+  --by_contra h
+  --induction h generalizing n s with
+  --| mk m x i => sorry
+  sorry
 
 -- `001A`
 /-- if `T` has dimension ≤ `k`, then `(T ⟶ skₖ(S)) ≃ (T ⟶ S)` -/
@@ -313,12 +341,12 @@ def skeleton_hom_equiv {S T : SSet} (h : T.dim_le k) : (T ⟶ S.Sk (k + 1)) ≃ 
       · rename_i h'
         simp only [not_not] at h'
         let t' : Δ[n.unop.len] ⟶ T := (yonedaEquiv _ _).symm t
-        have := h.condition (min_nat t') (yonedaEquiv _ _ (facτ t'))
+        have := h.condition (m_fac t') (yonedaEquiv _ _ (τ_fac t'))
         rw [← not_imp_not] at this
         --have := this (τ_nondegen t')
         --rw [not_lt] at this
-        have : min_nat t' < k + 1 := Nat.gt_of_not_le (this (τ_nondegen t'))
-        have := (S._0016 this (Set.mem_univ (f.app _ (yonedaEquiv _ _ (facτ t')))))
+        --have : m_fac t' < k + 1 := Nat.gt_of_not_le (this (τ_nondegen t'))
+        --have := (S._0016 this (Set.mem_univ (f.app _ (yonedaEquiv _ _ (τ_fac t')))))
         --have := _0017 T (yonedaEquiv _ _ t') (τ_nondegen t')
         sorry
       /-
@@ -354,11 +382,11 @@ def smplx_coprod : SSet := ∐ (S.nd_map1 k)
 
 noncomputable
 -- coproduct of ∂Δ[k] indexed by nondegenerate k-simplices
-def bndry_coprod : SSet := ∐ (S.nd_map2 k)
+def bdry_coprod : SSet := ∐ (S.nd_map2 k)
 
 noncomputable
 -- map between the above coproducts induced by the boundary inclusion
-def coprod_map : (S.bndry_coprod k) ⟶ (S.smplx_coprod k) :=
+def coprod_map : (S.bdry_coprod k) ⟶ (S.smplx_coprod k) :=
   Limits.Sigma.desc <| fun b ↦ boundaryInclusion k ≫ (Limits.Sigma.ι (S.nd_map1 k) b)
 
 noncomputable
@@ -368,7 +396,7 @@ def coprod_to_smplx : (S.smplx_coprod k) ⟶ (S.Sk (k + 1)) :=
 
 noncomputable
 -- map from boundary coproduct to the (k-1)-skeleton induced by each nondegenerate simplex
-def coprod_to_bndry : (S.bndry_coprod k) ⟶ (S.Sk k) :=
+def coprod_to_bndry : (S.bdry_coprod k) ⟶ (S.Sk k) :=
   Limits.Sigma.desc <| fun b ↦ simplex_boundary_map hk b
 
 lemma coprod_square_commutes :
