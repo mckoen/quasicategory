@@ -17,9 +17,7 @@ def empty (S : SSet) : SimplicialSubset S where
   obj _ := ∅
   map _ _ x := x
 
-def top (S : SSet) : SimplicialSubset S where
-  obj _ := Set.univ
-  map _ _ x := x
+def top (S : SSet) : SimplicialSubset S := Top.top
 
 --#synth Mono A.ι
 
@@ -101,7 +99,17 @@ open SimplexCategory
 inductive IsDegenerate : {n : ℕ} → (s : S _[n]) → Prop
   | mk (n : ℕ) (x : S _[n]) (i : Fin (n + 1)) : IsDegenerate (S.σ i x)
 
+/-- degeneracy for simplicial subsets. -/
+inductive IsDegenerate' {S : SSet} {X : SimplicialSubset S} : {n : ℕ} → (s : X.toPresheaf _[n]) → Prop
+  | mk (n : ℕ) (x : X.toPresheaf _[n]) (i : Fin (n + 1)) : IsDegenerate' ((SimplicialObject.σ X.toPresheaf) i x)
+
+def iso_top : S ≅ (⊤ : Subpresheaf S).toPresheaf where
+  hom := { app := fun _ s ↦ ⟨s, Set.mem_univ s⟩ }
+  inv := { app := fun _ s ↦ s }
+
 abbrev Nondegenerate {S : SSet} (s : S _[n]) : Prop := ¬ IsDegenerate s
+
+abbrev Nondegenerate' {S : SSet} {X : SimplicialSubset S} (s : X.toPresheaf _[n]) : Prop := ¬ IsDegenerate' s
 
 -- `0013`, image of degenerate simplex is degenerate
 lemma image_degen_of_degen (f : S ⟶ T) (s : S _[n]) (h : IsDegenerate s) :
@@ -113,6 +121,7 @@ lemma image_degen_of_degen (f : S ⟶ T) (s : S _[n]) (h : IsDegenerate s) :
   rw [this]
   apply IsDegenerate.mk
 
+/-
 -- `0013`
 lemma degen_of_image_degen_mono (f : S ⟶ T) [hf : Mono f]
     (s : S _[n]) (h : IsDegenerate (f.app (.op [n]) s)) :
@@ -120,12 +129,23 @@ lemma degen_of_image_degen_mono (f : S ⟶ T) [hf : Mono f]
 
 lemma _04ZN (f : S ⟶ T) :
     (∀ (n : ℕ) (t : T _[n]) (ht : Nondegenerate t), t ∈ Set.range (f.app _)) → Epi f := sorry
+-/
 
 variable (S : SSet)
 
 /-- a simplicial set has dimension ≤ `k` if every `n`-simplex is degenerate for `n > k`. -/
 class dim_le (k : ℕ) : Prop where
   condition : ∀ (n : ℕ) (s : S _[n]), k < n → IsDegenerate s
+
+/-- a simplicial subset has dimension ≤ `k` if every `n`-simplex is degenerate for `n > k`. -/
+class dim_le' {S : SSet} (k : ℕ) (X : SimplicialSubset S) : Prop where
+  condition : ∀ (n : ℕ) (s : X.toPresheaf _[n]), k < n → IsDegenerate' s
+
+lemma dim_iso {S T : SSet} (f : S ≅ T) (k : ℕ) : S.dim_le k → T.dim_le k := by
+  intro hS
+  refine ⟨fun n t hn => ?_⟩
+  convert image_degen_of_degen f.hom (f.inv.app _ t) (hS.condition n (f.inv.app _ t) hn)
+  rw [FunctorToTypes.inv_hom_id_app_apply]
 
 -- need lemma about dimension being preserved under isomorphism
 
@@ -198,7 +218,6 @@ lemma not_inj_of_lt (n m : ℕ) (τ : Fin n →o Fin m) (h0 : 0 < n) (hm : m < n
   have := τ.monotone
   dsimp [Monotone] at this
   dsimp [Function.Injective] at h
-
   sorry
 
 lemma lt_then_factor_through_σ (n m : ℕ) (h : m < n) (τ : ([n + 1] : SimplexCategory) ⟶ [m]) :
@@ -214,23 +233,17 @@ lemma _0011 (s : S _[n]) : IsDegenerate s ↔ (∃ (k : ℕ) (_ : k ≤ n), s �
     refine ⟨m + 1, le_rfl, m, Nat.lt.base m, x, standardSimplex.map (SimplexCategory.σ i), (Equiv.symm_apply_eq (S.yonedaEquiv [m + 1])).mpr rfl⟩
   · intro ⟨k, hk, m, hm, σ', (τ : Δ[n] ⟶ Δ[m]), (hf : (S.yonedaEquiv [n]).symm s = τ ≫ (S.yonedaEquiv [m]).symm σ')⟩
     -- m < n, so τ cannot be injective on vertices, so τ factors through some σ map.
+    sorry
 
-    /-
-    have equ' : ([n - 1 + 1] : SimplexCategory) = ([n] : SimplexCategory) := sorry
-    have equ : (([n] : SimplexCategory) ⟶ [m]) = (([n - 1 + 1] : SimplexCategory) ⟶ [m]) := congrFun (congrArg Quiver.Hom (id (Eq.symm equ'))) [m]
-    --have equ'' : Δ[n] = Δ[n - 1 + 1] := congrArg standardSimplex.obj (id (Eq.symm equ'))
-    let τ' := standardSimplex.objEquiv _ _ (yonedaEquiv _ _ τ)
-    rw [equ] at τ'
-    obtain ⟨i, α, hiα⟩ := lt_then_factor_through_σ _ _ sorry τ'
-    --rw [equ''] at τ
-    rw [← equ] at τ'
-    have : (yonedaEquiv _ _).symm ((standardSimplex.objEquiv _ _).symm τ') = τ := sorry
-    rw [← this] at hf
-    apply_fun (fun f ↦ (S.yonedaEquiv [n]) f) at hf
-    simp at hf
-    rw [hf]
-    -/
-
+/-- an `n`-simplex is degenerate iff it is in `skₖ₋₁(S)ₙ` for some `k ≤ n`. -/
+lemma _0011' {X : SimplicialSubset S} (s : X.toPresheaf _[n]) : IsDegenerate' s ↔ (∃ (k : ℕ) (_ : k ≤ n), s.val ∈ (S.skeleton k).obj (.op [n])) := by
+  refine ⟨?_, ?_⟩
+  · intro h
+    induction h with
+    | mk m x i =>
+    refine ⟨m + 1, le_rfl, m, Nat.lt.base m, x, standardSimplex.map (SimplexCategory.σ i), (Equiv.symm_apply_eq (S.yonedaEquiv [m + 1])).mpr rfl⟩
+  · intro ⟨k, hk, m, hm, σ', (τ : Δ[n] ⟶ Δ[m]), (hf : (S.yonedaEquiv [n]).symm s = τ ≫ (S.yonedaEquiv [m]).symm σ')⟩
+    -- m < n, so τ cannot be injective on vertices, so τ factors through some σ map.
     sorry
 
 /-- a nondegenerate `n`-simplex is in `skₖ₋₁(S)ₙ` iff `n < k`. (i.e., iff `skₖ₋₁(S)ₙ = Sₙ`) -/
@@ -243,13 +256,36 @@ lemma _0017 (s : S _[n]) (hs : Nondegenerate s) : s ∈ (S.skeleton k).obj (.op 
   rw [_0011]
   use k
 
+/-- a nondegenerate `n`-simplex is in `skₖ₋₁(S)ₙ` iff `n < k`. (i.e., iff `skₖ₋₁(S)ₙ = Sₙ`) -/
+lemma _0017' {X : SimplicialSubset S} (s : X.toPresheaf _[n]) (hs : Nondegenerate' s) : s.val ∈ (S.skeleton k).obj (.op [n]) ↔ n < k := by
+  refine ⟨?_, fun h ↦ _0016 S h (Set.mem_univ s)⟩
+  intro h
+  by_contra h'
+  apply hs
+  rw [not_lt] at h'
+  rw [_0011']
+  use k
+
+/-- `skₖ₋₁(S)` has dimension ≤ `k - 1` -/
+instance (k : ℕ) : dim_le' (k - 1) (S.skeleton k) where
+  condition := by
+    intro n ⟨s, hs⟩ hk
+    by_contra h
+    rw [_0017' S ⟨s, hs⟩ h] at hs
+    have : k ≤ n := Nat.le_of_pred_lt hk
+    rw [← not_lt] at this
+    exact this hs
+
 /-- `skₖ₋₁(S)` has dimension ≤ `k - 1` -/
 instance (k : ℕ) : (S.Sk k).dim_le (k - 1) where
   condition := by
     intro n ⟨s, hs⟩ hk
     by_contra h
     have : Nondegenerate s := by
-      --obtain ⟨m, t, i, hi⟩ := h'
+      intro h'
+      apply h
+      obtain ⟨m, t, i⟩ := h'
+      --apply subset_degen_of_degen _ (.mk m t i)
       sorry
     rw [_0017 S s this] at hs
     have : k ≤ n := Nat.le_of_pred_lt hk
@@ -278,7 +314,8 @@ def boundaryIsoSkeleton (k : ℕ) : ∂Δ[k] ≅ (Δ[k].Sk k) where
   inv := sorry
 
 /-- `∂Δ[n]` has dimension ≤ `k - 1` -/
-instance boundary_dim (k : ℕ) : ∂Δ[k].dim_le (k - 1) := sorry
+instance boundary_dim (k : ℕ) : ∂Δ[k].dim_le (k - 1) :=
+  dim_iso (boundaryIsoSkeleton k).symm (k - 1) (by infer_instance)
 
 /-
 inductive ndFac : {n : ℕ} → (s : Δ[n] ⟶ S) → Prop
@@ -316,14 +353,8 @@ lemma α_surj {S : SSet} (s : Δ[n] ⟶ S) : Function.Surjective (α_fac s).toOr
 
 -- `τ : Δ[m] ⟶ S` is nondegenerate (as an element of `S _[m]`)
 -- otherwise we could find a smaller m
-lemma τ_nondegen {S : SSet} {n : ℕ} (s : Δ[n] ⟶ S) (s' : S _[m]) (hm : m = m_fac s)
-    (τ : Δ[m] ⟶ S) --(hτ : τ = τ_fac s)
-    (h : s' = S.yonedaEquiv [m] τ) :
-    Nondegenerate s' := by
-  intro h'
-  --by_contra h
-  --induction h generalizing n s with
-  --| mk m x i => sorry
+lemma τ_nondegen {S : SSet} {n : ℕ} (s : Δ[n] ⟶ S) :
+    Nondegenerate (S.yonedaEquiv _ (τ_fac s)) := by
   sorry
 
 -- `001A`
@@ -333,27 +364,16 @@ def skeleton_hom_equiv {S T : SSet} (h : T.dim_le k) : (T ⟶ S.Sk (k + 1)) ≃ 
   toFun f := f ≫ (S.skeleton (k + 1)).ι
   invFun f := {
     app := fun n (t : T _[n.unop.len]) ↦ by
-      by_cases (Nondegenerate t)
-      · rename_i h'
-        have := h.condition n.unop.len t
-        rw [← not_imp_not] at this
-        exact ⟨f.app n t, S._0016 (Nat.gt_of_not_le (this h')) (Set.mem_univ _)⟩
-      · rename_i h'
-        simp only [not_not] at h'
-        let t' : Δ[n.unop.len] ⟶ T := (yonedaEquiv _ _).symm t
-        have := h.condition (m_fac t') (yonedaEquiv _ _ (τ_fac t'))
-        rw [← not_imp_not] at this
-        --have := this (τ_nondegen t')
-        --rw [not_lt] at this
-        --have : m_fac t' < k + 1 := Nat.gt_of_not_le (this (τ_nondegen t'))
-        --have := (S._0016 this (Set.mem_univ (f.app _ (yonedaEquiv _ _ (τ_fac t')))))
-        --have := _0017 T (yonedaEquiv _ _ t') (τ_nondegen t')
-        sorry
-      /-
-      -/
+      use f.app n t
+      let σ := (T.yonedaEquiv _).symm t
+      let τ := (T.yonedaEquiv _ (τ_fac σ))
+      refine ⟨m_fac σ, Nat.gt_of_not_le (not_imp_not.2 (h.condition _ (T.yonedaEquiv _ (τ_fac σ))) (τ_nondegen σ)),
+        f.app _ τ, standardSimplex.map (α_fac σ), ?_⟩
+      have := fac_eq σ
+      sorry
   }
-  left_inv := sorry
-  right_inv := sorry
+  left_inv := by aesop_cat
+  right_inv := by aesop_cat
 
 -- can also be shown using skeleton_hom_equiv
 /-- every `k`-simplex determines a map `Δ[k] ⟶ skₖ(S)` -/
@@ -418,8 +438,6 @@ def skPushoutCoconeObj (n : SimplexCategoryᵒᵖ) : Limits.PushoutCocone ((S.co
   .mk (S.SkSucc.app n) ((S.coprod_to_smplx k).app n) (congr_app (coprod_square_commutes S k hk) n)
 
 def skIsoPushout : (S.Sk (k + 1)).obj n ≅ (Limits.Types.Pushout ((S.coprod_to_bndry k hk).app n) ((S.coprod_map k).app n)) := sorry
-
-#check Limits.Types.Pushout.isColimitCocone
 
 def skPushoutObj : Limits.IsColimit (skPushoutCoconeObj S k hk n) where
   desc := sorry
