@@ -543,9 +543,10 @@ instance hornRetract : IsRetract (hornInclusion n i) (Λ_pushoutProduct n i) whe
 
 end _007F_1
 
-variable (m : ℕ) (i j : Fin m) (hij : i ≤ j)
+-- `0 ≤ i ≤ j ≤ m`
+variable (m : ℕ) (i j : Fin (m + 1)) (hij : i ≤ j)
 
-/-- defined for each `0 ≤ i ≤ j < m`. -/
+/-- `[m + 1] → [m]`, defined for each `0 ≤ i ≤ j < m`. -/
 def f_aux₁ (hj : j < m) : Fin (m + 2) →o Fin (m + 1) where
   toFun k :=
     if (k : ℕ) ≤ i then k
@@ -553,14 +554,15 @@ def f_aux₁ (hj : j < m) : Fin (m + 2) →o Fin (m + 1) where
   monotone' := by
     intro k k' (hk : (k : ℕ) ≤ k')
     by_cases (k : ℕ) ≤ i; all_goals by_cases (k' : ℕ) ≤ i; all_goals rename_i h h'; simp only [h, ↓reduceIte, h']
-    · exact (Fin.natCast_le_natCast (le_trans h i.prop.le) (le_trans h' i.prop.le)).mpr hk
+    · have := (Fin.natCast_le_natCast (le_trans h i.prop.le) (le_trans h' i.prop.le)).mpr hk
+      sorry
     · rw [not_le] at h'
       have : (k : ℕ) ≤ k' - 1 := Nat.le_sub_one_of_lt (Nat.lt_of_le_of_lt h h')
       sorry
     · exfalso; exact h (le_trans hk h')
     · sorry
 
-/-- defined for each `0 ≤ i ≤ j ≤ m`. -/
+/-- `[m + 2] → [m]`, defined for each `0 ≤ i ≤ j ≤ m`. -/
 def g_aux₁ : Fin (m + 3) →o Fin (m + 1) where
   toFun k :=
     if (k : ℕ) ≤ i then k
@@ -572,7 +574,8 @@ def g_aux₁ : Fin (m + 3) →o Fin (m + 1) where
     · simp [h]
       by_cases (k' : ℕ) ≤ i; all_goals rename_i h'
       · simp [h']
-        exact (Fin.natCast_le_natCast (le_trans h i.prop.le) (le_trans h' i.prop.le)).mpr hk
+        have := (Fin.natCast_le_natCast (le_trans h i.prop.le) (le_trans h' i.prop.le)).mpr hk
+        sorry
       · simp [h']
         sorry
     · simp [h]
@@ -589,6 +592,7 @@ def g_aux₁ : Fin (m + 3) →o Fin (m + 1) where
         have := Nat.sub_le_sub_right hk 2
         sorry
 
+/-- `[m + 1] → [2]`. -/
 def f_aux₂ : Fin (m + 2) →o Fin 3 where
   toFun k :=
     if (k : ℕ) ≤ i then 0
@@ -609,26 +613,45 @@ def f_aux₂ : Fin (m + 2) →o Fin 3 where
           exact Nat.lt_of_lt_of_le h' hk
         simp only [h, ↓reduceIte, h', Fin.isValue, a, b, le_refl]
 
-abbrev g_aux₂ (m : ℕ) (i j : Fin m) : Fin (m + 3) →o Fin 3 := f_aux₂ (m + 1) i j
+/-- `[m + 2] → [2]`. -/
+abbrev g_aux₂ : Fin (m + 3) →o Fin 3 := f_aux₂ (m + 1) i j
 
 open SimplexCategory FunctorToTypes in
 def f (hj : j < m) : Δ[m + 1] ⟶ Δ[m] ⊗ Δ[2] :=
   prod.lift (standardSimplex.map <| mkHom (f_aux₁ m i j hj)) (standardSimplex.map <| mkHom (f_aux₂ m i j))
 
 open SimplexCategory in
-instance (hj : j < m)  : Mono (f m i j hj) := by
+instance (hj : j < m) : Mono (f m i j hj) := by
   have : ∀ k, Mono ((f m i j hj).app k) := by
     intro k
     simp only [f, FunctorToTypes.prod.lift]
     rw [CategoryTheory.mono_iff_injective]
     intro x y h
-    simp [mkHom, Hom.mk] at h
+    rw [Prod.ext_iff] at h
+    obtain ⟨h₁, h₂⟩ := h
+    dsimp at h₁ h₂
+    simp [standardSimplex] at h₁
+
     sorry
   apply NatTrans.mono_of_mono_app
 
 open SimplexCategory FunctorToTypes in
 def g : Δ[m + 2] ⟶ Δ[m] ⊗ Δ[2] :=
   prod.lift (standardSimplex.map <| mkHom (g_aux₁ m i j)) (standardSimplex.map <| mkHom (g_aux₂ m i j))
+
+open SimplexCategory in
+instance : Mono (g m i j) := by
+  have : ∀ k, Mono ((g m i j).app k) := by
+    intro k
+    simp only [g, FunctorToTypes.prod.lift]
+    rw [CategoryTheory.mono_iff_injective]
+    intro x y h
+    rw [Prod.ext_iff] at h
+    obtain ⟨h₁, h₂⟩ := h
+    dsimp at h₁ h₂
+    simp [standardSimplex] at h₁
+    sorry
+  apply NatTrans.mono_of_mono_app
 
 open GrothendieckTopology in
 /-- `fᵢⱼ` as a simplicial subset of `Δ[m] ⊗ Δ[2]`. -/
@@ -644,8 +667,13 @@ def τ : SimplicialSubset (Δ[m] ⊗ Δ[2]) :=
 
 /-- `Δ[m + 1] ≅ σᵢⱼ ⊆ Δ[m] ⊗ Δ[2]`. -/
 noncomputable
-def m_succ_simplex_iso (hj : j < m) : Δ[m + 1] ≅ (σ m i j hj).toPresheaf :=
+def m_succ_simplex_iso_σ (hj : j < m) : Δ[m + 1] ≅ (σ m i j hj).toPresheaf :=
   SimplicialSubset.mono_iso (f m i j hj)
+
+/-- `Δ[m + 2] ≅ τᵢⱼ ⊆ Δ[m] ⊗ Δ[2]`. -/
+noncomputable
+def m_succ_simplex_iso_τ : Δ[m + 2] ≅ (τ m i j).toPresheaf :=
+  SimplicialSubset.mono_iso (g m i j)
 
 open GrothendieckTopology in
 /-- each pair `0 ≤ i ≤ j < m` determines a map `Λ[m + 1, i + 1] ⟶ (σ m i j)`. -/
@@ -654,23 +682,50 @@ def horn_to_σ (hj : j < m) : Λ[m + 1, i + 1] ⟶ (σ m i j hj).toPresheaf :=
   Subpresheaf.lift _ (hornInclusion (m + 1) (i + 1) ≫ f m i j hj) (fun _ ⟨x, _⟩ ↦ ⟨x, rfl⟩)
 
 lemma horn_to_σ_eq (hj : j < m) : (horn_to_σ m i j hj) =
-    (hornInclusion (m + 1) (i + 1)) ≫ (m_succ_simplex_iso m i j hj).hom := rfl
+    (hornInclusion (m + 1) (i + 1)) ≫ (m_succ_simplex_iso_σ m i j hj).hom := rfl
 
--- shift up by 1 so inner horn stuff works
+-- since `0 ≤ j < m` (so `1 ≤ m`), we shift up by 1 so inner horn stuff works
+-- when `m = 0`, get `Λ[2, 1] ⟶ σ 1 0 0`
+-- `0 ≤ i ≤ j ≤ m`
 /-- the map `Λ[m + 1 + 1, i + 1] ⟶ (σ (m + 1) i j)` is inner anodyne. -/
-lemma horn_to_σ_innerAnodyne (m : ℕ) (i j : Fin (m + 1)) (hij : i ≤ j) (hj : (j : ℕ) < m + 1) :
+lemma horn_to_σ_innerAnodyne (m : ℕ) (i j : Fin (m + 1 + 1)) (hij : i ≤ j) (hj : j < ((m + 1) : ℕ)) :
     innerAnodyne (horn_to_σ (m + 1) i j hj) := by
   intro X Y g hg
   refine ⟨?_⟩
   intro α β sq
   rw [horn_to_σ_eq] at sq
-  let w' : α ≫ g = (hornInclusion (m + 1 + 1) (i + 1)) ≫ ((m_succ_simplex_iso (m + 1) i j hj).hom ≫ β) := sq.w
+  let w' : α ≫ g = (hornInclusion (m + 1 + 1) (i + 1)) ≫ ((m_succ_simplex_iso_σ (m + 1) i j hj).hom ≫ β) := sq.w
   have h0 : 0 < (i + 1 : Fin (m + 2 + 1)) := sorry
   have hn : (i + 1 : Fin (m + 2 + 1)) < Fin.last (m + 2) := sorry
   let L := ((hg (@InnerHornInclusion.mk m (i + 1) h0 hn)).sq_hasLift (CommSq.mk w')).exists_lift.some
-  refine ⟨⟨⟨(m_succ_simplex_iso (m + 1) i j hj).inv ≫ L.l, ?_, ?_⟩⟩⟩
+  refine ⟨⟨⟨(m_succ_simplex_iso_σ (m + 1) i j hj).inv ≫ L.l, ?_, ?_⟩⟩⟩
   · have := L.fac_left
     rw [horn_to_σ_eq]
+    aesop
+  · rw [Category.assoc, L.fac_right, ← Category.assoc, Iso.inv_hom_id, Category.id_comp]
+
+open GrothendieckTopology in
+/-- each pair `0 ≤ i ≤ j < m` determines a map `Λ[m + 2, i + 1] ⟶ (τ m i j)`. -/
+noncomputable
+def horn_to_τ : Λ[m + 2, i + 1] ⟶ (τ m i j).toPresheaf :=
+  Subpresheaf.lift _ (hornInclusion (m + 2) (i + 1) ≫ g m i j) (fun _ ⟨x, _⟩ ↦ ⟨x, rfl⟩)
+
+lemma horn_to_τ_eq : (horn_to_τ m i j) =
+    (hornInclusion (m + 2) (i + 1)) ≫ (m_succ_simplex_iso_τ m i j).hom := rfl
+
+lemma horn_to_τ_innerAnodyne (m : ℕ) (i j : Fin (m + 1 + 1)) (hij : i ≤ j) :
+    innerAnodyne (horn_to_τ (m + 1) i j) := by
+  intro X Y g hg
+  refine ⟨?_⟩
+  intro α β sq
+  rw [horn_to_τ_eq] at sq
+  let w' : α ≫ g = (hornInclusion (m + 2 + 1) (i + 1)) ≫ ((m_succ_simplex_iso_τ (m + 1) i j).hom ≫ β) := sq.w
+  have h0 : 0 < (i + 1 : Fin (m + 2 + 2)) := sorry
+  have hn : (i + 1 : Fin (m + 2 + 2)) < Fin.last (m + 2 + 1) := sorry
+  let L := ((hg (@InnerHornInclusion.mk (m + 1) (i + 1) h0 hn)).sq_hasLift (CommSq.mk w')).exists_lift.some
+  refine ⟨⟨⟨(m_succ_simplex_iso_τ (m + 1) i j).inv ≫ L.l, ?_, ?_⟩⟩⟩
+  · have := L.fac_left
+    rw [horn_to_τ_eq]
     aesop
   · rw [Category.assoc, L.fac_right, ← Category.assoc, Iso.inv_hom_id, Category.id_comp]
 
