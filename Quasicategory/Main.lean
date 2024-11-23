@@ -2,6 +2,7 @@ import Quasicategory.Basic
 import Quasicategory.Monomorphism
 import Quasicategory.Terminal
 import Quasicategory.InternalHom
+import Quasicategory._007F
 
 namespace SSet
 
@@ -216,7 +217,7 @@ end _0079
 instance horn_tkf_iff_quasicat (S : SSet.{0}) : Quasicategory S ↔
     trivialKanFibration ((Fun.map (hornInclusion 2 1).op).app S) := by
   rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_rlp_proj, class_rlp_iff_llp_morphism]
-  have := _007F.contains_innerAnodyne_iff_contains_pushout_maps _ (llp_weakly_saturated (MorphismClass S.proj))
+  have := contains_innerAnodyne_iff_contains_pushout_maps _ (llp_weakly_saturated (MorphismClass S.proj))
   rw [← this]
   refine ⟨?_, ?_⟩
   · intro h _ _ p hp

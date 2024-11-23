@@ -53,6 +53,51 @@ instance : Lattice (SimplicialSubset S) where
   inf_le_right _ _ _:= inf_le_right
   le_inf _ _ _ h₁ h₂ n := le_inf (h₁ n) (h₂ n)
 
+def sSup : Set S.SimplicialSubset → S.SimplicialSubset := fun A ↦ {
+  obj := fun n ↦ (⨆ (X : A), X.val.obj n)
+  map := fun {n m} f s h ↦ by
+    dsimp at h
+    cases h with
+    | intro w h =>
+    simp only [Set.iSup_eq_iUnion, Set.iUnion_coe_set, Set.preimage_iUnion, Set.mem_iUnion,
+      Set.mem_preimage, exists_prop]
+    simp only [Set.mem_range, Subtype.exists, exists_prop] at h
+    obtain ⟨i, hi⟩ := h.1
+    use i
+    refine ⟨hi.1, ?_⟩
+    have : s ∈ i.obj n := by
+      rw [hi.2]
+      exact h.2
+    exact i.map f this
+}
+
+def sInf : Set S.SimplicialSubset → S.SimplicialSubset := fun A ↦ {
+  obj := fun n ↦ (⨅ (X : A), X.val.obj n)
+  map := fun {n m} f s h ↦ by
+    dsimp only [Set.iInf_eq_iInter] at h ⊢
+    refine Set.mem_preimage.mpr ?_
+    sorry
+}
+
+instance : CompleteLattice (SimplicialSubset S) where
+  sSup := sSup
+  le_sSup _ X hX _ x hx := Set.mem_iUnion.2 ⟨⟨X, hX⟩, hx⟩
+  sSup_le A X hX n x hx := by
+    cases hx with
+    | intro w h =>
+    simp only [Set.mem_range, Subtype.exists, exists_prop] at h
+    obtain ⟨i, hi⟩ := h.1
+    apply hX _ hi.1
+    have := h.2
+    rwa [← hi.2] at this
+  sInf := sorry
+  sInf_le := sorry
+  le_sInf := sorry
+  top := top S
+  bot := empty S
+  le_top _ x y hy := trivial
+  bot_le _ _ _ h := False.elim h
+
 noncomputable
 def mono_iso (f : S ⟶ T) [h : Mono f] : S ≅ (imagePresheaf f).toPresheaf where
   hom := {
