@@ -201,7 +201,7 @@ def WeaklySaturatedClassOf (T : MorphismProperty C) : MorphismProperty C := fun 
 
 -- do galois connection, galois insertion
 
-instance (T : MorphismProperty C) : WeaklySaturated.{w} (WeaklySaturatedClassOf.{w} T) where
+instance of_is (T : MorphismProperty C) : WeaklySaturated.{w} (WeaklySaturatedClassOf.{w} T) where
   StableUnderCobaseChange := .pushout
   StableUnderRetracts := .retract
   IsStableUnderTransfiniteComposition := {
