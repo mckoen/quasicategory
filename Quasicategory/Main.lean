@@ -75,7 +75,7 @@ lemma newSquare (S : SSet) (m : ℕ)
     {β : Δ[m] ⟶ (Fun.obj (Opposite.op Λ[2, 1])).obj S}
     (sq : CommSq α (boundaryInclusion m) ((Fun.map (hornInclusion 2 1).op).app S) β) :
     CommSq (to_S S m sq) (Δ_pushoutProduct m) S.proj (Δ[2] ⊗ Δ[m]).proj :=
-  CommSq.mk (Limits.IsTerminal.hom_ext ptIsTerminal
+  CommSq.mk (Limits.IsTerminal.hom_ext isTerminal
     ((to_S S m sq) ≫ S.proj) ((Δ_pushoutProduct m) ≫ (Δ[2] ⊗ Δ[m]).proj))
 
 lemma aux1 (S : SSet) (m : ℕ)
@@ -128,7 +128,7 @@ lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)
         ((Δ_pushout m).isColimit.uniq (S_cocone S m sq) (S.to_S m sq) ?_).symm
       · exact aux1 S m α β sq lift fac_left fac_right
       · exact aux2 S m α β sq
-    · exact Limits.IsTerminal.comp_from ptIsTerminal (MonoidalClosed.uncurry lift)
+    · exact Limits.IsTerminal.comp_from isTerminal (MonoidalClosed.uncurry lift)
 -/
 
 -- awful proof
@@ -218,7 +218,7 @@ lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)
       · rename_i j
         cases j
         all_goals simp
-  · exact Limits.IsTerminal.hom_ext ptIsTerminal _ _
+  · exact Limits.IsTerminal.hom_ext isTerminal _ _
 
 end _0079
 
