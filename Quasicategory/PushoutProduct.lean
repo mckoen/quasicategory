@@ -1,7 +1,7 @@
 import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
+import Mathlib.CategoryTheory.Closed.FunctorToTypes
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.CommSq
-import Quasicategory.FunctorToTypes
-import Quasicategory.MorphismProperty
+import Mathlib.Combinatorics.Quiver.ReflQuiver
 
 /-!
 

@@ -1,6 +1,6 @@
+import Mathlib.CategoryTheory.Limits.Shapes.Pullback.CommSq
 import Quasicategory.KInjective.Induction
 import Quasicategory.KInjective.StableUnderRetract
-import Mathlib.CategoryTheory.Limits.Shapes.Pullback.CommSq
 
 universe w v u
 
@@ -32,6 +32,7 @@ lemma hasLiftingProperty (t : X ⟶ Y) (l : X ⟶ Z) (r : Y ⟶ T) (b : Z ⟶ T)
 
 end IsPushout
 
+/-
 instance hasLiftingProperty_pushout_inl {X Y Z : C} (f : X ⟶ Y) (g : X ⟶ Z) [HasPushout f g] {A B : C} (p : A ⟶ B)
     [HasLiftingProperty g p] : HasLiftingProperty (pushout.inl f g : Y ⟶ pushout f g) p :=
   (IsPushout.of_hasPushout f g).hasLiftingProperty p
@@ -39,6 +40,7 @@ instance hasLiftingProperty_pushout_inl {X Y Z : C} (f : X ⟶ Y) (g : X ⟶ Z) 
 instance hasLiftingProperty_pushout_inr {X Y Z : C} (f : X ⟶ Y) (g : X ⟶ Z) [HasPushout f g] {A B : C} (p : A ⟶ B)
     [HasLiftingProperty f p] : HasLiftingProperty (pushout.inr f g: Z ⟶ pushout f g) p :=
   (IsPushout.of_hasPushout f g).flip.hasLiftingProperty p
+-/
 
 instance hasLiftingProperty_limits_map {I : Type*} {A B : I → C} (f : ∀ i, A i ⟶ B i)
     [HasCoproduct A] [HasCoproduct B] {X Y : C} (p : X ⟶ Y) [∀ i, HasLiftingProperty (f i) p] :
@@ -107,6 +109,7 @@ lemma llpWith_isStableUnderRetract : W.llpWith.IsStableUnderRetract where
 lemma rlpWith_isStableUnderRetract : W.rlpWith.IsStableUnderRetract where
   condition f g i p hip hg _ _ ι hι := hasRightLiftingProperty_of_retract f g i p hip ι (hg ι hι)
 
+/-
 lemma llpWith_respectsIso : W.llpWith.RespectsIso where
   precomp e f hf X Y p hp := by
     have := hf p hp
@@ -122,6 +125,7 @@ lemma rlpWith_respectsIso : W.rlpWith.RespectsIso where
   postcomp e f hf A B i hi := by
     have := hf i hi
     infer_instance
+-/
 
 namespace IsStableUnderTransfiniteCompositionOfShapeLlpWith
 

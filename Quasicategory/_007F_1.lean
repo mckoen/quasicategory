@@ -1,9 +1,11 @@
-import Quasicategory.Basic
-import Quasicategory.PushoutProduct
-import Quasicategory.MorphismProperty
-import Quasicategory.SimplicialSet
-import Mathlib.CategoryTheory.Limits.Shapes.FunctorToTypes
 import Quasicategory.Monomorphism
+import Quasicategory.PushoutProduct
+
+/-!
+
+The first half of the proof of `007F`.
+
+-/
 
 namespace SSet
 
@@ -15,8 +17,9 @@ def S : MorphismProperty SSet := fun _ _ i ↦ (WeaklySaturatedClassOf.{0} bdryP
 
 -- S is weakly saturated because T is
 instance S_WeaklySaturated : WeaklySaturated S where
-  StableUnderCobaseChange := fun  _ _ _ _ g _ f _ h hg ↦
-    (bdryPushoutClass).of_is.StableUnderCobaseChange (pushoutCommSq_IsPushout g f h) hg
+  IsStableUnderCobaseChange := ⟨by
+    intro _ _ _ _ g _ f _ h hg
+    exact (bdryPushoutClass).of_is.IsStableUnderCobaseChange.of_isPushout (pushoutCommSq_IsPushout g f h) hg⟩
   StableUnderRetracts := sorry
   IsStableUnderTransfiniteComposition := sorry
 
@@ -37,7 +40,7 @@ def s_aux (i : Fin (n + 1)) : Fin (n + 1) →o Fin 3 where
   toFun j :=   if _ : (j : ℕ) < i then 0 else if _ : (j : ℕ) = i then 1 else 2
   monotone' j k h := by
     dsimp only [dite_eq_ite]
-    cases Nat.lt.isWellOrder.trichotomous j i with
+    cases Nat.lt_trichotomy j i with
     | inl h' => simp only [h', ↓reduceIte, Fin.isValue, Fin.zero_le]
     | inr h' => cases h' with
     | inl h' =>
@@ -93,7 +96,7 @@ def r_aux (i : Fin (n + 1)) : Fin 3 × Fin (n + 1) →o Fin (n + 1) where
     if _ : ((j : ℕ) < i ∧ k = 0) ∨ ((j : ℕ) > i ∧ k = 2) then j else i
   monotone' := by
     intro ⟨k, j⟩ ⟨k', j'⟩ ⟨(hk : k ≤ k'), (hj : j ≤ j')⟩
-    cases Nat.lt.isWellOrder.trichotomous j i with
+    cases Nat.lt_trichotomy j i with
     | inl h =>
       have : ¬ i < j := Lean.Omega.Fin.not_lt.mpr (Fin.le_of_lt h)
       fin_cases k; all_goals fin_cases k'
@@ -156,7 +159,9 @@ def r_restrict_horn_2 : Λ[2, 1] ⊗ Δ[n] ⟶ Λ[n, i] where
                 else i) j = 0 at h
       by_cases (asOrderHom y) j < i; all_goals rename_i h'
       · by_cases (asOrderHom x) j = 0; all_goals rename_i h''
-        · exact ha j h''
+        · apply ha
+          right
+          exact ⟨j, h''⟩
         · aesop
       · aesop
     · aesop
@@ -219,7 +224,7 @@ lemma r_comp_s (n : ℕ) (i : Fin (n + 1)) : s n i ≫ r n i = 𝟙 Δ[n] := by
   have a : f = OrderHom.id := by
     ext x
     simp [f, r', s', s_aux, r_aux]
-    cases Nat.lt.isWellOrder.trichotomous x i with
+    cases Nat.lt_trichotomy x i with
     | inl h => aesop
     | inr h => cases h with
     | inl h => aesop
@@ -229,7 +234,8 @@ lemma r_comp_s (n : ℕ) (i : Fin (n + 1)) : s n i ≫ r n i = 𝟙 Δ[n] := by
       next h_1 =>
         simp_all only [Fin.isValue, one_ne_zero, imp_false, not_le, and_self]
         split
-        next h_2 => simp_all only [Fin.isValue, Fin.reduceEq, or_false, ↓reduceIte]
+        next h_2 => simp_all only [Fin.isValue, Fin.one_eq_zero_iff, OfNat.ofNat_ne_one, imp_false, not_le, and_self,
+          Fin.reduceEq, or_false, ↓reduceIte]
         next h_2 =>
           simp_all only [not_lt, Fin.isValue, Fin.reduceEq, or_false]
           split

@@ -1,7 +1,12 @@
-import Mathlib.AlgebraicTopology.SimplicialSet
+import Mathlib.AlgebraicTopology.SimplicialSet.Basic
 import Mathlib.CategoryTheory.Sites.Subsheaf
-import Quasicategory.Terminal
-import Quasicategory.KInjective.WellOrderContinuous
+import Mathlib.Combinatorics.Quiver.ReflQuiver
+
+/-!
+
+Work in progress file for SimplicialSubset and Skeleton API.
+
+-/
 
 open CategoryTheory GrothendieckTopology SimplicialObject Simplicial
 
@@ -111,7 +116,7 @@ def mono_iso (f : S ⟶ T) [h : Mono f] : S ≅ (imagePresheaf f).toPresheaf whe
     app := fun n ⟨x, hx⟩ ↦ Exists.choose hx
     naturality := fun n m g ↦ by
       ext x
-      apply (mono_iff_injective _).1 (((NatTrans.mono_iff_mono_app _ _).1 h) m)
+      apply (mono_iff_injective _).1 (((NatTrans.mono_iff_mono_app _).1 h) m)
       dsimp only [types_comp_apply, Subpresheaf.toPresheaf_obj, imagePresheaf_obj,
         Subpresheaf.toPresheaf_map_coe]
       let a := ((imagePresheaf f).toPresheaf.map g x).property
@@ -120,7 +125,7 @@ def mono_iso (f : S ⟶ T) [h : Mono f] : S ≅ (imagePresheaf f).toPresheaf whe
       dsimp only [imagePresheaf_obj, Subpresheaf.toPresheaf_map_coe] }
   hom_inv_id := by
     ext n x
-    apply (mono_iff_injective _).1 (((NatTrans.mono_iff_mono_app _ _).1 h) n)
+    apply (mono_iff_injective _).1 (((NatTrans.mono_iff_mono_app _).1 h) n)
     exact Exists.choose_spec (Set.mem_range_self x)
   inv_hom_id := by
     ext n x
@@ -281,12 +286,12 @@ lemma not_inj_of_lt {n m : ℕ} (τ : Fin (n + 2) →o Fin (m + 1)) (hm : m < n 
   dsimp [Function.Injective] at h
   induction m with
   | zero =>
-    have := @h 0 1 (by simp_all only [Nat.reduceAdd, le_of_subsingleton, implies_true]; apply Subsingleton.elim)
-    simp_all only [Nat.reduceAdd, le_of_subsingleton, implies_true, zero_ne_one]
+      have := @h 0 1 (by simp_all only [Nat.reduceAdd, le_of_subsingleton, implies_true]; apply Subsingleton.elim)
+      simp_all only [lt_add_iff_pos_left, add_pos_iff, zero_lt_one, or_true, Fin.zero_eq_one_iff, Nat.reduceEqDiff]
   | succ k ih =>
     let f : Fin (k + 2) →o Fin (k + 1) := {
       toFun := Fin.predAbove k
-      monotone' := Fin.predAbove_right_monotone k }
+      monotone' := Fin.predAbove_right_monotone (k : Fin (k + 1)) }
     apply ih (f.comp τ) (Nat.lt_of_succ_lt hm)
     · intro a b h'
       apply h
@@ -526,7 +531,7 @@ def skeleton_hom_equiv {S T : SSet} (h : T.dim_le k) : (T ⟶ S.Sk (k + 1)) ≃ 
 -- can also be shown using skeleton_hom_equiv
 /-- every `k`-simplex determines a map `Δ[k] ⟶ skₖ(S)` -/
 def simplex_map {S : SSet} (s : S _[k]) : Δ[k] ⟶ (S.Sk (k + 1)) :=
-  (yonedaEquiv _ _).symm (⟨s, _0016 S le_rfl (Set.mem_univ s)⟩)
+  (yonedaEquiv _ _).symm (⟨s, _0016 S (Nat.lt_add_one _) (Set.mem_univ s)⟩)
 
 /-- every `k`-simplex determines a map `∂Δ[k] ⟶ skₖ₋₁(S)` (assuming `1 ≤ k`) -/
 noncomputable

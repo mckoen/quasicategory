@@ -1,7 +1,14 @@
-import Mathlib.AlgebraicTopology.Quasicategory
+import Mathlib.AlgebraicTopology.Quasicategory.Basic
 import Quasicategory.MorphismProperty
 import Quasicategory.Terminal
-import Mathlib.AlgebraicTopology.KanComplex
+import Mathlib.AlgebraicTopology.SimplicialSet.KanComplex
+
+/-!
+
+Defines some basic morphism properties (fibrations, anodyne morphisms) and a few immediate
+results about them.
+
+-/
 
 namespace SSet
 
@@ -75,9 +82,9 @@ lemma quasicategory_iff_proj_innerFibration {S : SSet} :
     induction hp with
     | mk h0 hn =>
     obtain ⟨l, hl⟩ := h.hornFilling h0 hn f
-    exact ⟨l, hl.symm, ptIsTerminal.hom_ext _ _⟩
+    exact ⟨l, hl.symm, isTerminal.hom_ext _ _⟩
   · intro n i σ₀ h0 hn
-    have := (CommSq.mk (Limits.IsTerminal.hom_ext ptIsTerminal
+    have := (CommSq.mk (Limits.IsTerminal.hom_ext isTerminal
       (σ₀ ≫ S.proj) (hornInclusion (n + 2) i ≫  Δ[n + 2].proj)))
     have lift := ((h (.mk h0 hn)).sq_hasLift this).exists_lift.some
     exact ⟨lift.l, lift.fac_left.symm⟩
@@ -135,10 +142,10 @@ lemma extension_iff_rlp_proj {S : SSet} :
     constructor
     intro f₀ t sq
     obtain ⟨l, hl⟩ := h i hi f₀
-    exact ⟨l, hl.symm, Limits.IsTerminal.hom_ext ptIsTerminal _ _⟩
+    exact ⟨l, hl.symm, Limits.IsTerminal.hom_ext isTerminal _ _⟩
   · intro h A B i hi f₀
     obtain ⟨⟨lift⟩⟩ := (h hi).sq_hasLift
-      (CommSq.mk (Limits.IsTerminal.hom_ext ptIsTerminal (f₀ ≫ proj S) (i ≫ proj B)))
+      (CommSq.mk (Limits.IsTerminal.hom_ext isTerminal (f₀ ≫ proj S) (i ≫ proj B)))
     exact ⟨lift.l, lift.fac_left.symm⟩
 
 -- since S is a quasicat, every inner horn inclusion has LLP wrt (S ⟶ Δ[0]), and
@@ -163,4 +170,4 @@ instance quasicat_iff_extension_wrt_innerAnodyne {S : SSet.{0}} :
   constructor
   intro σ₀ _ sq
   obtain ⟨l, hl⟩ := hS.hornFilling h0 hn σ₀
-  exact ⟨l, hl.symm, Limits.IsTerminal.hom_ext ptIsTerminal _ _⟩
+  exact ⟨l, hl.symm, Limits.IsTerminal.hom_ext isTerminal _ _⟩

@@ -1,10 +1,12 @@
 import Quasicategory.Basic
-import Mathlib.CategoryTheory.Adhesive
-import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 import Quasicategory.InternalHom
-import Quasicategory.Terminal
 import Quasicategory.SimplicialSet
-import Mathlib.CategoryTheory.Limits.FilteredColimitCommutesFiniteLimit
+
+/-!
+
+Some results about monomorphisms, and the proof of `0077`.
+
+-/
 
 namespace SSet
 
@@ -44,7 +46,8 @@ instance boundaryInclusion_whisker_mono (B : SSet) (n : ℕ) : Mono (B ◁ (boun
       exact h.2
   apply NatTrans.mono_of_mono_app
 
-instance monomorphisms.StableUnderCobaseChange : StableUnderCobaseChange (monomorphisms SSet) := by
+instance monomorphisms.StableUnderCobaseChange : IsStableUnderCobaseChange (monomorphisms SSet) := by
+  refine ⟨?_⟩
   intro A B A' B' f s f' t P hf
   letI _ : Mono f := hf
   letI _ : Adhesive SSet := adhesive_functor
@@ -68,7 +71,7 @@ instance has_bot' [IsWellOrderLimitElement γ] : OrderBot {b | b < γ} :=
   has_bot γ (IsWellOrderLimitElement.neq_bot γ)
 
 example [IsWellOrderLimitElement γ] :
-    (F.map (homOfLE bot_le)) = ((F.coconeOfFunctorToOver (PrincipalSeg.ofElement (· < ·) γ).functorToOver).ι.app ⊥) := rfl
+    (F.map (homOfLE bot_le)) = ((F.coconeOfFunctorToOver (PrincipalSeg.ofElement (· < ·) γ).functorToOver).ι.app ((has_bot' γ).bot)) := rfl
 
 instance [hγ : IsWellOrderLimitElement γ] : IsDirected {b | b < γ} (· ≤ ·) where
   directed a b := by

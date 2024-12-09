@@ -1,8 +1,10 @@
-import Quasicategory.Basic
-import Quasicategory.Monomorphism
-import Quasicategory.Terminal
-import Quasicategory.InternalHom
 import Quasicategory._007F
+
+/-!
+
+The main result, `0066`. Every proof here should be redone.
+
+-/
 
 namespace SSet
 
@@ -36,13 +38,16 @@ lemma S_cocone_aux (S : SSet) (m : ℕ)
     β.app n ((boundaryInclusion m).app n y) at this
   change α'.app n ((hornInclusion 2 1 ▷ ∂Δ[m]).app n (x, y)) =
     β'.app n ((Λ[2, 1] ◁ boundaryInclusion m).app n (x, y))
-  simp only [MonoidalClosed.uncurry, tensorLeft_obj, ihom.adjunction, Closed.adj,
-    FunctorToTypes.adj, Functor.id_obj, FunctorToTypes.homEquiv_invFun, Monoidal.tensorObj_obj,
-    Functor.rightOp_obj, NatTrans.id_app, types_id_apply, FunctorToTypes.homEquiv,
-    Equiv.coe_fn_symm_mk, Fin.isValue, whiskerRight_app_apply, whiskerLeft_app_apply, α', β']
+  simp only [MonoidalClosed.uncurry, tensorLeft_obj, Adjunction.homEquiv, Functor.comp_obj,
+    ihom.adjunction, Closed.adj, FunctorToTypes.adj, FunctorToTypes.rightAdj,
+    FunctorToTypes.functorHomEquiv, Functor.homObjEquiv, Monoidal.tensorObj_obj,
+    Equiv.invFun_as_coe, Equiv.symm_trans_apply, Equiv.coe_fn_symm_mk, NatTrans.id_app,
+    types_id_apply, Equiv.trans_apply, Equiv.coe_fn_mk, Functor.functorHomEquiv_apply_app,
+    Functor.rightOp_obj, tensorLeft_map, Fin.isValue, whiskerRight_app_apply, whiskerLeft_app_apply,
+    α', β']
+  change _ = (β.app n ((boundaryInclusion m).app n y)).app n (𝟙 n) x
   rw [← this]
-  simp only [Fin.isValue, MonoidalClosed.pre, internalHom_obj]
-  aesop
+  rfl
 
 -- the cocone with point `S` given by uncurrying the maps `α` and `β`
 noncomputable
@@ -176,11 +181,16 @@ def newSq (S : SSet) (m : ℕ)
     Λ[2, 1] ◁ boundaryInclusion m ≫ inr ≫ f
   rw [← Category.assoc, ← Category.assoc, ← (Δ_pushout m).w]
   ext n ⟨x, y⟩
-  change (FunctorToTypes.rightAdj_map f n (FunctorToTypes.homEquiv_toFun_app inl n y)).app n (𝟙 n)
-    ((hornInclusion 2 1).app n x) =
-  f.app n (inl.app n ((hornInclusion 2 1).app n x, y))
-  dsimp [FunctorToTypes.rightAdj_map, FunctorToTypes.homEquiv_toFun_app]
-  simp only [Fin.isValue, FunctorToTypes.map_id_apply]
+  change _ = f.app n (inl.app n ((hornInclusion 2 1).app n x, y))
+  simp [MonoidalClosed.curry, Adjunction.homEquiv, ihom]
+  change (((ihom.adjunction Δ[2]).counit).app S).app
+    n ((((hornInclusion 2 1).app n x, ((Closed.rightAdj Δ[2]).map f).app n (((Closed.rightAdj Δ[2]).map inl).app n (((ihom.adjunction Δ[2]).unit.app ∂Δ[m]).app n y) )))) = _
+  simp only [Functor.id_obj, Functor.comp_obj, tensorLeft_obj, ihom.adjunction, Closed.adj,
+    FunctorToTypes.adj, Equiv.invFun_as_coe, Fin.isValue, Closed.rightAdj,
+    FunctorToTypes.functorHomEquiv_apply_app, NatTrans.id_app, FunctorToTypes.rightAdj_obj_obj,
+    types_id_apply, FunctorToTypes.rightAdj_map_app_app,
+    FunctorToTypes.functorHomEquiv_symm_apply_app_app, FunctorToTypes.map_id_apply,
+    Monoidal.tensorObj_obj]
 
 -- iff the pushout diagram has an extension, then the square has a lift
 lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)

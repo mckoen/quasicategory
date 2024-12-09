@@ -1,6 +1,7 @@
 import Mathlib.CategoryTheory.Comma.Over
+import Mathlib.CategoryTheory.Limits.Preserves.Basic
 import Mathlib.CategoryTheory.MorphismProperty.Composition
-import Mathlib.CategoryTheory.Limits.FunctorCategory
+import Mathlib.Combinatorics.Quiver.ReflQuiver
 import Mathlib.Order.InitialSeg
 
 universe u
@@ -227,6 +228,7 @@ variable (J) in
 class PreservesWellOrderContinuousOfShape (G : D ⥤ E) where
   condition (j : J) [IsWellOrderLimitElement j] : PreservesColimitsOfShape { i | i < j} G
 
+/-
 instance (F : J ⥤ D) [WellOrderContinuous F] (G : D ⥤ E)
     [h : PreservesWellOrderContinuousOfShape J G] :
     WellOrderContinuous (F ⋙ G) := WellOrderContinuous.mk' _ (fun j _ => by
@@ -235,6 +237,7 @@ instance (F : J ⥤ D) [WellOrderContinuous F] (G : D ⥤ E)
     infer_instance
   have := h.condition j
   exact isColimitOfPreserves G (F.isColimitOfWellOrderContinuous (PrincipalSeg.ofElement (· < ·) j)))
+-/
 
 end Functor
 
@@ -270,6 +273,7 @@ lemma mem_functor_iff {F₁ F₂ : D ⥤ C} (τ : F₁ ⟶ F₂) : W.functor D �
 
 variable (β : Type*) [LinearOrder β] [IsWellOrder β (· < ·)] [OrderBot β]
 
+/-
 instance [W.IsStableUnderTransfiniteCompositionOfShape β] [HasColimitsOfShape β C]
     [∀ X, Functor.PreservesWellOrderContinuousOfShape β ((evaluation D C).obj X)] :
     (W.functor D).IsStableUnderTransfiniteCompositionOfShape β where
@@ -282,6 +286,7 @@ instance isStableUnderTransfiniteCompositionOfShape_over [W.IsStableUnderTransfi
     (W.over S).IsStableUnderTransfiniteCompositionOfShape β where
   condition F _ hF _ hc := W.mem_of_transfinite_composition β (F ⋙ Over.forget _) hF _
     (isColimitOfPreserves (Over.forget _) hc)
+-/
 
 end
 

@@ -1,8 +1,12 @@
-
 import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
-import Quasicategory.FunctorToTypes
-import Mathlib.CategoryTheory.Limits.Shapes.Terminal
+import Mathlib.CategoryTheory.Closed.FunctorToTypes
 import Mathlib.CategoryTheory.Limits.Shapes.FunctorToTypes
+
+/-!
+
+Some isomorphisms of internal homs, used in `0066`.
+
+-/
 
 open CategoryTheory Simplicial MonoidalCategory MonoidalClosed
 
@@ -54,13 +58,13 @@ noncomputable section
 @[ext]
 lemma ihom_ext (Y Z : SSet) (n : SimplexCategoryᵒᵖ)
     (a b : (((ihom Y).obj Z)).obj n) : a.app = b.app → a = b := fun h ↦ by
-  apply Functor.ihom_ext
+  apply Functor.functorHom_ext
   intro m f; exact congr_fun (congr_fun h m) f
 
 @[ext]
 lemma ihom_ihom_ext (X Y Z : SSet) (n : SimplexCategoryᵒᵖ)
     (a b : ((ihom X).obj ((ihom Y).obj Z)).obj n) : a.app = b.app → a = b := fun h ↦ by
-  apply Functor.ihom_ext
+  apply Functor.functorHom_ext
   intro m f; exact congr_fun (congr_fun h m) f
 
 def ihom_iso_hom (X Y Z : SSet) : (ihom X).obj ((ihom Y).obj Z) ⟶ (ihom (X ⊗ Y)).obj Z where
@@ -88,7 +92,7 @@ def ihom_iso_inv (X Y Z : SSet) : (ihom (X ⊗ Y)).obj Z ⟶ (ihom X).obj ((ihom
         exact this
     · intro m l f g
       ext
-      simp [ihom, Closed.rightAdj, FunctorToTypes.rightAdj, Functor.ihom, Functor.hom₂Functor]
+      simp [ihom, Closed.rightAdj, FunctorToTypes.rightAdj, Functor.functorHom, Functor.homObjFunctor]
 
 /- [X, [Y, Z]] ≅ [X ⊗ Y, Z] -/
 def ihom_iso (X Y Z : SSet) : (ihom X).obj ((ihom Y).obj Z) ≅ (ihom (X ⊗ Y)).obj Z where
@@ -98,8 +102,8 @@ def ihom_iso (X Y Z : SSet) : (ihom X).obj ((ihom Y).obj Z) ≅ (ihom (X ⊗ Y))
     ext n x m f Xm l g Yl
     change (x.app l (f ≫ g) (X.map g Xm)).app l (𝟙 l) Yl = (x.app m f Xm).app l g Yl
     have := congr_fun (x.naturality g f) Xm
-    dsimp [ihom, Closed.rightAdj, FunctorToTypes.rightAdj, Functor.ihom,
-      Functor.hom₂Functor] at this
+    dsimp [ihom, Closed.rightAdj, FunctorToTypes.rightAdj, Functor.functorHom,
+      Functor.homObjFunctor] at this
     rw [this]
     aesop
   inv_hom_id := by
@@ -114,16 +118,16 @@ lemma ihom_braid_hom_eq {X Y Z : SSet} {n m : SimplexCategoryᵒᵖ} {f : n ⟶ 
     (((MonoidalClosed.pre (β_ X Y).hom).app Z).app n a).app m f =
       (β_ X Y).hom.app m ≫ a.app m f := by
   ext ⟨Xm, Ym⟩
-  change (((Y ⊗ X).ihom Z).map f a).app m (𝟙 m) (Ym, Xm) = a.app m f (Ym, Xm)
-  simp [Functor.ihom]
+  change (((Y ⊗ X).functorHom Z).map f a).app m (𝟙 m) (Ym, Xm) = a.app m f (Ym, Xm)
+  simp [Functor.functorHom]
 
 @[simp]
 lemma ihom_braid_inv_eq {X Y Z : SSet} {n m : SimplexCategoryᵒᵖ} {f : n ⟶ m}
     (a : ((ihom (X ⊗ Y)).obj Z).obj n) :
     (((MonoidalClosed.pre (β_ X Y).inv).app Z).app n a).app m f = (β_ X Y).inv.app m ≫ a.app m f := by
   ext ⟨Ym, Xm⟩
-  change (((X ⊗ Y).ihom Z).map f a).app m (𝟙 m) (Xm, Ym) = a.app m f (Xm, Ym)
-  simp [Functor.ihom]
+  change (((X ⊗ Y).functorHom Z).map f a).app m (𝟙 m) (Xm, Ym) = a.app m f (Xm, Ym)
+  simp [Functor.functorHom]
 
 /- [X ⊗ Y, Z] ≅ [Y ⊗ X, Z] -/
 def ihom_braid_iso (X Y Z : SSet) : (ihom (X ⊗ Y)).obj Z ≅ (ihom (Y ⊗ X)).obj Z where

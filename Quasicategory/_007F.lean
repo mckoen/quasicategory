@@ -1,5 +1,11 @@
 import Quasicategory._007F_1
 
+/-!
+
+The second half of the proof of `007F`, which is much more technical.
+
+-/
+
 namespace SSet
 
 open CategoryTheory Simplicial MorphismProperty MonoidalCategory
