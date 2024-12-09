@@ -15,12 +15,11 @@ def S : MorphismProperty SSet := fun _ _ i ↦ (WeaklySaturatedClassOf.{0} bdryP
 
 -- S is weakly saturated because T is
 instance S_WeaklySaturated : WeaklySaturated S where
-  StableUnderCobaseChange := by
-    intro X Y A B g s f t h hg
-    sorry
+  StableUnderCobaseChange := fun  _ _ _ _ g _ f _ h hg ↦
+    (bdryPushoutClass).of_is.StableUnderCobaseChange (pushoutCommSq_IsPushout g f h) hg
   StableUnderRetracts := sorry
   IsStableUnderTransfiniteComposition := sorry
-/--/
+
 lemma BoundaryInclusions_le_S : BoundaryInclusions ≤ S := fun _ _ _ h ↦ by
   induction h with | mk =>
   apply WeaklySaturatedOf.of
