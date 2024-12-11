@@ -5,6 +5,10 @@ import Quasicategory.PushoutProduct
 
 The first half of the proof of `007F`.
 
+# TODO
+
+Show `S` is stable under transfinite composition.
+
 -/
 
 namespace SSet
@@ -13,14 +17,17 @@ open CategoryTheory Simplicial MorphismProperty MonoidalCategory
 
 -- T = WeaklySaturatedOf bdryPushoutClass
 -- S is the class of all morphisms `i : A → B` such that the pushout product with `Λ[2, 1] ↪ Δ[2]` is in T
-def S : MorphismProperty SSet := fun _ _ i ↦ (WeaklySaturatedClassOf.{0} bdryPushoutClass) (pushoutProduct i (hornInclusion 2 1))
+def S : MorphismProperty SSet := fun _ _ i ↦
+    (WeaklySaturatedClassOf.{0} bdryPushoutClass) (pushoutProduct.desc i (hornInclusion 2 1))
 
 -- S is weakly saturated because T is
-instance S_WeaklySaturated : WeaklySaturated S where
+instance S.WeaklySaturated : WeaklySaturated S where
   IsStableUnderCobaseChange := ⟨by
     intro _ _ _ _ g _ f _ h hg
     exact (bdryPushoutClass).of_is.IsStableUnderCobaseChange.of_isPushout (pushoutCommSq_IsPushout g f h) hg⟩
-  StableUnderRetracts := sorry
+  IsStableUnderRetracts := ⟨by
+    intro _ _ _ _ f g h hg
+    exact (bdryPushoutClass).of_is.IsStableUnderRetracts.of_retract (pushoutProduct.RetractArrow h) hg⟩
   IsStableUnderTransfiniteComposition := sorry
 
 lemma BoundaryInclusions_le_S : BoundaryInclusions ≤ S := fun _ _ _ h ↦ by
@@ -30,7 +37,7 @@ lemma BoundaryInclusions_le_S : BoundaryInclusions ≤ S := fun _ _ _ h ↦ by
 
 lemma monomorphisms_le_S : monomorphisms SSet ≤ S := by
   rw [mono_eq_bdryInclusions]
-  apply minimalWeaklySaturated _ _ BoundaryInclusions_le_S S_WeaklySaturated
+  apply minimalWeaklySaturated _ _ BoundaryInclusions_le_S S.WeaklySaturated
 
 -- [n] ⟶ [2] by j ↦
 -- 0 if j < i
@@ -88,7 +95,7 @@ lemma leftSqCommAux (n : ℕ) (i : Fin (n + 1)) :
 
 lemma leftSqComm (n : ℕ) (i : Fin (n + 1)) : horn_to_pushout n i ≫ Λ_pushoutProduct n i = (hornInclusion n i) ≫ s n i := by
   rw [← leftSqCommAux]
-  dsimp [horn_to_pushout, Λ_pushoutProduct, pushoutProduct]
+  dsimp [horn_to_pushout, Λ_pushoutProduct, pushoutProduct.desc]
   rw [Category.assoc, IsPushout.inl_desc]
 
 def r_aux (i : Fin (n + 1)) : Fin 3 × Fin (n + 1) →o Fin (n + 1) where
@@ -214,7 +221,7 @@ def pushout_to_horn : (Λ_pushout n i).cocone.pt ⟶ Λ[n, i] :=
   Limits.pushout.desc (r_restrict_horn_n n i) (r_restrict_horn_2 n i h0 hn) rfl
 
 lemma rightSqComm : pushout_to_horn n i h0 hn ≫ hornInclusion n i = Λ_pushoutProduct n i ≫ r n i := by
-  dsimp [pushout_to_horn, Λ_pushoutProduct, pushoutProduct]
+  dsimp [pushout_to_horn, Λ_pushoutProduct, pushoutProduct.desc]
   apply Limits.pushout.hom_ext; all_goals aesop
 
 lemma r_comp_s (n : ℕ) (i : Fin (n + 1)) : s n i ≫ r n i = 𝟙 Δ[n] := by
@@ -266,7 +273,7 @@ lemma restricted_r_comp_s : horn_to_pushout n i ≫ pushout_to_horn n i h0 hn = 
   aesop
 
 noncomputable
-instance hornRetract : IsRetract (hornInclusion n i) (Λ_pushoutProduct n i) where
+instance hornRetract : RetractArrow (hornInclusion n i) (Λ_pushoutProduct n i) where
   i := {
     left := horn_to_pushout n i
     right := s n i

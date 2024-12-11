@@ -6,6 +6,14 @@ import Quasicategory.SimplicialSet
 
 Some results about monomorphisms, and the proof of `0077`.
 
+# TODO
+
+ - show monomorphisms are stable under transfinite composition.
+
+ - finish proof of `0077` which relies on `SimplicialSubset` API.
+
+ - generalize a lot of statements
+
 -/
 
 namespace SSet
@@ -46,7 +54,7 @@ instance boundaryInclusion_whisker_mono (B : SSet) (n : ℕ) : Mono (B ◁ (boun
       exact h.2
   apply NatTrans.mono_of_mono_app
 
-instance monomorphisms.StableUnderCobaseChange : IsStableUnderCobaseChange (monomorphisms SSet) := by
+instance IsStableUnderCobaseChange.monomorphisms : IsStableUnderCobaseChange (monomorphisms SSet) := by
   refine ⟨?_⟩
   intro A B A' B' f s f' t P hf
   letI _ : Mono f := hf
@@ -140,7 +148,7 @@ instance monomorphisms.isStableUnderTransfiniteCompositionOfShape :
 
 end mono_proof
 
-instance monomorphisms.IsStableUnderTransfiniteComposition :
+instance IsStableUnderTransfiniteComposition.monomorphisms :
     IsStableUnderTransfiniteComposition (monomorphisms SSet) where
   id_mem _ := instMonoId _
   comp_mem f g hf hg := @mono_comp _ _ _ _ _ f hf g hg
@@ -149,9 +157,9 @@ instance monomorphisms.IsStableUnderTransfiniteComposition :
 
 -- `0077` (a) monomorphisms are weakly saturated
 instance monomorphisms.WeaklySaturated : WeaklySaturated (monomorphisms SSet) :=
-  ⟨ monomorphisms.StableUnderCobaseChange,
-    monomorphisms.StableUnderRetracts,
-    monomorphisms.IsStableUnderTransfiniteComposition⟩
+  ⟨ IsStableUnderCobaseChange.monomorphisms,
+    IsStableUnderRetracts.monomorphisms,
+    IsStableUnderTransfiniteComposition.monomorphisms⟩
 
 -- need skeleta pushout construction for this, this is showing B(k - 1) ↪ B(k) is contained in S
 open SimplicialSubset GrothendieckTopology in
@@ -192,7 +200,7 @@ lemma trivialKanFibration_eq_rlp_monomorphisms :
   · intro h
     rw [class_rlp_iff_llp_morphism, mono_eq_bdryInclusions]
     intro _ _ i hi
-    refine minimalWeaklySaturated (MorphismClass p).llp BoundaryInclusions ?_ (llp_weakly_saturated _) i hi
+    refine minimalWeaklySaturated (MorphismClass p).llp BoundaryInclusions ?_ (llp.WeaklySaturated _) i hi
     intro _ _ _ hf _ _ _ hg
     induction hg with | mk => exact h hf
   · intro h _ _ p hp

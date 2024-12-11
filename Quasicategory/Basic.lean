@@ -8,6 +8,10 @@ import Mathlib.AlgebraicTopology.SimplicialSet.KanComplex
 Defines some basic morphism properties (fibrations, anodyne morphisms) and a few immediate
 results about them.
 
+# TODO
+
+show `innerAnodyne = WeaklySaturatedClassOf InnerHornInclusions`
+
 -/
 
 namespace SSet
@@ -93,7 +97,7 @@ lemma quasicategory_iff_proj_innerFibration {S : SSet} :
 instance quasicategory_of_innerFibration {X Y : SSet} (p : X ⟶ Y) (hp : innerFibration p) :
     Quasicategory Y → Quasicategory X := fun h ↦ by
   rw [quasicategory_iff_proj_innerFibration] at h ⊢
-  exact rlp_comp _ p hp Y.proj h
+  exact (rlp.IsStableUnderComposition _).comp_mem p Y.proj hp h
 
 /- a morphism is inner anodyne if it has the left lifting property wrt all inner fibrations. -/
 abbrev innerAnodyne := innerFibration.llp
@@ -105,8 +109,8 @@ lemma innerHorn_le_innerAnodyne : InnerHornInclusions ≤ innerAnodyne := fun _ 
 lemma innerAnodyne_eq :
     innerAnodyne = WeaklySaturatedClassOf InnerHornInclusions := by
   ext X Y p
-  refine ⟨?_, minimalWeaklySaturated innerAnodyne _ innerHorn_le_innerAnodyne (llp_weakly_saturated _) p⟩
-  · sorry -- small object argument?
+  refine ⟨?_, minimalWeaklySaturated innerAnodyne _ innerHorn_le_innerAnodyne (llp.WeaklySaturated _) p⟩
+  · sorry
 
 /-
 -- `01C3` aux
@@ -162,7 +166,7 @@ instance quasicat_iff_extension_wrt_innerAnodyne {S : SSet.{0}} :
   intro hS
   rw [extension_iff_rlp_proj, class_rlp_iff_llp_morphism, innerAnodyne_eq]
   intro _ _ _
-  refine minimalWeaklySaturated.{0} ((MorphismClass S.proj).llp) InnerHornInclusions ?_ (llp_weakly_saturated _) _
+  refine minimalWeaklySaturated.{0} ((MorphismClass S.proj).llp) InnerHornInclusions ?_ (llp.WeaklySaturated _) _
   intro _ _ i hi
   induction hi with | mk h0 hn =>
   intro _ _ f hf
