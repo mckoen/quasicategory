@@ -1,8 +1,8 @@
-# Quasicategories in Lean
+# Quasi-categories in Lean
 
-The general goal of this project is to formalize the basic theory of quasicategories in Lean. Most of the work is based on [Kerodon](https://kerodon.net/).
+The general goal of this project is to formalize the basic theory of quasi-categories in Lean. Most of the work is based on [Kerodon](https://kerodon.net/).
 
-The current goal is [0066](https://kerodon.net/tag/0066). This has been reduced to [0077](https://kerodon.net/tag/0077) and [007F](https://kerodon.net/tag/007F) (two very technical proofs).
+The current goal is [0066](https://kerodon.net/tag/0066): if $X$ is a quasi-category and $A$ is a simplicial set, then $X^A$ is a quasi-category. This has been reduced to [0077](https://kerodon.net/tag/0077) and [007F](https://kerodon.net/tag/007F) (two very technical proofs).
 
 Remaining tasks:
 
