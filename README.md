@@ -11,7 +11,7 @@ Remaining tasks:
 - [ ] the maps $B(k - 1) \hookrightarrow B(k)$ belong to $T'$ (requires simplicial subset and skeleton API)
 
 ### [007F](https://kerodon.net/tag/007F):
-- [ ] $S$ is stable under transfinite composition
+- [x] $S$ is stable under transfinite composition
 - [ ] the pushout product of $\partial\Delta^m \hookrightarrow \Delta^m$ with $\Lambda^2_1 \hookrightarrow \Delta^2$ is inner anodyne for $0 \le m$ (requires simplicial subset API)
 
 ### [01BR](https://kerodon.net/tag/01BR):
