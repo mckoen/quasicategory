@@ -34,7 +34,7 @@ lemma class_llp_iff_rlp_morphism (T : MorphismProperty C) {X Y : C} (p : X ⟶ Y
 instance llp.IsStableUnderTransfiniteComposition {T : MorphismProperty C} :
     T.llp.IsStableUnderTransfiniteComposition := T.llpWith_comp
 
-class WeaklySaturated (P : MorphismProperty C) : Prop :=
+class WeaklySaturated (P : MorphismProperty C) : Prop where
   IsStableUnderCobaseChange : P.IsStableUnderCobaseChange
   IsStableUnderRetracts : P.IsStableUnderRetracts
   IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposition.{w} P
