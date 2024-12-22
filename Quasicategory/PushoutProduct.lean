@@ -3,7 +3,7 @@ import Mathlib.CategoryTheory.Closed.FunctorToTypes
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.CommSq
 import Mathlib.Combinatorics.Quiver.ReflQuiver
 import Quasicategory.Retract.Basic
-import Quasicategory.TransfiniteComposition
+import Quasicategory.TransfiniteComposition.Basic
 
 /-!
 
@@ -12,6 +12,8 @@ Defines pushout-products and a little bit of API.
 Everything here should be generalized and more API should be added.
 
 -/
+
+universe v' v u' u
 
 open CategoryTheory MonoidalCategory
 
@@ -60,6 +62,73 @@ lemma w : g ▷ A ≫ inl f g = X ◁ f ≫ inr f g  := (IsPushout f g).toCommSq
 lemma desc_id : (desc' f g) (inl f g) (inr f g) (w f g) = 𝟙 (pt f g) :=
   (IsPushout f g).hom_ext (by aesop) (by aesop)
 
+
+variable {C : Type u} [Category.{v} C] {F G : C ⥤ SSet} (h : F ⟶ G)
+
+variable {X Y : SSet} (g : X ⟶ Y)
+
+@[simp]
+noncomputable
+def natTransLeftFunctor_map {A B : C} (f : A ⟶ B) : pt (h.app A) g ⟶ pt (h.app B) g := by
+  refine (desc' (h.app A) g)
+    (Y ◁ (F.map f) ≫ inl (h.app B) g) (X ◁ (G.map f) ≫ inr (h.app B) g) ?_
+  rw [← Category.assoc (X ◁ _), ← MonoidalCategory.whiskerLeft_comp, ← h.naturality f,
+    MonoidalCategory.whiskerLeft_comp, Category.assoc, ← pushoutProduct.w]
+  rfl
+
+@[simp]
+lemma natTransLeftFunctor_map_id (A : C) :
+    natTransLeftFunctor_map h g (𝟙 A) = 𝟙 (pt (h.app A) g) :=
+  (IsPushout (h.app A) g).hom_ext (by aesop) (by aesop)
+
+@[simp]
+lemma natTransLeftFunctor_map_comp {X Y Z : C} (s : X ⟶ Y) (t : Y ⟶ Z ):
+    natTransLeftFunctor_map h g (s ≫ t) = natTransLeftFunctor_map h g s ≫ natTransLeftFunctor_map h g t := by
+  apply (IsPushout (h.app X) g).hom_ext (by aesop) (by aesop)
+
+@[simp]
+noncomputable
+def natTransLeftFunctor : C ⥤ SSet where
+  obj A := pt (h.app A) g
+  map := natTransLeftFunctor_map h g
+  map_id := natTransLeftFunctor_map_id h g
+  map_comp := natTransLeftFunctor_map_comp h g
+
+noncomputable
+def natTransLeftFunctor_comp {G' : C ⥤ SSet} (h' : G ⟶ G') :
+    (natTransLeftFunctor h g) ⟶ (natTransLeftFunctor (h ≫ h') g) where
+  app A := by
+    refine (IsPushout (h.app A) g).desc
+      (inl ((h ≫ h').app A) g) (X ◁ (h'.app A) ≫ inr ((h ≫ h').app A) g) ?_
+    · rw [w]; aesop
+  naturality {A _} f := by
+    apply (IsPushout (h.app A) g).hom_ext (by aesop)
+    simp only [natTransLeftFunctor, NatTrans.comp_app, pt, natTransLeftFunctor_map, desc', inl,
+      IsPushout.cocone_inl, inr, IsPushout.cocone_inr, IsPushout.inr_desc_assoc, Category.assoc,
+      IsPushout.inr_desc, MonoidalCategory.whiskerLeft_comp]
+    rw [← Category.assoc, ← Category.assoc, ← MonoidalCategory.whiskerLeft_comp,
+      ← MonoidalCategory.whiskerLeft_comp, h'.naturality]
+
+/-- very slow :( -/
+noncomputable
+def descFunctor : (natTransLeftFunctor h g) ⟶ (G ⋙ tensorLeft Y) where
+  app A := desc (h.app A) g
+  naturality A B f := by
+    apply (IsPushout (h.app A) g).hom_ext
+    · simp_all only [Functor.comp_obj, tensorLeft_obj, natTransLeftFunctor, pt, natTransLeftFunctor_map, desc', inl,
+        IsPushout.cocone_inl, inr, IsPushout.cocone_inr, desc, IsPushout.inl_desc_assoc, Category.assoc,
+        IsPushout.inl_desc, Functor.comp_map, tensorLeft_map]
+      ext : 1
+      · ext n a : 2
+        simp_all only [Category.assoc, ChosenFiniteProducts.whiskerLeft_fst]
+      · ext n a : 2
+        simp_all only [Category.assoc, ChosenFiniteProducts.whiskerLeft_snd, ChosenFiniteProducts.whiskerLeft_snd_assoc,
+          NatTrans.naturality]
+    · simp_all only [Functor.comp_obj, tensorLeft_obj, natTransLeftFunctor, pt, natTransLeftFunctor_map, desc', inl,
+        IsPushout.cocone_inl, inr, IsPushout.cocone_inr, desc, IsPushout.inr_desc_assoc, Category.assoc,
+        IsPushout.inr_desc, Functor.comp_map, tensorLeft_map]
+      rfl
+
 end CategoryTheory.pushoutProduct
 
 namespace SSet
@@ -81,7 +150,7 @@ inductive bdryPushout : {X Y : SSet} → (X ⟶ Y) → Prop
 def bdryPushoutClass : MorphismProperty SSet := fun _ _ p ↦ bdryPushout p
 
 variable {X Y A B : SSet} (g : X ⟶ Y) (f : A ⟶ B)
-
+/-
 section Pushout
 
 variable {s : X ⟶ A} {t : Y ⟶ B} (h : CommSq s g f t)
@@ -307,56 +376,73 @@ def pushoutProduct.RetractArrow :
 
 end Retract
 
+-/
+
 section TransfiniteComposition
 
 variable {J : Type u} [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFoundedLT J]
   (F : J ⥤ SSet) [F.IsWellOrderContinuous] (c : Cocone F) (hc : IsColimit c)
 
 noncomputable
-def F' : J ⥤ SSet where
-  obj j := pushoutProduct.pt (c.ι.app j) (hornInclusion 2 1)
-  map {j k} f :=
-    (pushoutProduct.desc' (c.ι.app j) (hornInclusion 2 1))
-      (Δ[2] ◁ (F.map f) ≫ (pushoutProduct.inl (c.ι.app k) (hornInclusion 2 1)))
-      (pushoutProduct.inr (c.ι.app k) (hornInclusion 2 1))
-      (by
-        have := c.ι.naturality f
-        simp only [Functor.const_obj_obj, Functor.const_obj_map, Category.comp_id] at this
-        rw [← this, MonoidalCategory.whiskerLeft_comp, Category.assoc, ← pushoutProduct.w,
-          ← Category.assoc, ← @whisker_exchange, Category.assoc])
-  map_id j := by
-    simp only [Functor.const_obj_obj, Fin.isValue, pushoutProduct.pt, pushoutProduct.inl,
-      IsPushout.cocone_inl, pushoutProduct.inr, IsPushout.cocone_inr, Functor.const_obj_map,
-      eq_mp_eq_cast, cast_eq, id_eq, eq_mpr_eq_cast, pushoutProduct.desc',
-      CategoryTheory.Functor.map_id, MonoidalCategory.whiskerLeft_id, Category.id_comp]
-    exact pushoutProduct.desc_id (c.ι.app j) (hornInclusion 2 1)
-  map_comp f g := sorry
+abbrev F' : J ⥤ SSet := pushoutProduct.natTransLeftFunctor c.ι (hornInclusion 2 1)
+
+instance : (F' F c).IsWellOrderContinuous := sorry
 
 noncomputable
 def c' : Cocone (F' F c) where
   pt := Δ[2] ⊗ c.pt
-  ι := {
-    app := fun j ↦ pushoutProduct.desc (c.ι.app j) (hornInclusion 2 1)
-    naturality := sorry
-  }
+  ι := pushoutProduct.descFunctor c.ι (hornInclusion 2 1)
+
+@[simp]
+def _root_.CategoryTheory.Functor.succ : J ⥤ SSet where
+  obj j := F.obj (Order.succ j)
+  map f := F.map (homOfLE (Order.succ_le_succ f.le))
+  map_comp _ _ := by rw [← F.map_comp]; rfl
+
+@[simp]
+def _root_.CategoryTheory.Functor.succNatTrans : F ⟶ F.succ where
+  app j := F.map (homOfLE (Order.le_succ j))
+  naturality {j j'} f := by
+    simp
+    rw [← F.map_comp, ← F.map_comp]
+    suffices f ≫ homOfLE (Order.le_succ j') =
+      (homOfLE (Order.le_succ j)) ≫ homOfLE (Order.succ_le_succ f.le) by rfl
+    rfl
+
+noncomputable
+abbrev P := pushoutProduct.natTransLeftFunctor (F.succNatTrans) (hornInclusion 2 1)
+
+@[simp]
+def φaux : (F.succ) ⟶ (Functor.const J).obj c.pt where
+  app j := c.ι.app (Order.succ j)
+
+@[simp]
+lemma φaux' : (F.succNatTrans) ≫ (φaux F c) = c.ι := by aesop
 
 noncomputable
 def Pj_jsucc (j : J) :=
   pushoutProduct.pt (F.map (homOfLE (Order.le_succ j))) (hornInclusion 2 1)
 
 noncomputable
-def φ (j : J) : (Pj_jsucc F j) ⟶ (F' F c).obj j := by
+def φj (j : J) : (Pj_jsucc F j) ⟶ (F' F c).obj j := by
   refine pushoutProduct.desc' _ _ ?_ ?_ ?_
   · exact pushoutProduct.inl (c.ι.app j) (hornInclusion 2 1)
   · exact Λ[2, 1] ◁ (c.ι.app (Order.succ j)) ≫ pushoutProduct.inr (c.ι.app j) (hornInclusion 2 1)
   · sorry
 
+-- not defeq but right approach
+/-
+set_option maxHeartbeats 400000 in
+def φ : (P F) ⟶ (F' F c) :=
+  pushoutProduct.natTransLeftFunctor_comp (F.succNatTrans) (hornInclusion 2 1) (φaux F c)
+-/
+
 lemma newSqComm :
   pushoutProduct.desc (F.map (homOfLE (Order.le_succ j))) (hornInclusion 2 1) ≫ pushoutProduct.inl (c.ι.app (Order.succ j)) (hornInclusion 2 1)
-    = (φ F c j) ≫ (F' F c).map (homOfLE (Order.le_succ j)) := by sorry
+    = (φj F c j) ≫ (F' F c).map (homOfLE (Order.le_succ j)) := by sorry
 
 noncomputable
-def newPushoutCocone (j : J) : PushoutCocone (pushoutProduct.desc (F.map (homOfLE (Order.le_succ j))) (hornInclusion 2 1)) (φ F c j) :=
+def newPushoutCocone (j : J) : PushoutCocone (pushoutProduct.desc (F.map (homOfLE (Order.le_succ j))) (hornInclusion 2 1)) (φj F c j) :=
   PushoutCocone.mk _ _ (newSqComm F c)
 
 noncomputable
