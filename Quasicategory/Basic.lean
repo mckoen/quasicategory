@@ -12,7 +12,11 @@ results about them.
 
 show `innerAnodyne = WeaklySaturatedClassOf InnerHornInclusions`
 
+rewrite all of this
+
 -/
+
+universe w
 
 namespace SSet
 
@@ -70,13 +74,13 @@ abbrev innerFibration := InnerHornInclusions.rlp
 lemma innerFibration_of_leftFibration {X Y : SSet} (p : X ⟶ Y) (hp : leftFibration p) :
     innerFibration p := fun _ _ _ h ↦ by
   induction h with
-  | mk h0 hn => exact hp (.mk (le_of_lt h0) hn)
+  | mk h0 hn => exact hp _ (.mk (le_of_lt h0) hn)
 
 -- right fibrations are inner fibrations
 lemma innerFibration_of_rightFibration {X Y : SSet} (p : X ⟶ Y) (hp : rightFibration p) :
     innerFibration p := fun _ _ _ h ↦ by
   induction h with
-  | mk h0 hn => exact hp (.mk h0 (le_of_lt hn))
+  | mk h0 hn => exact hp _ (.mk h0 (le_of_lt hn))
 
 -- `01BB` S is a quasicategory iff S ⟶ Δ[0] is an inner fibration
 lemma quasicategory_iff_proj_innerFibration {S : SSet} :
@@ -90,26 +94,25 @@ lemma quasicategory_iff_proj_innerFibration {S : SSet} :
   · intro n i σ₀ h0 hn
     have := (CommSq.mk (Limits.IsTerminal.hom_ext isTerminal
       (σ₀ ≫ S.proj) (hornInclusion (n + 2) i ≫  Δ[n + 2].proj)))
-    have lift := ((h (.mk h0 hn)).sq_hasLift this).exists_lift.some
+    have lift := ((h _ (.mk h0 hn)).sq_hasLift this).exists_lift.some
     exact ⟨lift.l, lift.fac_left.symm⟩
 
 -- `01BJ` if Y is a quasicategory and X ⟶ Y is an inner fibration, then X is a quasicategory
 instance quasicategory_of_innerFibration {X Y : SSet} (p : X ⟶ Y) (hp : innerFibration p) :
     Quasicategory Y → Quasicategory X := fun h ↦ by
   rw [quasicategory_iff_proj_innerFibration] at h ⊢
-  exact (rlp.IsStableUnderComposition _).comp_mem p Y.proj hp h
+  exact (rlp _).comp_mem p Y.proj hp h
 
 /- a morphism is inner anodyne if it has the left lifting property wrt all inner fibrations. -/
 abbrev innerAnodyne := innerFibration.llp
 
 lemma innerHorn_le_innerAnodyne : InnerHornInclusions ≤ innerAnodyne := fun _ _ _ hp ↦ by
   induction hp with
-  | mk h0 hn => exact fun _ _ _ h ↦ h (.mk h0 hn)
+  | mk h0 hn => exact fun _ _ _ h ↦ h _ (.mk h0 hn)
 
-lemma innerAnodyne_eq :
-    innerAnodyne = WeaklySaturatedClassOf InnerHornInclusions := by
+lemma innerAnodyne_eq : innerAnodyne = WeaklySaturatedClassOf InnerHornInclusions := by
   ext X Y p
-  refine ⟨?_, minimalWeaklySaturated innerAnodyne _ innerHorn_le_innerAnodyne (llp.WeaklySaturated _) p⟩
+  refine ⟨?_, minimalWeaklySaturated.{_, _, w} innerAnodyne _ innerHorn_le_innerAnodyne (llp.WeaklySaturated _) p⟩
   · sorry
 
 /-
@@ -148,7 +151,7 @@ lemma extension_iff_rlp_proj {S : SSet} :
     obtain ⟨l, hl⟩ := h i hi f₀
     exact ⟨l, hl.symm, Limits.IsTerminal.hom_ext isTerminal _ _⟩
   · intro h A B i hi f₀
-    obtain ⟨⟨lift⟩⟩ := (h hi).sq_hasLift
+    obtain ⟨⟨lift⟩⟩ := (h _ hi).sq_hasLift
       (CommSq.mk (Limits.IsTerminal.hom_ext isTerminal (f₀ ≫ proj S) (i ≫ proj B)))
     exact ⟨lift.l, lift.fac_left.symm⟩
 
@@ -158,15 +161,15 @@ lemma extension_iff_rlp_proj {S : SSet} :
 
 -- `007E`
 -- quasicategory iff extension property wrt every inner anodyne morphism
-instance quasicat_iff_extension_wrt_innerAnodyne {S : SSet.{0}} :
+instance quasicat_iff_extension_wrt_innerAnodyne {S : SSet} :
     (∀ {A B} (i : A ⟶ B) (_ : innerAnodyne i) (f₀ : A ⟶ S), ∃ (f : B ⟶ S), f₀ = i ≫ f) ↔
     Quasicategory S := by
   refine ⟨fun h ↦
     ⟨fun n i σ₀ h0 hn ↦ h _ (innerHorn_le_innerAnodyne (hornInclusion (n + 2) i) (.mk h0 hn)) σ₀⟩, ?_⟩
   intro hS
-  rw [extension_iff_rlp_proj, class_rlp_iff_llp_morphism, innerAnodyne_eq]
+  rw [extension_iff_rlp_proj, class_rlp_iff_llp_morphism, innerAnodyne_eq.{w}]
   intro _ _ _
-  refine minimalWeaklySaturated.{0} ((MorphismClass S.proj).llp) InnerHornInclusions ?_ (llp.WeaklySaturated _) _
+  refine minimalWeaklySaturated ((MorphismClass S.proj).llp) InnerHornInclusions ?_ (llp.WeaklySaturated.{_, _, w} _) _
   intro _ _ i hi
   induction hi with | mk h0 hn =>
   intro _ _ f hf

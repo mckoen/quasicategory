@@ -4,7 +4,11 @@ import Quasicategory._007F
 
 The main result, `0066`. Every proof here should be redone.
 
+fix universe issues!
+
 -/
+
+universe w
 
 namespace SSet
 
@@ -13,7 +17,7 @@ open CategoryTheory Simplicial MorphismProperty MonoidalCategory MonoidalClosed
 section _0079
 
 def Δ_pushout (m : ℕ) :=
-  pushoutProduct.IsPushout (boundaryInclusion m) (hornInclusion 2 1)
+  PushoutProduct.IsPushout (boundaryInclusion m) (hornInclusion 2 1)
 
 noncomputable
 def Δ_cocone (m : ℕ) :
@@ -224,22 +228,22 @@ end _0079
 
 -- `0079`
 /- S is a quasicat iff Fun(Δ[2], S) ⟶ Fun(Λ[2, 1], S) is a trivial Kan fib -/
-instance horn_tkf_iff_quasicat (S : SSet.{0}) : Quasicategory S ↔
+instance horn_tkf_iff_quasicat (S : SSet) : Quasicategory S ↔
     trivialKanFibration ((Fun.map (hornInclusion 2 1).op).app S) := by
-  rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_rlp_proj, class_rlp_iff_llp_morphism]
-  have := contains_innerAnodyne_iff_contains_pushout_maps _ (llp.WeaklySaturated (MorphismClass S.proj))
+  rw [← quasicat_iff_extension_wrt_innerAnodyne.{w}, extension_iff_rlp_proj, class_rlp_iff_llp_morphism]
+  have := contains_innerAnodyne_iff_contains_pushout_maps.{w} _ (llp.WeaklySaturated.{_, _, w} (MorphismClass S.proj))
   rw [← this]
   refine ⟨?_, ?_⟩
   · intro h _ _ p hp
     induction hp with | mk m =>
     constructor
     intro α β sq
-    exact sqLift_of_newSqLift _ _ _ ((h m .mk).sq_hasLift (newSquare S m sq))
+    exact sqLift_of_newSqLift _ _ _ ((h m _ .mk).sq_hasLift (newSquare S m sq))
   · intro h m _ _ p hp
     induction hp
     constructor
     intro f g sq
-    exact (newSqLift_of_sqLift S m f g sq) ((h (.mk m)).sq_hasLift (newSq S m f))
+    exact (newSqLift_of_sqLift S m f g sq) ((h _ (.mk m)).sq_hasLift (newSq S m f))
 
 /- changing the square to apply the lifting property of p
    on the monomorphism `(B ◁ boundaryInclusion n)` -/
@@ -253,12 +257,12 @@ lemma induced_tkf_aux (B X Y : SSet) (p : X ⟶ Y)
 -- `0071` (special case of `0070`)
 /- if p : X ⟶ Y is a trivial Kan fib, then Fun(B,X) ⟶ Fun(B,Y) is -/
 noncomputable
-instance induced_tkf (B X Y : SSet.{0}) (p : X ⟶ Y) (hp: trivialKanFibration p) :
+instance induced_tkf (B X Y : SSet) (p : X ⟶ Y) (hp: trivialKanFibration p) :
     trivialKanFibration ((Fun.obj (.op B)).map p) := by
   intro _ _ i hi
   induction hi with | mk n =>
-  rw [trivialKanFibration_eq_rlp_monomorphisms] at hp
-  have := hp (boundaryInclusion_whisker_mono B n)
+  rw [trivialKanFibration_eq_rlp_monomorphisms.{w}] at hp
+  have := hp _ (boundaryInclusion_whisker_mono B n)
   apply induced_tkf_aux
 
 -- uses `0071` and `0079`
@@ -266,14 +270,14 @@ instance induced_tkf (B X Y : SSet.{0}) (p : X ⟶ Y) (hp: trivialKanFibration p
 -- apply `ihom_equiv` and `0079`
 open MonoidalClosed in
 noncomputable
-def fun_quasicat_aux (S D : SSet.{0}) [Quasicategory D] :
+def fun_quasicat_aux (S D : SSet) [Quasicategory D] :
     trivialKanFibration ((Fun.map (hornInclusion 2 1).op).app ((Fun.obj (.op S)).obj D)) := by
   intro _ _ i hi
   induction hi with | mk n =>
   -- since Fun[Δ[n], D] ⟶ Fun[Λ[2,1], D] is a TKF by `0079`,
   -- get Fun(S, Fun(Δ[n], D)) ⟶ Fun(S, Fun(Λ[2,1], D)) is a TKF by `0071`
-  have := (horn_tkf_iff_quasicat D).1 (by infer_instance)
-  have := (induced_tkf S _ _ ((Fun.map (hornInclusion 2 1).op).app D)) this (.mk n)
+  have := (horn_tkf_iff_quasicat.{w} D).1 (by infer_instance)
+  have := (induced_tkf.{w} S _ _ ((Fun.map (hornInclusion 2 1).op).app D)) this _ (.mk n)
   dsimp at this
   have H : Arrow.mk ((ihom S).map ((MonoidalClosed.pre (hornInclusion 2 1)).app D)) ≅
       Arrow.mk ((Fun.map (hornInclusion 2 1).op).app ((Fun.obj (Opposite.op S)).obj D)) :=
@@ -283,8 +287,8 @@ def fun_quasicat_aux (S D : SSet.{0}) [Quasicategory D] :
 -- what can be said for more general filling conditions?
 -- `0066`
 /- if D is a quasicat, then Fun(S, D) is -/
-instance fun_quasicat (S D : SSet.{0}) [Quasicategory D] : Quasicategory ((Fun.obj (.op S)).obj D) :=
+instance fun_quasicat (S D : SSet) [Quasicategory D] : Quasicategory ((Fun.obj (.op S)).obj D) :=
   -- instance inferred by `fun_quasicat_aux`
-  (horn_tkf_iff_quasicat ((Fun.obj (.op S)).obj D)).2 (fun_quasicat_aux S D)
+  (horn_tkf_iff_quasicat.{w} ((Fun.obj (.op S)).obj D)).2 (fun_quasicat_aux.{w} S D)
 
 end SSet
