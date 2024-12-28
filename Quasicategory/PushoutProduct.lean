@@ -17,7 +17,7 @@ universe v' v u' u
 
 open CategoryTheory MonoidalCategory
 
-namespace CategoryTheory.pushoutProduct
+namespace CategoryTheory.PushoutProduct
 
 variable {A B X Y : SSet} (f : A ⟶ B) (g : X ⟶ Y)
 
@@ -28,15 +28,18 @@ def IsPushout := IsPushout.of_hasPushout (g ▷ A) (X ◁ f)
 noncomputable
 def pt : SSet := (IsPushout f g).cocone.pt
 
-/-- The pushout-product of `f` and `g`. name should be changed -/
+/-- The pushout-product of `f` and `g`. -/
 @[simp]
 noncomputable
-def desc : pt f g ⟶ Y ⊗ B :=
+def pushoutProduct : pt f g ⟶ Y ⊗ B :=
   (IsPushout f g).desc (Y ◁ f) (g ▷ B) rfl
+
+/-- Notation for the pushout-product. -/
+scoped infixr:80 " ◫ " => PushoutProduct.pushoutProduct
 
 @[simp]
 noncomputable
-def desc' {W : SSet} (h : Y ⊗ A ⟶ W) (k : X ⊗ B ⟶ W) (w : g ▷ A ≫ h = X ◁ f ≫ k) :
+def desc {W : SSet} (h : Y ⊗ A ⟶ W) (k : X ⊗ B ⟶ W) (w : g ▷ A ≫ h = X ◁ f ≫ k) :
     pt f g ⟶ W := (IsPushout f g).desc h k w
 
 @[simp]
@@ -49,17 +52,17 @@ def inr : (X ⊗ B) ⟶ pt f g := (IsPushout f g).cocone.inr
 
 @[simp]
 lemma inl_desc {W : SSet} (h : Y ⊗ A ⟶ W) (k : X ⊗ B ⟶ W) (w : g ▷ A ≫ h = X ◁ f ≫ k) :
-    (inl f g) ≫ (desc' f g) h k w = h := (IsPushout f g).inl_desc _ _ _
+    (inl f g) ≫ (desc f g) h k w = h := (IsPushout f g).inl_desc _ _ _
 
 @[simp]
 lemma inr_desc {W : SSet} (h : Y ⊗ A ⟶ W) (k : X ⊗ B ⟶ W) (w : g ▷ A ≫ h = X ◁ f ≫ k) :
-    (inr f g) ≫ (desc' f g) h k w = k := (IsPushout f g).inr_desc _ _ _
+    (inr f g) ≫ (desc f g) h k w = k := (IsPushout f g).inr_desc _ _ _
 
 @[simp]
 lemma w : g ▷ A ≫ inl f g = X ◁ f ≫ inr f g  := (IsPushout f g).toCommSq.w
 
 @[simp]
-lemma desc_id : (desc' f g) (inl f g) (inr f g) (w f g) = 𝟙 (pt f g) :=
+lemma desc_id : (desc f g) (inl f g) (inr f g) (w f g) = 𝟙 (pt f g) :=
   (IsPushout f g).hom_ext (by aesop) (by aesop)
 
 
@@ -70,10 +73,10 @@ variable {X Y : SSet} (g : X ⟶ Y)
 @[simp]
 noncomputable
 def natTransLeftFunctor_map {A B : C} (f : A ⟶ B) : pt (h.app A) g ⟶ pt (h.app B) g := by
-  refine (desc' (h.app A) g)
+  refine (desc (h.app A) g)
     (Y ◁ (F.map f) ≫ inl (h.app B) g) (X ◁ (G.map f) ≫ inr (h.app B) g) ?_
   rw [← Category.assoc (X ◁ _), ← MonoidalCategory.whiskerLeft_comp, ← h.naturality f,
-    MonoidalCategory.whiskerLeft_comp, Category.assoc, ← pushoutProduct.w]
+    MonoidalCategory.whiskerLeft_comp, Category.assoc, ← PushoutProduct.w]
   rfl
 
 @[simp]
@@ -103,7 +106,7 @@ def natTransLeftFunctor_comp {G' : C ⥤ SSet} (h' : G ⟶ G') :
     · rw [w]; aesop
   naturality {A _} f := by
     apply (IsPushout (h.app A) g).hom_ext (by aesop)
-    simp only [natTransLeftFunctor, NatTrans.comp_app, pt, natTransLeftFunctor_map, desc', inl,
+    simp only [natTransLeftFunctor, NatTrans.comp_app, pt, natTransLeftFunctor_map, desc, inl,
       IsPushout.cocone_inl, inr, IsPushout.cocone_inr, IsPushout.inr_desc_assoc, Category.assoc,
       IsPushout.inr_desc, MonoidalCategory.whiskerLeft_comp]
     rw [← Category.assoc, ← Category.assoc, ← MonoidalCategory.whiskerLeft_comp,
@@ -112,11 +115,11 @@ def natTransLeftFunctor_comp {G' : C ⥤ SSet} (h' : G ⟶ G') :
 /-- very slow :( -/
 noncomputable
 def descFunctor : (natTransLeftFunctor h g) ⟶ (G ⋙ tensorLeft Y) where
-  app A := desc (h.app A) g
+  app A := (h.app A) ◫ g
   naturality A B f := by
     apply (IsPushout (h.app A) g).hom_ext
-    · simp_all only [Functor.comp_obj, tensorLeft_obj, natTransLeftFunctor, pt, natTransLeftFunctor_map, desc', inl,
-        IsPushout.cocone_inl, inr, IsPushout.cocone_inr, desc, IsPushout.inl_desc_assoc, Category.assoc,
+    · simp_all only [Functor.comp_obj, tensorLeft_obj, natTransLeftFunctor, pt, natTransLeftFunctor_map, desc, inl,
+        IsPushout.cocone_inl, inr, IsPushout.cocone_inr, pushoutProduct, IsPushout.inl_desc_assoc, Category.assoc,
         IsPushout.inl_desc, Functor.comp_map, tensorLeft_map]
       ext : 1
       · ext n a : 2
@@ -124,27 +127,27 @@ def descFunctor : (natTransLeftFunctor h g) ⟶ (G ⋙ tensorLeft Y) where
       · ext n a : 2
         simp_all only [Category.assoc, ChosenFiniteProducts.whiskerLeft_snd, ChosenFiniteProducts.whiskerLeft_snd_assoc,
           NatTrans.naturality]
-    · simp_all only [Functor.comp_obj, tensorLeft_obj, natTransLeftFunctor, pt, natTransLeftFunctor_map, desc', inl,
-        IsPushout.cocone_inl, inr, IsPushout.cocone_inr, desc, IsPushout.inr_desc_assoc, Category.assoc,
+    · simp_all only [Functor.comp_obj, tensorLeft_obj, natTransLeftFunctor, pt, natTransLeftFunctor_map, desc, inl,
+        IsPushout.cocone_inl, inr, IsPushout.cocone_inr, pushoutProduct, IsPushout.inr_desc_assoc, Category.assoc,
         IsPushout.inr_desc, Functor.comp_map, tensorLeft_map]
       rfl
 
-end CategoryTheory.pushoutProduct
+end CategoryTheory.PushoutProduct
 
 namespace SSet
 
-open Limits Simplicial
+open Limits Simplicial PushoutProduct
 
 /-- pushout in proof `0079` (for retract diagram) -/
 def Λ_pushout (m : ℕ) (i : Fin (m + 1)) :=
-  pushoutProduct.IsPushout (hornInclusion m i) (hornInclusion 2 1)
+  PushoutProduct.IsPushout (hornInclusion m i) (hornInclusion 2 1)
 
 noncomputable
 def Λ_pushoutProduct (m : ℕ) (i : Fin (m + 1)) : (Λ_pushout m i).cocone.pt ⟶ Δ[2] ⊗ Δ[m] :=
-  pushoutProduct.desc (hornInclusion m i) (hornInclusion 2 1)
+  (hornInclusion m i) ◫ (hornInclusion 2 1)
 
 inductive bdryPushout : {X Y : SSet} → (X ⟶ Y) → Prop
-  | mk ⦃m : ℕ⦄ : bdryPushout (pushoutProduct.desc (boundaryInclusion m) (hornInclusion 2 1))
+  | mk ⦃m : ℕ⦄ : bdryPushout ((boundaryInclusion m) ◫ (hornInclusion 2 1))
 
 /-- the class of pushout products of `∂Δ[n] ↪ Δ[n]` with `Λ[n, i] ↪ Δ[n]`. -/
 def bdryPushoutClass : MorphismProperty SSet := fun _ _ p ↦ bdryPushout p
@@ -158,37 +161,36 @@ variable {s : X ⟶ A} {t : Y ⟶ B} (h : CommSq s g f t)
 /-- given a `CommSq s g f t`, we get a map between pushout products
   of `f` with `hornInclusion 2 1` and `g` with `hornInclusion 2 1`. -/
 noncomputable
-def pushoutDescOfCommSq : (pushoutProduct.pt g (hornInclusion 2 1)) ⟶
-    (pushoutProduct.pt f (hornInclusion 2 1)) :=
-  IsPushout.desc (pushoutProduct.IsPushout g (hornInclusion 2 1))
-    ((Δ[2] ◁ s) ≫ (pushoutProduct.IsPushout f (hornInclusion 2 1)).cocone.inl)
-    ((Λ[2, 1] ◁ t) ≫ (pushoutProduct.IsPushout f (hornInclusion 2 1)).cocone.inr)
+def pushoutDescOfCommSq : (pt g (hornInclusion 2 1)) ⟶ (pt f (hornInclusion 2 1)) :=
+  IsPushout.desc (PushoutProduct.IsPushout g (hornInclusion 2 1))
+    ((Δ[2] ◁ s) ≫ (PushoutProduct.inl f (hornInclusion 2 1)))
+    ((Λ[2, 1] ◁ t) ≫ (PushoutProduct.inr f (hornInclusion 2 1)))
     (by
      change Λ[2, 1] ◁ s ≫ hornInclusion 2 1 ▷ A ≫ pushout.inl (hornInclusion 2 1 ▷ A) (Λ[2, 1] ◁ f) = (Λ[2, 1] ◁ (g ≫ t)) ≫ _
-     rw [Λ[2, 1] ◁ s ≫= (pushoutProduct.IsPushout f (hornInclusion 2 1)).toCommSq.w, ← h.w]
+     rw [Λ[2, 1] ◁ s ≫= (PushoutProduct.IsPushout f (hornInclusion 2 1)).toCommSq.w, ← h.w]
      rfl )
 
 /-- using the above map between pushout products, we get a new `CommSq`. -/
-lemma pushoutCommSq_w : (pushoutDescOfCommSq g f h) ≫ pushoutProduct.desc f (hornInclusion 2 1) =
-    pushoutProduct.desc g (hornInclusion 2 1) ≫ (Δ[2] ◁ t) := by
+lemma pushoutCommSq_w : (pushoutDescOfCommSq g f h) ≫ f ◫ (hornInclusion 2 1) =
+    (g ◫ (hornInclusion 2 1)) ≫ (Δ[2] ◁ t) := by
   apply Limits.pushout.hom_ext
-  · simp [pushoutProduct.desc, pushoutDescOfCommSq, IsPushout.inl_desc]
+  · simp [pushoutDescOfCommSq, IsPushout.inl_desc]
     rw [← MonoidalCategory.whiskerLeft_comp, h.w, MonoidalCategory.whiskerLeft_comp]
-  · simp [pushoutProduct.desc, pushoutDescOfCommSq, IsPushout.inr_desc]
+  · simp [pushoutDescOfCommSq, IsPushout.inr_desc]
     rw [@whisker_exchange]
 
 /-- the `PushoutCocone` determined by the above `CommSq`. -/
 noncomputable
-def pushoutCommSq_cocone : PushoutCocone (pushoutDescOfCommSq g f h) (pushoutProduct.desc g (hornInclusion 2 1)) :=
+def pushoutCommSq_cocone : PushoutCocone (pushoutDescOfCommSq g f h) (g ◫ (hornInclusion 2 1)) :=
     .mk _ _ (pushoutCommSq_w g f h)
 
 /-- such a `PushoutCocone` gives us a `PushoutCocone` of `Δ[2] ◁ s` and `Δ[2] ◁ g`. -/
 noncomputable
-def changePushoutCocone (C : PushoutCocone (pushoutDescOfCommSq g f h) (pushoutProduct.desc g (hornInclusion 2 1))) :
+def changePushoutCocone (C : PushoutCocone (pushoutDescOfCommSq g f h) (g ◫ (hornInclusion 2 1))) :
     PushoutCocone (Δ[2] ◁ s) (Δ[2] ◁ g) := by
   refine PushoutCocone.mk ((pushout.inl (hornInclusion 2 1 ▷ A) (Λ[2, 1] ◁ f)) ≫ C.inl) C.inr ?_
   have a := C.condition
-  dsimp only [pushoutDescOfCommSq, pushoutProduct.desc] at a
+  dsimp only [pushoutDescOfCommSq, pushoutProduct] at a
   rw [← (IsPushout.inl_desc _ (Δ[2] ◁ g)), Category.assoc, ← a, ← Category.assoc, ← Category.assoc, IsPushout.inl_desc]
   rfl
 
@@ -213,12 +215,12 @@ def whiskerPushout {g f} (h' : IsPushout s g f t) (S : SSet) : IsPushout (S ◁ 
   (whiskerPushoutAux s g S).of_iso (Iso.refl _) (Iso.refl _) (Iso.refl _)
     ((whiskerLeftIso S h'.isoPushout).symm) rfl rfl (by aesop) (by aesop)
 
-variable (C : PushoutCocone (pushoutDescOfCommSq g f h'.toCommSq) (pushoutProduct.desc g (hornInclusion 2 1)))
+variable (C : PushoutCocone (pushoutDescOfCommSq g f h'.toCommSq) (g ◫ (hornInclusion 2 1)))
 
 lemma temp : Δ[2] ◁ s ≫ pushout.inl (hornInclusion 2 1 ▷ A) (Λ[2, 1] ◁ f) ≫ C.inl =
     Δ[2] ◁ g ≫ C.inr := by
   have a := C.condition
-  dsimp only [pushoutDescOfCommSq, pushoutProduct.desc] at a
+  dsimp only [pushoutDescOfCommSq, pushoutProduct] at a
   rw [← (IsPushout.inl_desc _ (Δ[2] ◁ g)), Category.assoc, ← a, ← Category.assoc, ← Category.assoc, IsPushout.inl_desc]
   rfl
 
@@ -230,50 +232,50 @@ def pushoutCommSq_IsColimit'_desc : Δ[2] ⊗ B ⟶ C.pt :=
 
 -- needs to be cleaned up
 lemma pushoutCommSq_IsColimit'_fac_left :
-    pushoutProduct.desc f (hornInclusion 2 1) ≫ pushoutCommSq_IsColimit'_desc h' C = C.inl := by
-  apply (pushoutProduct.IsPushout f (hornInclusion 2 1)).hom_ext
-  · simp only [Fin.isValue, pushoutProduct.pt, pushoutProduct.desc, PushoutCocone.ι_app_left,
+    (f ◫ (hornInclusion 2 1)) ≫ pushoutCommSq_IsColimit'_desc h' C = C.inl := by
+  apply (PushoutProduct.IsPushout f (hornInclusion 2 1)).hom_ext
+  · simp only [Fin.isValue, PushoutProduct.pt, pushoutProduct, PushoutCocone.ι_app_left,
       PushoutCocone.ι_app_right, IsPushout.inl_desc_assoc, IsPushout.inl_desc, pushoutCommSq_IsColimit'_desc]
   · apply (whiskerPushout h' _).hom_ext
-    · change (Λ[2, 1] ◁ f ≫ pushoutProduct.inr f (hornInclusion 2 1)) ≫
-        pushoutProduct.desc f (hornInclusion 2 1) ≫ pushoutCommSq_IsColimit'_desc h' C =
-        Λ[2, 1] ◁ f ≫ pushoutProduct.inr f (hornInclusion 2 1) ≫ C.inl
-      rw [← Category.assoc, ← pushoutProduct.w, Category.assoc, Category.assoc,
-        ← Category.assoc (pushoutProduct.inl f (hornInclusion 2 1))]
-      dsimp only [pushoutProduct.inl, pushoutProduct.desc, pushoutCommSq_IsColimit'_desc]
+    · change (Λ[2, 1] ◁ f ≫ PushoutProduct.inr f (hornInclusion 2 1)) ≫
+        (f ◫ (hornInclusion 2 1)) ≫ pushoutCommSq_IsColimit'_desc h' C =
+        Λ[2, 1] ◁ f ≫ PushoutProduct.inr f (hornInclusion 2 1) ≫ C.inl
+      rw [← Category.assoc, ← PushoutProduct.w, Category.assoc, Category.assoc,
+        ← Category.assoc (PushoutProduct.inl f (hornInclusion 2 1))]
+      dsimp only [PushoutProduct.inl, pushoutProduct, pushoutCommSq_IsColimit'_desc]
       rw [IsPushout.inl_desc]
-      simp only [Fin.isValue, pushoutProduct.pt, PushoutCocone.ι_app_left, pushoutProduct.desc,
-        PushoutCocone.ι_app_right, IsPushout.inl_desc, pushoutProduct.inr, IsPushout.cocone_inr]
+      simp only [Fin.isValue, PushoutProduct.pt, PushoutCocone.ι_app_left, pushoutProduct,
+        PushoutCocone.ι_app_right, IsPushout.inl_desc, PushoutProduct.inr, IsPushout.cocone_inr]
       exact pushout.condition_assoc C.inl
-    · change (Λ[2, 1] ◁ t ≫ pushoutProduct.inr f (hornInclusion 2 1)) ≫
-        pushoutProduct.desc f (hornInclusion 2 1) ≫ pushoutCommSq_IsColimit'_desc h' C =
-        Λ[2, 1] ◁ t ≫ pushoutProduct.inr f (hornInclusion 2 1) ≫ C.inl
-      rw [Category.assoc, ← Category.assoc (pushoutProduct.inr f (hornInclusion 2 1))]
-      dsimp only [pushoutProduct.inl, pushoutProduct.desc, pushoutCommSq_IsColimit'_desc]
+    · change (Λ[2, 1] ◁ t ≫ PushoutProduct.inr f (hornInclusion 2 1)) ≫
+        (f ◫ (hornInclusion 2 1)) ≫ pushoutCommSq_IsColimit'_desc h' C =
+        Λ[2, 1] ◁ t ≫ PushoutProduct.inr f (hornInclusion 2 1) ≫ C.inl
+      rw [Category.assoc, ← Category.assoc (PushoutProduct.inr f (hornInclusion 2 1))]
+      dsimp only [PushoutProduct.inl, pushoutProduct, pushoutCommSq_IsColimit'_desc]
       rw [IsPushout.inr_desc, ← Category.assoc, @whisker_exchange, Category.assoc,
         IsPushout.inr_desc, ← Category.assoc]
-      have := pushoutProduct.inr g (hornInclusion 2 1) ≫= C.condition
-      dsimp only [pushoutProduct.inr, pushoutDescOfCommSq] at this ⊢
+      have := PushoutProduct.inr g (hornInclusion 2 1) ≫= C.condition
+      dsimp only [PushoutProduct.inr, pushoutDescOfCommSq] at this ⊢
       rw [← Category.assoc, IsPushout.inr_desc] at this
       rw [this]
       aesop
 
 lemma pushoutCommSq_IsColimit'_fac_right : Δ[2] ◁ t ≫ pushoutCommSq_IsColimit'_desc h' C = C.inr := by
-  simp only [Fin.isValue, pushoutProduct.pt, pushoutProduct.desc, pushoutCommSq_IsColimit'_desc,
+  simp only [Fin.isValue, PushoutProduct.pt, pushoutProduct, pushoutCommSq_IsColimit'_desc,
     PushoutCocone.ι_app_left, PushoutCocone.ι_app_right, IsPushout.inr_desc]
 
 lemma pushoutCommSq_IsColimit'_uniq (m : Δ[2] ⊗ B ⟶ C.pt)
-    (fac_left : pushoutProduct.desc f (hornInclusion 2 1) ≫ m = C.inl)
+    (fac_left : (f ◫ (hornInclusion 2 1)) ≫ m = C.inl)
     (fac_right : Δ[2] ◁ t ≫ m = C.inr) : m = pushoutCommSq_IsColimit'_desc h' C := by
   apply (whiskerPushout h' _).hom_ext
-  · have := pushoutProduct.inl f (hornInclusion 2 1) ≫= fac_left
-    simp only [Fin.isValue, pushoutProduct.pt, pushoutProduct.desc, pushoutProduct.inl,
+  · have := PushoutProduct.inl f (hornInclusion 2 1) ≫= fac_left
+    simp only [Fin.isValue, PushoutProduct.pt, pushoutProduct, PushoutProduct.inl,
       IsPushout.cocone_inl, IsPushout.inl_desc_assoc, PushoutCocone.ι_app_left] at this
     dsimp only [pushoutCommSq_IsColimit'_desc]
     rw [this]
-    simp only [Fin.isValue, pushoutProduct.pt, pushoutProduct.desc, PushoutCocone.ι_app_left,
+    simp only [Fin.isValue, PushoutProduct.pt, pushoutProduct, PushoutCocone.ι_app_left,
       PushoutCocone.ι_app_right, IsPushout.inl_desc]
-  · simpa only [Fin.isValue, pushoutProduct.pt, pushoutProduct.desc, pushoutCommSq_IsColimit'_desc,
+  · simpa only [Fin.isValue, PushoutProduct.pt, pushoutProduct, pushoutCommSq_IsColimit'_desc,
       PushoutCocone.ι_app_left, PushoutCocone.ι_app_right, IsPushout.inr_desc]
 
 /-- the above is a colimit. -/
@@ -287,8 +289,8 @@ def pushoutCommSq_IsColimit' :
     (pushoutCommSq_IsColimit'_uniq h')
 
 def pushoutCommSq_IsPushout :
-    IsPushout (pushoutDescOfCommSq g f h'.toCommSq) (pushoutProduct.desc g (hornInclusion 2 1))
-      (pushoutProduct.desc f (hornInclusion 2 1)) ((Δ[2] ◁ t)) where
+    IsPushout (pushoutDescOfCommSq g f h'.toCommSq) (g ◫ (hornInclusion 2 1))
+      (f ◫ (hornInclusion 2 1)) ((Δ[2] ◁ t)) where
   w := pushoutCommSq_w g f h'.toCommSq
   isColimit' := ⟨pushoutCommSq_IsColimit' h'⟩
 
@@ -300,31 +302,31 @@ variable {f g} (h : RetractArrow f g)
 
 noncomputable
 def pushoutProduct.i.left :
-    pushoutProduct.pt f (hornInclusion 2 1) ⟶ pushoutProduct.pt g (hornInclusion 2 1) :=
-  (pushoutProduct.IsPushout f (hornInclusion 2 1)).desc
-    (Δ[2] ◁ h.i.left ≫ (pushoutProduct.IsPushout g (hornInclusion 2 1)).cocone.inl)
-    (Λ[2, 1] ◁ h.i.right ≫ (pushoutProduct.IsPushout g (hornInclusion 2 1)).cocone.inr)
+    pt f (hornInclusion 2 1) ⟶ pt g (hornInclusion 2 1) :=
+  (PushoutProduct.desc f (hornInclusion 2 1))
+    (Δ[2] ◁ h.i.left ≫ (PushoutProduct.inl g (hornInclusion 2 1)))
+    (Λ[2, 1] ◁ h.i.right ≫ (PushoutProduct.inr g (hornInclusion 2 1)))
     (by
       dsimp
       rw [← Category.assoc, ← Category.assoc, ← MonoidalCategory.whiskerLeft_comp, ← h.i_w,
         MonoidalCategory.whiskerLeft_comp, ← whisker_exchange, Category.assoc, Category.assoc,
-        ← (pushoutProduct.IsPushout g (hornInclusion 2 1)).w])
+        ← (PushoutProduct.IsPushout g (hornInclusion 2 1)).w])
 
 noncomputable
 def pushoutProduct.r.left :
-    pushoutProduct.pt g (hornInclusion 2 1) ⟶ pushoutProduct.pt f (hornInclusion 2 1) :=
-  (pushoutProduct.IsPushout g (hornInclusion 2 1)).desc
-    (Δ[2] ◁ h.r.left ≫ (pushoutProduct.IsPushout f (hornInclusion 2 1)).cocone.inl)
-    (Λ[2, 1] ◁ h.r.right ≫ (pushoutProduct.IsPushout f (hornInclusion 2 1)).cocone.inr)
+    pt g (hornInclusion 2 1) ⟶ pt f (hornInclusion 2 1) :=
+  (PushoutProduct.desc g (hornInclusion 2 1))
+    (Δ[2] ◁ h.r.left ≫ (PushoutProduct.inl f (hornInclusion 2 1)))
+    (Λ[2, 1] ◁ h.r.right ≫ (PushoutProduct.inr f (hornInclusion 2 1)))
     (by
       dsimp
       rw [← Category.assoc, ← Category.assoc, ← MonoidalCategory.whiskerLeft_comp, ← h.r_w,
         MonoidalCategory.whiskerLeft_comp, ← whisker_exchange, Category.assoc, Category.assoc,
-        ← (pushoutProduct.IsPushout f (hornInclusion 2 1)).w])
+        ← (PushoutProduct.IsPushout f (hornInclusion 2 1)).w])
 
 lemma pushoutProduct.retract_left : pushoutProduct.i.left h ≫ pushoutProduct.r.left h = 𝟙 _ := by
   dsimp [i.left, r.left]
-  refine (pushoutProduct.IsPushout f (hornInclusion 2 1)).hom_ext ?_ ?_
+  refine (PushoutProduct.IsPushout f (hornInclusion 2 1)).hom_ext ?_ ?_
   · simp only [Fin.isValue, IsPushout.inl_desc_assoc, Category.assoc, IsPushout.inl_desc]
     rw [← Category.assoc, ← MonoidalCategory.whiskerLeft_comp, h.retract_left]
     rfl
@@ -332,33 +334,33 @@ lemma pushoutProduct.retract_left : pushoutProduct.i.left h ≫ pushoutProduct.r
     rw [← Category.assoc, ← MonoidalCategory.whiskerLeft_comp, h.retract_right]
     rfl
 
-lemma pushoutProduct.i_w : pushoutProduct.i.left h ≫ pushoutProduct.desc g (hornInclusion 2 1) =
-    pushoutProduct.desc f (hornInclusion 2 1) ≫ Δ[2] ◁ h.i.right := by
+lemma pushoutProduct.i_w : pushoutProduct.i.left h ≫ g ◫ (hornInclusion 2 1) =
+    (f ◫ (hornInclusion 2 1)) ≫ Δ[2] ◁ h.i.right := by
   dsimp [i.left]
-  apply (pushoutProduct.IsPushout f (hornInclusion 2 1)).hom_ext
-  · dsimp [pushoutProduct.desc]
+  apply (PushoutProduct.IsPushout f (hornInclusion 2 1)).hom_ext
+  · dsimp [pushoutProduct]
     rw [IsPushout.inl_desc_assoc, Category.assoc, IsPushout.inl_desc, ← Category.assoc,
       IsPushout.inl_desc, ← MonoidalCategory.whiskerLeft_comp, h.i_w]
     rfl
-  · dsimp [pushoutProduct.desc]
+  · dsimp [pushoutProduct]
     rw [IsPushout.inr_desc_assoc, Category.assoc, IsPushout.inr_desc, ← Category.assoc,
       IsPushout.inr_desc, whisker_exchange]
 
-lemma pushoutProduct.r_w : pushoutProduct.r.left h ≫ pushoutProduct.desc f (hornInclusion 2 1) =
-    pushoutProduct.desc g (hornInclusion 2 1) ≫ Δ[2] ◁ h.r.right := by
+lemma pushoutProduct.r_w : pushoutProduct.r.left h ≫ f ◫ (hornInclusion 2 1) =
+    (g ◫ (hornInclusion 2 1)) ≫ Δ[2] ◁ h.r.right := by
   dsimp [r.left]
-  apply (pushoutProduct.IsPushout g (hornInclusion 2 1)).hom_ext
-  · dsimp [pushoutProduct.desc]
+  apply (PushoutProduct.IsPushout g (hornInclusion 2 1)).hom_ext
+  · dsimp [pushoutProduct]
     rw [IsPushout.inl_desc_assoc, Category.assoc, IsPushout.inl_desc, ← Category.assoc,
       IsPushout.inl_desc, ← MonoidalCategory.whiskerLeft_comp, h.r_w]
     rfl
-  · dsimp [pushoutProduct.desc]
+  · dsimp [pushoutProduct]
     rw [IsPushout.inr_desc_assoc, Category.assoc, IsPushout.inr_desc, ← Category.assoc,
       IsPushout.inr_desc, whisker_exchange]
 
 noncomputable
 def pushoutProduct.RetractArrow :
-    RetractArrow (pushoutProduct.desc f (hornInclusion 2 1)) (pushoutProduct.desc g (hornInclusion 2 1)) where
+    RetractArrow (f ◫ (hornInclusion 2 1)) (g ◫ (hornInclusion 2 1)) where
   i := {
     left := pushoutProduct.i.left h
     right :=  Δ[2] ◁ h.i.right
@@ -384,14 +386,14 @@ variable {J : Type u} [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFoundedLT 
   (F : J ⥤ SSet) [F.IsWellOrderContinuous] (c : Cocone F) (hc : IsColimit c)
 
 noncomputable
-abbrev F' : J ⥤ SSet := pushoutProduct.natTransLeftFunctor c.ι (hornInclusion 2 1)
+abbrev F' : J ⥤ SSet := PushoutProduct.natTransLeftFunctor c.ι (hornInclusion 2 1)
 
 instance : (F' F c).IsWellOrderContinuous := sorry
 
 noncomputable
 def c' : Cocone (F' F c) where
   pt := Δ[2] ⊗ c.pt
-  ι := pushoutProduct.descFunctor c.ι (hornInclusion 2 1)
+  ι := PushoutProduct.descFunctor c.ι (hornInclusion 2 1)
 
 @[simp]
 def _root_.CategoryTheory.Functor.succ : J ⥤ SSet where
@@ -410,39 +412,43 @@ def _root_.CategoryTheory.Functor.succNatTrans : F ⟶ F.succ where
     rfl
 
 noncomputable
-abbrev P := pushoutProduct.natTransLeftFunctor (F.succNatTrans) (hornInclusion 2 1)
+abbrev P := PushoutProduct.natTransLeftFunctor (F.succNatTrans) (hornInclusion 2 1)
 
 @[simp]
 def φaux : (F.succ) ⟶ (Functor.const J).obj c.pt where
   app j := c.ι.app (Order.succ j)
 
+omit [OrderBot J] [WellFoundedLT J] [F.IsWellOrderContinuous] in
 @[simp]
-lemma φaux' : (F.succNatTrans) ≫ (φaux F c) = c.ι := by aesop
+lemma φaux' : (F.succNatTrans) ≫ (φaux F c) = c.ι := by
+  simp_all only [Functor.succ, homOfLE_leOfHom, Functor.succNatTrans, φaux]
+  ext x n a : 4
+  simp_all only [Functor.const_obj_obj, homOfLE_leOfHom, NatTrans.comp_app, NatTrans.naturality, Functor.const_obj_map,
+    Category.comp_id]
 
 noncomputable
 def Pj_jsucc (j : J) :=
-  pushoutProduct.pt (F.map (homOfLE (Order.le_succ j))) (hornInclusion 2 1)
+  PushoutProduct.pt (F.map (homOfLE (Order.le_succ j))) (hornInclusion 2 1)
 
 noncomputable
 def φj (j : J) : (Pj_jsucc F j) ⟶ (F' F c).obj j := by
-  refine pushoutProduct.desc' _ _ ?_ ?_ ?_
-  · exact pushoutProduct.inl (c.ι.app j) (hornInclusion 2 1)
-  · exact Λ[2, 1] ◁ (c.ι.app (Order.succ j)) ≫ pushoutProduct.inr (c.ι.app j) (hornInclusion 2 1)
+  refine PushoutProduct.desc _ _ ?_ ?_ ?_
+  · exact PushoutProduct.inl (c.ι.app j) (hornInclusion 2 1)
+  · exact Λ[2, 1] ◁ (c.ι.app (Order.succ j)) ≫ PushoutProduct.inr (c.ι.app j) (hornInclusion 2 1)
   · sorry
 
--- not defeq but right approach
-/-
+-- not defeq but right approach, (P F) ⟶ (F' F c)
 set_option maxHeartbeats 400000 in
-def φ : (P F) ⟶ (F' F c) :=
-  pushoutProduct.natTransLeftFunctor_comp (F.succNatTrans) (hornInclusion 2 1) (φaux F c)
--/
+noncomputable
+def φ : P F ⟶ natTransLeftFunctor (F.succNatTrans ≫ φaux F c) (hornInclusion 2 1) :=
+  PushoutProduct.natTransLeftFunctor_comp (F.succNatTrans) (hornInclusion 2 1) (φaux F c)
 
 lemma newSqComm :
-  pushoutProduct.desc (F.map (homOfLE (Order.le_succ j))) (hornInclusion 2 1) ≫ pushoutProduct.inl (c.ι.app (Order.succ j)) (hornInclusion 2 1)
+  ((F.map (homOfLE (Order.le_succ j))) ◫ (hornInclusion 2 1)) ≫ PushoutProduct.inl (c.ι.app (Order.succ j)) (hornInclusion 2 1)
     = (φj F c j) ≫ (F' F c).map (homOfLE (Order.le_succ j)) := by sorry
 
 noncomputable
-def newPushoutCocone (j : J) : PushoutCocone (pushoutProduct.desc (F.map (homOfLE (Order.le_succ j))) (hornInclusion 2 1)) (φj F c j) :=
+def newPushoutCocone (j : J) : PushoutCocone ((F.map (homOfLE (Order.le_succ j))) ◫ (hornInclusion 2 1)) (φj F c j) :=
   PushoutCocone.mk _ _ (newSqComm F c)
 
 noncomputable
