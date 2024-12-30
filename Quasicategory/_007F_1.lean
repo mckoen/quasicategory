@@ -40,7 +40,10 @@ instance S.WeaklySaturated : WeaklySaturated.{_, _, w} S.{w} where
     comp_mem := by
       intro X Y Z f g hf hg
       dsimp only [S] at hf hg ⊢
-      sorry
+      rw [← pushoutProductCompEq f g (hornInclusion 2 1)]
+      refine (of_is.{w, _, _} _).IsStableUnderTransfiniteComposition.comp_mem (compDesc f g (hornInclusion 2 1)) (g ◫ hornInclusion 2 1)
+        (WeaklySaturatedOf.pushout (compPushout f g (hornInclusion 2 1)) hf)
+        hg
     isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := {
       le X Y f hf := by
         letI := ((bdryPushoutClass).of_is.IsStableUnderTransfiniteComposition.isStableUnderTransfiniteCompositionOfShape J)

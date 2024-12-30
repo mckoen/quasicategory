@@ -8,7 +8,7 @@ open CategoryTheory MonoidalCategory Simplicial SSet Limits
 
 namespace CategoryTheory.PushoutProduct
 
-variable {X Y A B : SSet} (g : X ⟶ Y) (f : A ⟶ B)
+variable {X Y A B : SSet} (f : A ⟶ B) (g : X ⟶ Y)
 
 variable {J : Type w} [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFoundedLT J]
   (F : J ⥤ SSet) [F.IsWellOrderContinuous] (c : Cocone F) (hc : IsColimit c)
