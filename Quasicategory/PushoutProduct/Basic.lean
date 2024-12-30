@@ -62,6 +62,14 @@ lemma w : g ▷ A ≫ inl f g = X ◁ f ≫ inr f g  := (IsPushout f g).toCommSq
 lemma desc_id : (desc f g) (inl f g) (inr f g) (w f g) = 𝟙 (pt f g) :=
   (IsPushout f g).hom_ext (by aesop) (by aesop)
 
+noncomputable
+def id_pushoutProduct_iso (W : SSet) : pt (𝟙 W) g ≅ Y ⊗ W :=
+  IsPushout.isoIsPushout _ _ (IsPushout (𝟙 W) g) (IsPushout.id_vert (g ▷ W))
+
+noncomputable
+def id_pushoutProduct_iso_desc (W : SSet) :
+    (id_pushoutProduct_iso g W).inv ≫ ((𝟙 W) ◫ g) = 𝟙 (Y ⊗ W) := by
+  exact (Iso.inv_comp_eq_id (id_pushoutProduct_iso g W)).mpr rfl
 
 variable {C : Type u} [Category.{v} C] {F G : C ⥤ SSet} (h : F ⟶ G)
 
@@ -108,6 +116,14 @@ def natTransLeftFunctor_comp {G' : C ⥤ SSet} (h' : G ⟶ G') :
       IsPushout.inr_desc, MonoidalCategory.whiskerLeft_comp]
     rw [← Category.assoc, ← Category.assoc, ← MonoidalCategory.whiskerLeft_comp,
       ← MonoidalCategory.whiskerLeft_comp, h'.naturality]
+
+noncomputable
+def inlDescFunctor : (F ⋙ tensorLeft Y) ⟶ (natTransLeftFunctor h g) where
+  app A := inl (h.app A) g
+
+noncomputable
+def inrDescFunctor : (G ⋙ tensorLeft X) ⟶ (natTransLeftFunctor h g) where
+  app A := inr (h.app A) g
 
 /-- very slow :( -/
 noncomputable

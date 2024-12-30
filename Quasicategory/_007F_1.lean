@@ -13,7 +13,7 @@ Show `S` is stable under transfinite composition.
 
 -/
 
-universe w
+universe w v u
 
 namespace SSet
 
@@ -25,25 +25,39 @@ def S : MorphismProperty SSet := fun _ _ i ↦
     (WeaklySaturatedClassOf.{w} bdryPushoutClass) (i ◫ (hornInclusion 2 1))
 
 -- S is weakly saturated because T is
-instance S.WeaklySaturated : WeaklySaturated S where
+instance S.WeaklySaturated : WeaklySaturated.{_, _, w} S.{w} where
   IsStableUnderCobaseChange := ⟨by
     intro _ _ _ _ g _ f _ h hg
-    sorry⟩
-    --exact (bdryPushoutClass).of_is.IsStableUnderCobaseChange.of_isPushout (pushoutCommSq_IsPushout g f h) hg⟩
+    exact (bdryPushoutClass).of_is.IsStableUnderCobaseChange.of_isPushout (pushoutCommSq_IsPushout h) hg⟩
   IsStableUnderRetracts := ⟨by
     intro _ _ _ _ f g h hg
-    sorry⟩
-    --exact (bdryPushoutClass).of_is.IsStableUnderRetracts.of_retract (pushoutProduct.RetractArrow h) hg⟩
-  IsStableUnderTransfiniteComposition := sorry
+    exact (bdryPushoutClass).of_is.IsStableUnderRetracts.of_retract (pushoutProduct.RetractArrow h) hg⟩
+  IsStableUnderTransfiniteComposition := {
+    id_mem X := (of_is.{w, _, _} _).IsStableUnderTransfiniteComposition.comp_mem
+        (𝟙 _) (id_pushoutProduct_iso (hornInclusion 2 1) X).hom
+        ((of_is.{w, _, _} _).IsStableUnderTransfiniteComposition.id_mem _)
+        (WeaklySaturated_contains_iso _ _ (isomorphisms.infer_property _))
+    comp_mem := by
+      intro X Y Z f g hf hg
+      dsimp only [S] at hf hg ⊢
+      sorry
+    isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := {
+      le X Y f hf := by
+        letI := ((bdryPushoutClass).of_is.IsStableUnderTransfiniteComposition.isStableUnderTransfiniteCompositionOfShape J)
+        induction hf with
+        | mk F hF c hc =>
+        apply bdryPushoutClass.WeaklySaturatedClassOf.mem_of_transfinite_composition ?_ (c'_IsColimit F c)
+        · intro j hj
+          exact WeaklySaturatedOf.pushout (newPushoutIsPushout F c j) (hF j hj) }}
 
 lemma BoundaryInclusions_le_S : BoundaryInclusions ≤ S := fun _ _ _ h ↦ by
   induction h with | mk =>
   apply WeaklySaturatedOf.of
   apply bdryPushout.mk
 
-lemma monomorphisms_le_S : monomorphisms SSet ≤ S := by
-  rw [mono_eq_bdryInclusions]
-  apply minimalWeaklySaturated.{_, _, w} _ _ BoundaryInclusions_le_S S.WeaklySaturated
+lemma monomorphisms_le_S : monomorphisms SSet ≤ S.{w} := by
+  rw [mono_eq_bdryInclusions.{_, w}]
+  apply minimalWeaklySaturated _ _ BoundaryInclusions_le_S S.WeaklySaturated
 
 -- [n] ⟶ [2] by j ↦
 -- 0 if j < i

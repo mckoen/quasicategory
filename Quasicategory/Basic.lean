@@ -112,7 +112,7 @@ lemma innerHorn_le_innerAnodyne : InnerHornInclusions ≤ innerAnodyne := fun _ 
 
 lemma innerAnodyne_eq : innerAnodyne = WeaklySaturatedClassOf InnerHornInclusions := by
   ext X Y p
-  refine ⟨?_, minimalWeaklySaturated.{_, _, w} innerAnodyne _ innerHorn_le_innerAnodyne (llp.WeaklySaturated _) p⟩
+  refine ⟨?_, minimalWeaklySaturated innerAnodyne _ innerHorn_le_innerAnodyne (llp.WeaklySaturated _) p⟩
   · sorry
 
 /-
@@ -167,7 +167,7 @@ instance quasicat_iff_extension_wrt_innerAnodyne {S : SSet} :
   refine ⟨fun h ↦
     ⟨fun n i σ₀ h0 hn ↦ h _ (innerHorn_le_innerAnodyne (hornInclusion (n + 2) i) (.mk h0 hn)) σ₀⟩, ?_⟩
   intro hS
-  rw [extension_iff_rlp_proj, class_rlp_iff_llp_morphism, innerAnodyne_eq.{w}]
+  rw [extension_iff_rlp_proj, class_rlp_iff_llp_morphism, innerAnodyne_eq]
   intro _ _ _
   refine minimalWeaklySaturated ((MorphismClass S.proj).llp) InnerHornInclusions ?_ (llp.WeaklySaturated.{_, _, w} _) _
   intro _ _ i hi

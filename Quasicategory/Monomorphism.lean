@@ -268,7 +268,7 @@ instance quasicategory_of_trivialKanFibration {X Y : SSet.{0}}
 
 /-- inner anodyne morphisms are monomorphisms -/
 lemma innerAnodyne_mono : innerAnodyne ≤ monomorphisms SSet := by
-  rw [innerAnodyne_eq.{w}]
+  rw [innerAnodyne_eq]
   refine minimalWeaklySaturated (monomorphisms SSet) InnerHornInclusions ?_ monomorphisms.WeaklySaturated.{_, w}
   intro _ _ _ h
   induction h with | mk => exact hornInclusion_mono _ _
