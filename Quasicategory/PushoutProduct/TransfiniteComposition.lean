@@ -206,6 +206,7 @@ variable {G} (h : F ⟶ G)
 def natTransSucc : F.succ ⟶ G.succ where
   app j := h.app (Order.succ j)
 
+/-
 @[simp]
 def φaux : (F.succ) ⟶ (Functor.const J).obj c.pt := natTransSucc F c.ι
 
@@ -215,48 +216,69 @@ lemma φaux' : (F.succNatTrans) ≫ (natTransSucc F c.ι) = c.ι := by
   ext
   simp
 
-/-
+@[simp]
 noncomputable
-def Pj_jsucc (j : J) :=
-  PushoutProduct.pt (F.map (homOfLE (Order.le_succ j))) (hornInclusion 2 1)
--/
-
--- not defeq but right approach, (P F) ⟶ (F' F c)
-noncomputable
-def φ : P F ⟶ natTransLeftFunctor (F.succNatTrans ≫ (natTransSucc F c.ι)) (hornInclusion 2 1) :=
+def φ_1 : P F ⟶ natTransLeftFunctor (F.succNatTrans ≫ (natTransSucc F c.ι)) (hornInclusion 2 1) :=
   PushoutProduct.natTransLeftFunctor_comp (F.succNatTrans) (hornInclusion 2 1) (natTransSucc F c.ι)
 
-def φ' : (P F) ⟶ (F' F c) where
-  app j := by
-    have := (φ F c).app j
-    rw [φaux'] at this
-    dsimp only [F']
-    sorry
-
+@[simp]
 noncomputable
-def φj (j : J) : (P F).obj j ⟶ (F' F c).obj j := sorry
+def φ_2 : natTransLeftFunctor (F.succNatTrans ≫ (natTransSucc F c.ι)) (hornInclusion 2 1) ⟶ (F' F c) :=
+  eqToHom (by rw [φaux'])
 
+@[simp]
+noncomputable
+def φ : (P F) ⟶ (F' F c) :=
+  PushoutProduct.natTransLeftFunctor_comp (F.succNatTrans) (hornInclusion 2 1) (natTransSucc F c.ι) ≫
+    eqToHom (by rw [φaux'])
+-/
+
+@[simp]
+noncomputable
+def φ_j : (P F).obj j ⟶ (F' F c).obj j := by
+  refine (IsPushout _ _).desc
+    (inl (c.ι.app j) (hornInclusion 2 1))
+    (Λ[2, 1] ◁ c.ι.app (Order.succ j) ≫ inr (c.ι.app j) (hornInclusion 2 1)) ?_
+  simp
+  rw [← MonoidalCategory.whiskerLeft_comp_assoc]
+  have : (F.map (homOfLE (Order.le_succ j)) ≫ c.ι.app (Order.succ j)) = c.ι.app j := by simp
+  rw [this]
+  simpa using w (c.ι.app j) (hornInclusion 2 1)
+
+omit [OrderBot J] [WellFoundedLT J] [F.IsWellOrderContinuous] in
 lemma newSqComm :
-    (φj F c j) ≫ (F' F c).map (homOfLE (Order.le_succ j)) =
+    (φ_j F c) ≫ (F' F c).map (homOfLE (Order.le_succ j)) =
     ((F.map (homOfLE (Order.le_succ j))) ◫ (hornInclusion 2 1)) ≫
       PushoutProduct.inl (c.ι.app (Order.succ j)) (hornInclusion 2 1) := by
-  sorry
+  apply (IsPushout _ _).hom_ext (by aesop)
+  simp
+  have := w (c.ι.app (Order.succ j)) (hornInclusion 2 1)
+  dsimp at this
+  rw [this]
 
 noncomputable
 def newPushoutCocone (j : J) : PushoutCocone
-    (φj F c j) ((F.map (homOfLE (Order.le_succ j))) ◫ (hornInclusion 2 1)) :=
+    (φ_j F c) ((F.map (homOfLE (Order.le_succ j))) ◫ (hornInclusion 2 1)) :=
   PushoutCocone.mk _ _ (newSqComm F c)
 
+@[simp]
+noncomputable
+def newPushoutIsColimit_desc (s : PushoutCocone (φ_j F c) (F.map (homOfLE (Order.le_succ j)) ◫ hornInclusion 2 1)) :
+    (F' F c).obj (Order.succ j) ⟶ s.pt :=
+  (IsPushout _ _).desc s.inr ((inr _ _) ≫ s.inl) (by simpa using ((inr _ _) ≫= s.condition).symm)
+
+set_option maxHeartbeats 800000 in
 noncomputable
 def newPushoutIsColimit : IsColimit (newPushoutCocone F c j) := by
-  apply PushoutCocone.IsColimit.mk
-  · sorry
-  · sorry
-  · sorry
-  · sorry
+  refine PushoutCocone.IsColimit.mk _ (newPushoutIsColimit_desc F c) ?_ ?_ ?_
+  · intro s
+    exact (IsPushout _ _).hom_ext (by simpa using ((inl _ _) ≫= s.condition).symm) (by aesop)
+  · aesop
+  · intro _ _ h _
+    exact (IsPushout _ _).hom_ext (by aesop) (by simp [← h])
 
 def newPushoutIsPushout (j : J) : CategoryTheory.IsPushout
-  (φj F c j)
+  (φ_j F c)
   (F.map (homOfLE (Order.le_succ j)) ◫ hornInclusion 2 1)
   ((F' F c).map (homOfLE (Order.le_succ j)))
   (PushoutProduct.inl (c.ι.app (Order.succ j)) (hornInclusion 2 1))
