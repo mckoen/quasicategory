@@ -49,7 +49,7 @@ instance S.WeaklySaturated : WeaklySaturated.{_, _, w} S.{w} where
         letI := ((bdryPushoutClass).of_is.IsStableUnderTransfiniteComposition.isStableUnderTransfiniteCompositionOfShape J)
         induction hf with
         | mk F hF c hc =>
-        apply bdryPushoutClass.WeaklySaturatedClassOf.mem_of_transfinite_composition ?_ (c'_IsColimit F c)
+        apply bdryPushoutClass.WeaklySaturatedClassOf.mem_of_transfinite_composition ?_ (c'_IsColimit F c hc)
         · intro j hj
           exact WeaklySaturatedOf.pushout (newPushoutIsPushout F c j) (hF j hj) }}
 
