@@ -31,10 +31,18 @@ def tempCocone (s : Cocone ((F' F c).restrictionLT m)) :
   ι := (whiskerLeft (Monotone.functor _) (inlDescFunctor c.ι (hornInclusion 2 1))) ≫ s.ι
 
 noncomputable
+def tempCocone' (s : Cocone (F' F c)) :
+    (Cocone (F ⋙ tensorLeft Δ[2])) where
+  pt := s.pt
+  ι := (inlDescFunctor c.ι (hornInclusion 2 1)) ≫ s.ι
+
+/-
+noncomputable
 def tempCocone' (s : Cocone ((F' F c).restrictionLT m)) :
     Cocone (((Functor.const J).obj c.pt).restrictionLT m ⋙ tensorLeft Λ[2, 1]) where
   pt := s.pt
   ι := (whiskerLeft (Monotone.functor _) (inrDescFunctor c.ι (hornInclusion 2 1))) ≫ s.ι
+-/
 
 instance {m : J} {hm : Order.IsSuccLimit m} : OrderBot (Set.Iio m) := Subtype.orderBot hm.bot_lt
 
@@ -129,7 +137,50 @@ def c' : Cocone (F' F c) where
   pt := Δ[2] ⊗ c.pt
   ι := PushoutProduct.descFunctor c.ι (hornInclusion 2 1)
 
-def c'_IsColimit : IsColimit (c' F c) := sorry
+set_option maxHeartbeats 400000 in
+/-- also really really bad -/
+noncomputable
+def c'_IsColimit : IsColimit (c' F c) where
+  desc s := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).desc (tempCocone' F c s)
+  fac s j := by
+    apply (IsPushout _ _).hom_ext
+    · have := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).fac (tempCocone' F c s) j
+      simp [tempCocone', inlDescFunctor] at this
+      rw [← this]
+      simp [c', descFunctor, tempCocone']
+      rfl
+    · let H := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc)
+      apply (Limits.isColimitOfPreserves (tensorLeft Λ[2, 1]) hc).hom_ext
+      intro k
+      simp [c', descFunctor]
+      rw [← Category.assoc, @whisker_exchange, Category.assoc]
+      have := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).fac (tempCocone' F c s) k
+      simp at this
+      rw [this]
+      simp [tempCocone', inlDescFunctor]
+      have a := (w (c.ι.app k) (hornInclusion 2 1)) --=≫ s.ι.app j
+      simp at a
+      rw [← Category.assoc, a]
+      by_cases hj : j ≤ k
+      · have := s.ι.naturality (homOfLE <| hj)
+        simp at this
+        rw [← this]
+        simp
+      · rw [not_le] at hj
+        have := s.ι.naturality (homOfLE <| le_of_lt hj)
+        simp at this
+        rw [← this]
+        simp
+  uniq s h hj := by
+    apply (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).hom_ext
+    intro j
+    have := (inl _ _) ≫= hj j
+    simp [c', descFunctor] at this ⊢
+    rw [this]
+    have := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).fac (tempCocone' F c s) j
+    simp at this
+    rw [this]
+    rfl
 
 @[simp]
 def _root_.CategoryTheory.Functor.succ : J ⥤ SSet where
