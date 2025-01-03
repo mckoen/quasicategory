@@ -80,8 +80,14 @@ def sInf : Set S.SimplicialSubset → S.SimplicialSubset := fun A ↦ {
   obj := fun n ↦ (⨅ (X : A), X.val.obj n)
   map := fun {n m} f s h ↦ by
     dsimp only [Set.iInf_eq_iInter] at h ⊢
-    refine Set.mem_preimage.mpr ?_
-    sorry
+    refine Set.mem_preimage.mpr (Set.mem_iInter.2 ?_)
+    intro i
+    have : s ∈ (i : SimplicialSubset _).obj n := by
+      simp_all only [Set.iInter_coe_set, Set.mem_iInter, Subtype.coe_prop]
+    have : (S.map f '' (i : SimplicialSubset _).obj n) ⊆ ((i : SimplicialSubset _).obj m) := by
+      sorry
+    apply this
+    exact Set.mem_image_of_mem (S.map f) (Set.mem_iInter.1 h i)
 }
 
 instance : CompleteLattice (SimplicialSubset S) where
