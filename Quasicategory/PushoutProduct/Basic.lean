@@ -12,7 +12,7 @@ Everything here should be generalized and more API should be added.
 
 universe v u
 
-open CategoryTheory MonoidalCategory
+open CategoryTheory MonoidalCategory Limits
 
 namespace CategoryTheory.PushoutProduct
 
@@ -25,12 +25,12 @@ def IsPushout := IsPushout.of_hasPushout (g ▷ A) (X ◁ f)
 
 @[simp]
 noncomputable
-def pt : SSet := (IsPushout f g).cocone.pt
+def pt : SSet := pushout (g ▷ A) (X ◁ f)
 
 /-- The pushout-product of `f` and `g`. -/
 @[simp]
 noncomputable
-def pushoutProduct : pt f g ⟶ Y ⊗ B :=
+def pushoutProduct : pushout (g ▷ A) (X ◁ f) ⟶ Y ⊗ B :=
   (IsPushout f g).desc (Y ◁ f) (g ▷ B) rfl
 
 /-- Notation for the pushout-product. -/
@@ -71,6 +71,72 @@ def id_pushoutProduct_iso_desc (W : SSet) :
 
 end
 
+noncomputable
+def pushoutProductRight_map_left {X Y : SSet} (h : X ⟶ Y)
+    {A B K L : SSet} (f : A ⟶ B) (g : K ⟶ L)
+    {s : A ⟶ K} {t : B ⟶ L} (w : s ≫ g = f ≫ t) :
+    (PushoutProduct.pt f h) ⟶ (PushoutProduct.pt g h) := by
+  apply pushout.desc (Y ◁ s ≫ (inl g h)) (X ◁ t ≫ (inr g h)) _
+  rw [← Category.assoc, ← whisker_exchange, Category.assoc]
+  simp [pushout.condition, ← Category.assoc, ← MonoidalCategory.whiskerLeft_comp, w]
+
+noncomputable
+def pushoutProductRight_map {X Y : SSet} (h : X ⟶ Y)
+    {A B K L : SSet} (f : A ⟶ B) (g : K ⟶ L)
+    {s : A ⟶ K} {t : B ⟶ L} (w : s ≫ g = f ≫ t) :
+    Arrow.mk (f ◫ h) ⟶ Arrow.mk (g ◫ h) where
+  left := pushoutProductRight_map_left h f g w
+  right := Y ◁ t
+  w := by
+    refine pushout.hom_ext ?_ ?_
+    · simp [pushoutProductRight_map_left, ← MonoidalCategory.whiskerLeft_comp, w]
+    · simp [pushoutProductRight_map_left, ← whisker_exchange]
+
+noncomputable
+def pushoutProductRight {X Y : SSet} (h : X ⟶ Y) : Arrow SSet.{u} ⥤ Arrow SSet.{u} where
+  obj f := f.hom ◫ h
+  map {f g} sq := pushoutProductRight_map h f.hom g.hom sq.w
+  map_id _ := by
+    simp [pushoutProductRight_map, pushoutProductRight_map_left]
+    apply Arrow.hom_ext
+    · aesop
+    · aesop
+  map_comp f g := by
+    simp [pushoutProductRight_map, pushoutProductRight_map_left]
+    apply Arrow.hom_ext
+    · aesop
+    · aesop
+
+set_option maxHeartbeats 1000000 in
+noncomputable
+def pushoutProductFunctor : Arrow SSet.{u} ⥤ Arrow SSet.{u} ⥤ Arrow SSet.{u} where
+  obj h := pushoutProductRight h.hom
+  map {f g} sq := {
+    app f' := by
+      --simp [pushoutProductRight, pushoutProductRight_map, pushoutProductRight_map_left]
+      refine ⟨?_, ?_, ?_⟩
+      · dsimp [pushoutProductRight, pushoutProductRight_map, pushoutProductRight_map_left]
+        refine pushout.desc ?_ ?_ ?_
+        · exact (sq.right ▷ f'.left) ≫ (inl _ _)
+        · exact (sq.left ▷ f'.right) ≫ (inr _ _)
+        · have := sq.w
+          dsimp at this
+          rw [← Category.assoc, ← comp_whiskerRight, ← this, comp_whiskerRight, Category.assoc]
+          rw [← Category.assoc, ← Category.assoc, whisker_exchange, Category.assoc]
+          simp [pushout.condition]
+      · exact sq.right ▷ f'.right
+      · dsimp only [pushoutProductRight, pushoutProductRight_map, pushoutProductRight_map_left]
+        apply pushout.hom_ext
+        · aesop
+        · aesop
+    naturality := by
+      intro f' g' sq'
+      dsimp only [pushoutProductRight, pushoutProductRight_map, pushoutProductRight_map_left]
+      apply Arrow.hom_ext
+      · aesop
+      · sorry --aesop
+  }
+
 section NatTrans
 
 variable {C : Type u} [Category.{v} C] {F G : C ⥤ SSet} (h : F ⟶ G)
@@ -83,7 +149,7 @@ def natTransLeftFunctor_map {A B : C} (f : A ⟶ B) : pt (h.app A) g ⟶ pt (h.a
   refine (desc (h.app A) g)
     (Y ◁ (F.map f) ≫ inl (h.app B) g) (X ◁ (G.map f) ≫ inr (h.app B) g) ?_
   rw [← Category.assoc (X ◁ _), ← MonoidalCategory.whiskerLeft_comp, ← h.naturality f,
-    MonoidalCategory.whiskerLeft_comp, Category.assoc, ← PushoutProduct.w]
+    MonoidalCategory.whiskerLeft_comp, Category.assoc, ← w]
   rfl
 
 @[simp]
