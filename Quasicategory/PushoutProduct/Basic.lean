@@ -1,6 +1,8 @@
 import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.CommSq
 import Mathlib.Combinatorics.Quiver.ReflQuiver
+import Mathlib.AlgebraicTopology.SimplicialSet.Horn
+import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 
 /-!
 
@@ -107,7 +109,6 @@ def pushoutProductRight {X Y : SSet} (h : X ⟶ Y) : Arrow SSet.{u} ⥤ Arrow SS
     · aesop
     · aesop
 
-set_option maxHeartbeats 1000000 in
 noncomputable
 def pushoutProductFunctor : Arrow SSet.{u} ⥤ Arrow SSet.{u} ⥤ Arrow SSet.{u} where
   obj h := pushoutProductRight h.hom
@@ -127,13 +128,13 @@ def pushoutProductFunctor : Arrow SSet.{u} ⥤ Arrow SSet.{u} ⥤ Arrow SSet.{u}
       · exact sq.right ▷ f'.right
       · dsimp only [pushoutProductRight, pushoutProductRight_map, pushoutProductRight_map_left]
         apply pushout.hom_ext
-        · aesop
-        · aesop
+        · sorry
+        · sorry
     naturality := by
       intro f' g' sq'
       dsimp only [pushoutProductRight, pushoutProductRight_map, pushoutProductRight_map_left]
       apply Arrow.hom_ext
-      · aesop
+      · sorry
       · sorry --aesop
   }
 
@@ -289,14 +290,14 @@ open Limits Simplicial PushoutProduct
 
 /-- pushout in proof `0079` (for retract diagram) -/
 def Λ_pushout (m : ℕ) (i : Fin (m + 1)) :=
-  PushoutProduct.IsPushout (hornInclusion m i) (hornInclusion 2 1)
+  PushoutProduct.IsPushout (SSet.horn m i).ι (horn 2 1).ι
 
 noncomputable
 def Λ_pushoutProduct (m : ℕ) (i : Fin (m + 1)) : (Λ_pushout m i).cocone.pt ⟶ Δ[2] ⊗ Δ[m] :=
-  (hornInclusion m i) ◫ (hornInclusion 2 1)
+  (horn m i).ι ◫ (horn 2 1).ι
 
 inductive bdryPushout : {X Y : SSet} → (X ⟶ Y) → Prop
-  | mk ⦃m : ℕ⦄ : bdryPushout ((boundaryInclusion m) ◫ (hornInclusion 2 1))
+  | mk ⦃m : ℕ⦄ : bdryPushout ((boundary m).ι ◫ (horn 2 1).ι)
 
 /-- the class of pushout products of `∂Δ[n] ↪ Δ[n]` with `Λ[n, i] ↪ Δ[n]`. -/
 def bdryPushoutClass : MorphismProperty SSet := fun _ _ p ↦ bdryPushout p

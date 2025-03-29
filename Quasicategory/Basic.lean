@@ -1,7 +1,6 @@
 import Mathlib.AlgebraicTopology.Quasicategory.Basic
 import Quasicategory.MorphismProperty
 import Quasicategory.Terminal
-import Mathlib.AlgebraicTopology.SimplicialSet.KanComplex
 
 /-!
 
@@ -23,35 +22,35 @@ namespace SSet
 open CategoryTheory Simplicial MorphismProperty
 
 inductive BoundaryInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
-  | mk n : BoundaryInclusion (boundaryInclusion n)
+  | mk n : BoundaryInclusion (boundary n).ι
 
 /-- The class of all boundary inclusions. -/
 def BoundaryInclusions : MorphismProperty SSet := fun _ _ p ↦ BoundaryInclusion p
 
 inductive HornInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (h0 : 0 ≤ i) (hn : i ≤ Fin.last (n+2)) :
-    HornInclusion (hornInclusion (n+2) i)
+    HornInclusion (horn (n+2) i).ι
 
 /-- The class of all horn inclusions. -/
 def HornInclusions : MorphismProperty SSet := fun _ _ p ↦ HornInclusion p
 
 inductive LeftHornInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (h0 : 0 ≤ i) (hn : i < Fin.last (n+2)) :
-    LeftHornInclusion (hornInclusion (n+2) i)
+    LeftHornInclusion (horn (n+2) i).ι
 
 /-- The class of all left horn inclusions. -/
 def LeftHornInclusions : MorphismProperty SSet := fun _ _ p ↦ LeftHornInclusion p
 
 inductive RightHornInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (h0 : 0 < i) (hn : i ≤ Fin.last (n+2)) :
-    RightHornInclusion (hornInclusion (n+2) i)
+    RightHornInclusion (horn (n+2) i).ι
 
 /-- The class of all right horn inclusions. -/
 def RightHornInclusions : MorphismProperty SSet := fun _ _ p ↦ RightHornInclusion p
 
 inductive InnerHornInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (h0 : 0 < i) (hn : i < Fin.last (n+2)) :
-    InnerHornInclusion (hornInclusion (n+2) i)
+    InnerHornInclusion (horn (n+2) i).ι
 
 /-- The class of all inner horn inclusions. -/
 def InnerHornInclusions : MorphismProperty SSet := fun _ _ p ↦ InnerHornInclusion p
@@ -93,7 +92,7 @@ lemma quasicategory_iff_proj_innerFibration {S : SSet} :
     exact ⟨l, hl.symm, isTerminal.hom_ext _ _⟩
   · intro n i σ₀ h0 hn
     have := (CommSq.mk (Limits.IsTerminal.hom_ext isTerminal
-      (σ₀ ≫ S.proj) (hornInclusion (n + 2) i ≫  Δ[n + 2].proj)))
+      (σ₀ ≫ S.proj) ((horn (n + 2) i).ι ≫  Δ[n + 2].proj)))
     have lift := ((h _ (.mk h0 hn)).sq_hasLift this).exists_lift.some
     exact ⟨lift.l, lift.fac_left.symm⟩
 
@@ -165,7 +164,7 @@ instance quasicat_iff_extension_wrt_innerAnodyne {S : SSet} :
     (∀ {A B} (i : A ⟶ B) (_ : innerAnodyne i) (f₀ : A ⟶ S), ∃ (f : B ⟶ S), f₀ = i ≫ f) ↔
     Quasicategory S := by
   refine ⟨fun h ↦
-    ⟨fun n i σ₀ h0 hn ↦ h _ (innerHorn_le_innerAnodyne (hornInclusion (n + 2) i) (.mk h0 hn)) σ₀⟩, ?_⟩
+    ⟨fun n i σ₀ h0 hn ↦ h _ (innerHorn_le_innerAnodyne (horn (n + 2) i).ι (.mk h0 hn)) σ₀⟩, ?_⟩
   intro hS
   rw [extension_iff_rlp_proj, class_rlp_iff_llp_morphism, innerAnodyne_eq]
   intro _ _ _

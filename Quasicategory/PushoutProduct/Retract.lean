@@ -13,31 +13,31 @@ variable {f g} (h : RetractArrow f g)
 
 noncomputable
 def pushoutProduct.i.left :
-    pt f (hornInclusion 2 1) ⟶ pt g (hornInclusion 2 1) :=
-  (PushoutProduct.desc f (hornInclusion 2 1))
-    (Δ[2] ◁ h.i.left ≫ (PushoutProduct.inl g (hornInclusion 2 1)))
-    (Λ[2, 1] ◁ h.i.right ≫ (PushoutProduct.inr g (hornInclusion 2 1)))
+    pt f ((horn 2 1).ι) ⟶ pt g ((horn 2 1).ι) :=
+  (PushoutProduct.desc f ((horn 2 1).ι))
+    (Δ[2] ◁ h.i.left ≫ (PushoutProduct.inl g ((horn 2 1).ι)))
+    ((Λ[2, 1] : SSet) ◁ h.i.right ≫ (PushoutProduct.inr g ((horn 2 1).ι)))
     (by
       dsimp
       rw [← Category.assoc, ← Category.assoc, ← MonoidalCategory.whiskerLeft_comp, ← h.i_w,
         MonoidalCategory.whiskerLeft_comp, ← whisker_exchange, Category.assoc, Category.assoc,
-        ← (PushoutProduct.IsPushout g (hornInclusion 2 1)).w])
+        ← (PushoutProduct.IsPushout g ((horn 2 1).ι)).w])
 
 noncomputable
 def pushoutProduct.r.left :
-    pt g (hornInclusion 2 1) ⟶ pt f (hornInclusion 2 1) :=
-  (PushoutProduct.desc g (hornInclusion 2 1))
-    (Δ[2] ◁ h.r.left ≫ (PushoutProduct.inl f (hornInclusion 2 1)))
-    (Λ[2, 1] ◁ h.r.right ≫ (PushoutProduct.inr f (hornInclusion 2 1)))
+    pt g ((horn 2 1).ι) ⟶ pt f ((horn 2 1).ι) :=
+  (PushoutProduct.desc g ((horn 2 1).ι))
+    (Δ[2] ◁ h.r.left ≫ (PushoutProduct.inl f ((horn 2 1).ι)))
+    ((Λ[2, 1] : SSet) ◁ h.r.right ≫ (PushoutProduct.inr f ((horn 2 1).ι)))
     (by
       dsimp
       rw [← Category.assoc, ← Category.assoc, ← MonoidalCategory.whiskerLeft_comp, ← h.r_w,
         MonoidalCategory.whiskerLeft_comp, ← whisker_exchange, Category.assoc, Category.assoc,
-        ← (PushoutProduct.IsPushout f (hornInclusion 2 1)).w])
+        ← (PushoutProduct.IsPushout f ((horn 2 1).ι)).w])
 
 lemma pushoutProduct.retract_left : pushoutProduct.i.left h ≫ pushoutProduct.r.left h = 𝟙 _ := by
   dsimp [i.left, r.left]
-  refine (PushoutProduct.IsPushout f (hornInclusion 2 1)).hom_ext ?_ ?_
+  refine (PushoutProduct.IsPushout f ((horn 2 1).ι)).hom_ext ?_ ?_
   · simp only [Fin.isValue, IsPushout.inl_desc_assoc, Category.assoc, IsPushout.inl_desc]
     rw [← Category.assoc, ← MonoidalCategory.whiskerLeft_comp, h.retract_left]
     rfl
@@ -45,10 +45,10 @@ lemma pushoutProduct.retract_left : pushoutProduct.i.left h ≫ pushoutProduct.r
     rw [← Category.assoc, ← MonoidalCategory.whiskerLeft_comp, h.retract_right]
     rfl
 
-lemma pushoutProduct.i_w : pushoutProduct.i.left h ≫ g ◫ (hornInclusion 2 1) =
-    (f ◫ (hornInclusion 2 1)) ≫ Δ[2] ◁ h.i.right := by
+lemma pushoutProduct.i_w : pushoutProduct.i.left h ≫ g ◫ ((horn 2 1).ι) =
+    (f ◫ ((horn 2 1).ι)) ≫ Δ[2] ◁ h.i.right := by
   dsimp [i.left]
-  apply (PushoutProduct.IsPushout f (hornInclusion 2 1)).hom_ext
+  apply (PushoutProduct.IsPushout f ((horn 2 1).ι)).hom_ext
   · dsimp [pushoutProduct]
     rw [IsPushout.inl_desc_assoc, Category.assoc, IsPushout.inl_desc, ← Category.assoc,
       IsPushout.inl_desc, ← MonoidalCategory.whiskerLeft_comp, h.i_w]
@@ -57,10 +57,10 @@ lemma pushoutProduct.i_w : pushoutProduct.i.left h ≫ g ◫ (hornInclusion 2 1)
     rw [IsPushout.inr_desc_assoc, Category.assoc, IsPushout.inr_desc, ← Category.assoc,
       IsPushout.inr_desc, whisker_exchange]
 
-lemma pushoutProduct.r_w : pushoutProduct.r.left h ≫ f ◫ (hornInclusion 2 1) =
-    (g ◫ (hornInclusion 2 1)) ≫ Δ[2] ◁ h.r.right := by
+lemma pushoutProduct.r_w : pushoutProduct.r.left h ≫ f ◫ ((horn 2 1).ι) =
+    (g ◫ ((horn 2 1).ι)) ≫ Δ[2] ◁ h.r.right := by
   dsimp [r.left]
-  apply (PushoutProduct.IsPushout g (hornInclusion 2 1)).hom_ext
+  apply (PushoutProduct.IsPushout g ((horn 2 1).ι)).hom_ext
   · dsimp [pushoutProduct]
     rw [IsPushout.inl_desc_assoc, Category.assoc, IsPushout.inl_desc, ← Category.assoc,
       IsPushout.inl_desc, ← MonoidalCategory.whiskerLeft_comp, h.r_w]
@@ -71,7 +71,7 @@ lemma pushoutProduct.r_w : pushoutProduct.r.left h ≫ f ◫ (hornInclusion 2 1)
 
 noncomputable
 def pushoutProduct.RetractArrow :
-    RetractArrow (f ◫ (hornInclusion 2 1)) (g ◫ (hornInclusion 2 1)) where
+    RetractArrow (f ◫ ((horn 2 1).ι)) (g ◫ ((horn 2 1).ι)) where
   i := {
     left := pushoutProduct.i.left h
     right :=  Δ[2] ◁ h.i.right

@@ -4,6 +4,8 @@ import Quasicategory._007F_1
 
 The second half of the proof of `007F`, which is much more technical.
 
+Being worked on in a separate repository
+
 -/
 
 universe w
@@ -11,6 +13,7 @@ universe w
 
 open CategoryTheory Simplicial MorphismProperty MonoidalCategory SSet
 
+/-
 -- `0 ≤ i ≤ j ≤ n`
 variable (n : ℕ)
 
@@ -209,6 +212,7 @@ def σ_X_map (a b : Fin n) (hab : a ≤ b) (hb : b + 1 < n) : (σ n a b hab) ⟶
   apply le_iSup_of_le hab
   rfl
   exact Set.Ici_subset_Ioi.mp fun ⦃a⦄ a ↦ a
+-/
 
 /-
 noncomputable
@@ -250,7 +254,7 @@ lemma innerAnodyne_eq_T : innerAnodyne = (WeaklySaturatedClassOf.{w} bdryPushout
   | @mk n i h0 hn =>
     apply WeaklySaturatedOf.retract -- reduces to showing horn inclusion is a retract of a boundary pushout maps
     · exact hornRetract (n + 2) i h0 hn
-    · exact monomorphisms_le_S.{w} (hornInclusion (n + 2) i) (hornInclusion_mono _ _)
+    · exact monomorphisms_le_S.{w} (horn (n + 2) i).ι (hornInclusion_mono _ _)
   refine minimalWeaklySaturated InnerHornInclusions.WeaklySaturatedClassOf bdryPushoutClass ?_ (by infer_instance) f
   intro _ _ f hf
   induction hf with | @mk m =>
@@ -260,15 +264,15 @@ lemma innerAnodyne_eq_T : innerAnodyne = (WeaklySaturatedClassOf.{w} bdryPushout
 
 -- `007F` (a)
 lemma monoPushout_innerAnodyne {A B : SSet} (i : A ⟶ B) [hi : Mono i] :
-    innerAnodyne (PushoutProduct.pushoutProduct i (hornInclusion 2 1)) := by
+    innerAnodyne (PushoutProduct.pushoutProduct i (horn 2 1).ι) := by
   rw [innerAnodyne_eq_T.{w}]
   exact monomorphisms_le_S.{w} i hi
 
 -- `007F` (b)
 lemma contains_innerAnodyne_iff_contains_pushout_maps
     (S : MorphismProperty SSet) (hS : WeaklySaturated S) :
-    (∀ m, S (PushoutProduct.pushoutProduct (boundaryInclusion m) (hornInclusion 2 1))) ↔ (∀ {X Y : SSet} (p : X ⟶ Y) (_ : innerAnodyne p), S p) := by
-  refine ⟨?_, fun h m ↦ h _ (monoPushout_innerAnodyne.{w} (boundaryInclusion m))⟩
+    (∀ m, S (PushoutProduct.pushoutProduct (boundary m).ι (horn 2 1).ι)) ↔ (∀ {X Y : SSet} (p : X ⟶ Y) (_ : innerAnodyne p), S p) := by
+  refine ⟨?_, fun h m ↦ h _ (monoPushout_innerAnodyne.{w} (boundary m).ι)⟩
   intro h X Y p hp
   rw [innerAnodyne_eq_T] at hp
   refine minimalWeaklySaturated S bdryPushoutClass ?_ hS _ hp

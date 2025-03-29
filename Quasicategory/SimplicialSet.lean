@@ -8,6 +8,7 @@ Work in progress file for SimplicialSubset and Skeleton API.
 
 -/
 
+/-
 open CategoryTheory GrothendieckTopology SimplicialObject Simplicial
 
 namespace SSet
@@ -714,3 +715,4 @@ def temp {S : SSet} {n : SimplexCategoryᵒᵖ} (s : (cocone S).pt.obj n) :
 -- so if i : A → B is a monomorphism, then A ≅ im(i) ⊆ B, so B = ∪ im(i)(k)
 
 end SSet
+-/

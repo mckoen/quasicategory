@@ -1,12 +1,13 @@
 
 import Mathlib.AlgebraicTopology.SimplicialSet.Basic
+import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplex
 
 open CategoryTheory Limits
 
 open Simplicial
 
-def SimplexCategory.isTerminalZero : IsTerminal ([0] : SimplexCategory) := by
-  refine IsTerminal.ofUniqueHom (fun _ ↦ SimplexCategory.const _ [0] 0) ?_
+def SimplexCategory.isTerminalZero : IsTerminal ⦋0⦌ := by
+  refine IsTerminal.ofUniqueHom (fun _ ↦ SimplexCategory.const _ ⦋0⦌ 0) ?_
   · apply SimplexCategory.eq_const_to_zero
 
 def SSet.isTerminal : IsTerminal (Δ[0] : SSet.{u}) where
