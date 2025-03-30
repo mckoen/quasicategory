@@ -7,8 +7,8 @@ The current goal is [0066](https://kerodon.net/tag/0066): the internal hom betwe
 Remaining tasks:
 
 ### [0077](https://kerodon.net/tag/0077):
-- [ ] the collection of monomorphisms of simplicial sets is stable under transfinite composition
-- [ ] monomorphisms are generated (in the weakly saturated sense) by boundary inclusions $\partial\Delta^n \hookrightarrow \Delta^n$ (needs the skeletal filtration)
+- [x] the collection of monomorphisms of simplicial sets is stable under transfinite composition (done by @joelriou)
+- [x] monomorphisms are generated (in the weakly saturated sense) by boundary inclusions $\partial\Delta^n \hookrightarrow \Delta^n$ (done by @joelriou)
 
 ### [007F](https://kerodon.net/tag/007F):
 - [ ] the pushout-product of $\partial\Delta^n \hookrightarrow \Delta^n$ with $\Lambda^2_1 \hookrightarrow \Delta^2$ is inner anodyne (being worked on in [this repository](https://github.com/mckoen/topcat-model-category))
