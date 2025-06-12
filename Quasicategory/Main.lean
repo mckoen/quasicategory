@@ -14,243 +14,104 @@ namespace SSet
 
 open CategoryTheory Simplicial MorphismProperty MonoidalCategory MonoidalClosed
 
+open PushoutProduct
+
 section _0079
 
-def Δ_pushout (m : ℕ) :=
-  PushoutProduct.IsPushout ((boundary m).ι) ((horn 2 1).ι)
+variable {S : SSet} {m : ℕ}
+  (α : (∂Δ[m] : SSet) ⟶ (ihom Δ[2]).obj S) (β : Δ[m] ⟶ (ihom (Λ[2, 1] : SSet)).obj S)
 
-noncomputable
-def Δ_cocone (m : ℕ) :
-    Limits.PushoutCocone ((horn 2 1).ι ▷ (∂Δ[m] : SSet)) ((Λ[2, 1] : SSet) ◁ ((boundary m).ι)) :=
-  Limits.PushoutCocone.mk (Δ[2] ◁ ((boundary m).ι)) ((horn 2 1).ι ▷ Δ[m]) rfl
-
-noncomputable
-def Δ_pushoutProduct (m : ℕ) : (Δ_pushout m).cocone.pt ⟶ Δ[2] ⊗ Δ[m] :=
-  (Δ_pushout m).isColimit.desc (Δ_cocone m)
-
-lemma S_cocone_aux (S : SSet) (m : ℕ)
-    (α : (∂Δ[m] : SSet) ⟶ (Fun.obj (Opposite.op Δ[2])).obj S)
-    (β : Δ[m] ⟶ (Fun.obj (Opposite.op (Λ[2, 1] : SSet))).obj S)
-    (sq : CommSq α ((boundary m).ι) ((Fun.map ((horn 2 1).ι).op).app S) β) :
-    (horn 2 1).ι ▷ (∂Δ[m] : SSet) ≫ MonoidalClosed.uncurry α =
-    (Λ[2, 1] : SSet) ◁ (boundary m).ι ≫ MonoidalClosed.uncurry β := by
-  let α' := MonoidalClosed.uncurry α
-  let β' := MonoidalClosed.uncurry β
-  ext n ⟨x, y⟩
-  have := congr_fun (congr_app sq.w n) y
-  change ((MonoidalClosed.pre ((horn 2 1).ι)).app S).app n (α.app n y) =
-    β.app n (((boundary m).ι).app n y) at this
-  change α'.app n (((horn 2 1).ι ▷ (∂Δ[m] : SSet)).app n (x, y)) =
-    β'.app n (((Λ[2, 1] : SSet) ◁ (boundary m).ι).app n (x, y))
-  simp only [MonoidalClosed.uncurry, tensorLeft_obj, Adjunction.homEquiv, Functor.comp_obj,
-    ihom.adjunction, Closed.adj, FunctorToTypes.adj, FunctorToTypes.rightAdj,
-    FunctorToTypes.functorHomEquiv, Functor.homObjEquiv, Monoidal.tensorObj_obj,
-    Equiv.invFun_as_coe, Equiv.symm_trans_apply, Equiv.coe_fn_symm_mk, NatTrans.id_app,
-    types_id_apply, Equiv.trans_apply, Equiv.coe_fn_mk, Functor.functorHomEquiv_apply_app,
-    Functor.rightOp_obj, tensorLeft_map, Fin.isValue, whiskerRight_app_apply, whiskerLeft_app_apply,
-    α', β']
-  change _ = (β.app n (((boundary m).ι).app n y)).app n (𝟙 n) x
-  rw [← this]
+lemma commSq_uncurry (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
+    CommSq (Λ[2, 1].ι ▷ ∂Δ[m]) ((Λ[2, 1] : SSet) ◁ ∂Δ[m].ι)
+      (MonoidalClosed.uncurry α) (MonoidalClosed.uncurry β) := by
+  constructor
+  dsimp [MonoidalClosed.uncurry, Adjunction.homEquiv]
+  rw [← MonoidalCategory.whiskerLeft_comp_assoc, ← Category.assoc, ← whisker_exchange, ← sq.w]
   rfl
-
--- the cocone with point `S` given by uncurrying the maps `α` and `β`
-noncomputable
-def S_cocone (S : SSet) (m : ℕ)
-    {α : (∂Δ[m] : SSet) ⟶ (Fun.obj (Opposite.op Δ[2])).obj S}
-    {β : Δ[m] ⟶ (Fun.obj (Opposite.op (Λ[2, 1] : SSet))).obj S}
-    (sq : CommSq α ((boundary m).ι) ((Fun.map ((horn 2 1).ι).op).app S) β) :
-    Limits.PushoutCocone ((horn 2 1).ι ▷ (∂Δ[m] : SSet)) ((Λ[2, 1] : SSet) ◁ (boundary m).ι) := by
-  refine Limits.PushoutCocone.mk
-    (MonoidalClosed.uncurry α) (MonoidalClosed.uncurry β) (S_cocone_aux S m α β sq)
 
 -- induced morphism from pushout to `S` given by `S_cocone`
 noncomputable
-def to_S (S : SSet) (m : ℕ)
-    {α : (∂Δ[m] : SSet) ⟶ (Fun.obj (Opposite.op Δ[2])).obj S}
-    {β : Δ[m] ⟶ (Fun.obj (Opposite.op (Λ[2, 1] : SSet))).obj S}
-    (sq : CommSq α ((boundary m).ι) ((Fun.map ((horn 2 1).ι).op).app S) β) :
-    (Δ_pushout m).cocone.pt ⟶ S :=
-  (Δ_pushout m).isColimit.desc (S_cocone S m sq)
+def to_S
+    (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
+    (PushoutProduct.pt ∂Δ[m].ι Λ[2, 1].ι) ⟶ S :=
+  PushoutProduct.desc _ _ (MonoidalClosed.uncurry α) (MonoidalClosed.uncurry β) (commSq_uncurry α β sq).w
 
-open IsPushout in
 -- the new square in `0079`
-lemma newSquare (S : SSet) (m : ℕ)
-    {α : (∂Δ[m] : SSet) ⟶ (Fun.obj (Opposite.op Δ[2])).obj S}
-    {β : Δ[m] ⟶ (Fun.obj (Opposite.op (Λ[2, 1] : SSet))).obj S}
-    (sq : CommSq α ((boundary m).ι) ((Fun.map ((horn 2 1).ι).op).app S) β) :
-    CommSq (to_S S m sq) (Δ_pushoutProduct m) S.proj (Δ[2] ⊗ Δ[m]).proj :=
+lemma newSquare
+    (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
+    CommSq (to_S α β sq) (∂Δ[m].ι ◫ Λ[2, 1].ι) S.proj (Δ[2] ⊗ Δ[m]).proj :=
   CommSq.mk (Limits.IsTerminal.hom_ext isTerminal
-    ((to_S S m sq) ≫ S.proj) ((Δ_pushoutProduct m) ≫ (Δ[2] ⊗ Δ[m]).proj))
+    ((to_S α β sq) ≫ S.proj) ((∂Δ[m].ι ◫ Λ[2, 1].ι) ≫ (Δ[2] ⊗ Δ[m]).proj))
 
-lemma aux1 (S : SSet) (m : ℕ)
-    (α : (∂Δ[m] : SSet) ⟶ (Fun.obj (Opposite.op Δ[2])).obj S)
-    (β : Δ[m] ⟶ (Fun.obj (Opposite.op (Λ[2, 1] : SSet))).obj S)
-    (sq : CommSq α ((boundary m).ι) ((Fun.map ((horn 2 1).ι).op).app S) β)
-    (lift : Δ[m] ⟶ (Fun.obj (Opposite.op Δ[2])).obj S)
-    (fac_left : (boundary m).ι ≫ lift = α)
-    (fac_right : lift ≫ (Fun.map ((horn 2 1).ι).op).app S = β) :
-    ∀ (j : Limits.WalkingSpan), (Δ_pushout m).cocone.ι.app j ≫ Δ_pushoutProduct m ≫ MonoidalClosed.uncurry lift =
-      (S.S_cocone m sq).ι.app j := by
-  intro j
-  simp only [Fin.isValue, Functor.const_obj_obj, Δ_pushoutProduct, Δ_cocone, Limits.IsColimit.fac_assoc,
-    Limits.PushoutCocone.mk_pt, Limits.PushoutCocone.mk_ι_app, Limits.span_zero, S_cocone]
-  rw [← congrArg MonoidalClosed.uncurry fac_left]
-  cases j
-  · aesop
-  · rename_i j
-    cases j
-    · aesop
-    · aesop
-
-lemma aux2 (S : SSet) (m : ℕ)
-    (α : (∂Δ[m] : SSet) ⟶ (Fun.obj (Opposite.op Δ[2])).obj S)
-    (β : Δ[m] ⟶ (Fun.obj (Opposite.op (Λ[2, 1] : SSet))).obj S)
-    (sq : CommSq α ((boundary m).ι) ((Fun.map ((horn 2 1).ι).op).app S) β) :
-    ∀ (j : Limits.WalkingSpan), (Δ_pushout m).cocone.ι.app j ≫ S.to_S m sq = (S.S_cocone m sq).ι.app j := by
-  intro j
-  cases j
-  · simp only [Fin.isValue, Limits.span_zero, Functor.const_obj_obj,
-    Limits.PushoutCocone.condition_zero, IsPushout.cocone_inl, to_S, S_cocone, Category.assoc,
-    Limits.PushoutCocone.mk_pt, Limits.PushoutCocone.mk_ι_app]
-    congr 1
-    apply Limits.PushoutCocone.IsColimit.inl_desc (Δ_pushout m).isColimit
-  · rename_i j
-    cases j
-    · apply Limits.PushoutCocone.IsColimit.inl_desc (Δ_pushout m).isColimit
-    · apply Limits.PushoutCocone.IsColimit.inr_desc (Δ_pushout m).isColimit
-
-/-
-lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)
-    {α : (∂Δ[m] : SSet) ⟶ (Fun.obj (Opposite.op Δ[2])).obj S}
-    {β : Δ[m] ⟶ (Fun.obj (Opposite.op (Λ[2, 1] : SSet))).obj S}
-    (sq : CommSq α ((boundary m).ι) ((Fun.map ((horn 2 1).ι).op).app S) β) :
-    sq.HasLift → (newSquare S m sq).HasLift := by
-  · intro ⟨lift, fac_left, fac_right⟩
-    refine ⟨MonoidalClosed.uncurry lift, ?_, ?_⟩
-    · refine ((Δ_pushout m).isColimit.uniq
-        (S_cocone S m sq) (Δ_pushoutProduct m ≫ MonoidalClosed.uncurry lift) ?_).trans
-        ((Δ_pushout m).isColimit.uniq (S_cocone S m sq) (S.to_S m sq) ?_).symm
-      · exact aux1 S m α β sq lift fac_left fac_right
-      · exact aux2 S m α β sq
-    · exact Limits.IsTerminal.comp_from isTerminal (MonoidalClosed.uncurry lift)
--/
-
--- awful proof
-lemma sqLift_of_newSqLift (S : SSet) (m : ℕ)
-    {α : (∂Δ[m] : SSet) ⟶ (Fun.obj (Opposite.op Δ[2])).obj S}
-    {β : Δ[m] ⟶ (Fun.obj (Opposite.op (Λ[2, 1] : SSet))).obj S}
-    (sq : CommSq α ((boundary m).ι) ((Fun.map ((horn 2 1).ι).op).app S) β) :
-    (newSquare S m sq).HasLift → sq.HasLift := by
-  · intro ⟨lift, fac_left, _⟩
-    have S' := (Δ_pushout m).isColimit.uniq (S_cocone S m sq) (to_S S m sq) (aux2 S m α β sq)
-    have Δ' := (Δ_pushout m).isColimit.uniq (Δ_cocone m) (Δ_pushoutProduct m) (by simp only [Fin.isValue,
-      Δ_cocone, Limits.PushoutCocone.mk_pt, Functor.const_obj_obj, Δ_pushoutProduct, Limits.IsColimit.fac,
-      Limits.PushoutCocone.mk_ι_app, Limits.span_zero, implies_true])
-    refine ⟨MonoidalClosed.curry lift, ?_, ?_⟩
-    all_goals apply_fun MonoidalClosed.uncurry
-    · simp only [uncurry_natural_left, uncurry_curry]
-      have := Limits.PushoutCocone.IsColimit.inl_desc (Δ_pushout m).isColimit _ _
-        (S_cocone_aux S m α β sq)
-      change (Δ_pushout m).cocone.inl ≫ (Δ_pushout m).isColimit.desc (S.S_cocone m sq) = _ at this
-      have L := Limits.PushoutCocone.IsColimit.inl_desc (Δ_pushout m).isColimit
-        (Δ[2] ◁ (boundary m).ι) ((horn 2 1).ι ▷ Δ[m]) rfl
-      change (Δ_pushout m).cocone.inl ≫ (Δ_pushout m).isColimit.desc (Δ_cocone m) = _ at L
-      rw [← this, ← S', ← fac_left, Δ', ← Category.assoc, L]
-    · have := Limits.PushoutCocone.IsColimit.inr_desc (Δ_pushout m).isColimit _ _
-        (S_cocone_aux S m α β sq)
-      change (Δ_pushout m).cocone.inr ≫ (Δ_pushout m).isColimit.desc (S.S_cocone m sq) = _ at this
-      have L := Limits.PushoutCocone.IsColimit.inr_desc (Δ_pushout m).isColimit
-        (Δ[2] ◁ (boundary m).ι) ((horn 2 1).ι ▷ Δ[m]) rfl
-      change (Δ_pushout m).cocone.inr ≫ (Δ_pushout m).isColimit.desc (Δ_cocone m) = _ at L
-      dsimp only [Fin.isValue, internalHom_obj, internalHom_map, Quiver.Hom.unop_op]
-      rw [← this, ← S', ← fac_left, Δ', ← Category.assoc, L]
-      apply_fun MonoidalClosed.curry
-      rfl
+lemma sqLift_of_newSqLift
+    (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
+    (newSquare α β sq).HasLift → sq.HasLift := by
+  intro ⟨lift, fac_left, _⟩
+  refine ⟨curry lift, ?_, ?_⟩
+  · apply_fun uncurry
+    rw [uncurry_natural_left, uncurry_curry]
+    apply_fun (fun f ↦ (PushoutProduct.inl ∂Δ[m].ι Λ[2, 1].ι) ≫ f) at fac_left
+    simp [to_S] at fac_left
+    assumption
+  · apply_fun uncurry
+    rw [uncurry_natural_left]
+    apply_fun (fun f ↦ (PushoutProduct.inr ∂Δ[m].ι Λ[2, 1].ι) ≫ f) at fac_left
+    simp [to_S] at fac_left
+    simp [← fac_left, whisker_exchange_assoc]
 
 -- given a map from the pushout to S, we can recover a commutative square as in `0079`
-def newSq (S : SSet) (m : ℕ)
-    (f : (Δ_pushout m).cocone.pt ⟶ S) :
-  CommSq (MonoidalClosed.curry ((Δ_pushout m).cocone.inl ≫ f))
-    ((boundary m).ι) ((Fun.map ((horn 2 1).ι).op).app S)
-    (MonoidalClosed.curry ((Δ_pushout m).cocone.inr ≫ f)) := by
+def newSq
+    (f : (PushoutProduct.pt ∂Δ[m].ι Λ[2, 1].ι) ⟶ S) :
+  CommSq (MonoidalClosed.curry ((PushoutProduct.inl ∂Δ[m].ι Λ[2, 1].ι) ≫ f))
+    ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S)
+    (MonoidalClosed.curry ((PushoutProduct.inr ∂Δ[m].ι Λ[2, 1].ι) ≫ f)) := by
   constructor
-  apply_fun MonoidalClosed.uncurry
-  simp only [Fin.isValue, internalHom_obj, IsPushout.cocone_inl, internalHom_map,
-    Quiver.Hom.unop_op, uncurry_natural_left, MonoidalClosed.uncurry_pre, Functor.id_obj,
-    IsPushout.cocone_inr, uncurry_curry]
-  let inl := Limits.pushout.inl ((horn 2 1).ι ▷ (∂Δ[m] : SSet)) ((Λ[2, 1] : SSet) ◁ (boundary m).ι)
-  let inr := Limits.pushout.inr ((horn 2 1).ι ▷ (∂Δ[m] : SSet)) ((Λ[2, 1] : SSet) ◁ (boundary m).ι)
-  change (Λ[2, 1] : SSet) ◁ MonoidalClosed.curry (inl ≫ f) ≫
-    (horn 2 1).ι ▷ (ihom Δ[2]).obj S ≫ (ihom.ev Δ[2]).app S =
-    (Λ[2, 1] : SSet) ◁ (boundary m).ι ≫ inr ≫ f
-  rw [← Category.assoc, ← Category.assoc, ← (Δ_pushout m).w]
-  ext n ⟨x, y⟩
-  change _ = f.app n (inl.app n (((horn 2 1).ι).app n x, y))
-  simp [MonoidalClosed.curry, Adjunction.homEquiv, ihom]
-  change (((ihom.adjunction Δ[2]).counit).app S).app
-    n (((((horn 2 1).ι).app n x, ((Closed.rightAdj Δ[2]).map f).app n (((Closed.rightAdj Δ[2]).map inl).app n (((ihom.adjunction Δ[2]).unit.app (∂Δ[m] : SSet)).app n y) )))) = _
-  simp only [Functor.id_obj, Functor.comp_obj, tensorLeft_obj, ihom.adjunction, Closed.adj,
-    FunctorToTypes.adj, Equiv.invFun_as_coe, Fin.isValue, Closed.rightAdj,
-    FunctorToTypes.functorHomEquiv_apply_app, NatTrans.id_app, FunctorToTypes.rightAdj_obj_obj,
-    types_id_apply, FunctorToTypes.rightAdj_map_app_app,
-    FunctorToTypes.functorHomEquiv_symm_apply_app_app, FunctorToTypes.map_id_apply,
-    Monoidal.tensorObj_obj]
-  congr
+  apply_fun uncurry
+  simp [uncurry_natural_left, internalHom_map, uncurry_pre, uncurry_natural_left, whisker_exchange_assoc]
+  exact Limits.pushout.condition_assoc f
 
 -- iff the pushout diagram has an extension, then the square has a lift
 lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)
-    (f : (Δ_pushout m).cocone.pt ⟶ S)
+    (f : PushoutProduct.pt ∂Δ[m].ι Λ[2, 1].ι ⟶ S)
     (g : Δ[2] ⊗ Δ[m] ⟶ Δ[0])
-    (sq : CommSq f (Δ_pushoutProduct m) S.proj g) :
-    (newSq S m f).HasLift → sq.HasLift := by
+    (sq : CommSq f (∂Δ[m].ι ◫ Λ[2, 1].ι) S.proj g) :
+    (newSq f).HasLift → sq.HasLift := by
   intro ⟨lift, fac_left, fac_right⟩
-  use MonoidalClosed.uncurry lift
-  · refine ((Δ_pushout m).isColimit.uniq
-      (S_cocone S m ((newSq S m f))) (Δ_pushoutProduct m ≫ MonoidalClosed.uncurry lift) ?_).trans
-      ((Δ_pushout m).isColimit.uniq (S_cocone S m (newSq S m f)) f ?_).symm
-    · exact aux1 S m (MonoidalClosed.curry ((Δ_pushout m).cocone.inl ≫ f))
-        (MonoidalClosed.curry ((Δ_pushout m).cocone.inr ≫ f)) (newSq S m f) lift fac_left fac_right
-    · have := aux2 S m (MonoidalClosed.curry ((Δ_pushout m).cocone.inl ≫ f))
-        (MonoidalClosed.curry ((Δ_pushout m).cocone.inr ≫ f)) (newSq S m f)
-      convert this
-      apply (Δ_pushout m).isColimit.uniq (S_cocone S m (newSq S m f)) f
-      intro j
-      cases j
-      all_goals simp only [Fin.isValue, Limits.span_zero, IsPushout.cocone_inl, IsPushout.cocone_inr,
-        S_cocone, Limits.PushoutCocone.mk_pt, Functor.const_obj_obj,
-        Limits.PushoutCocone.condition_zero, Category.assoc, Limits.PushoutCocone.mk_ι_app,
-        uncurry_curry]
-      · rename_i j
-        cases j
-        all_goals simp
-  · exact Limits.IsTerminal.hom_ext isTerminal _ _
+  refine ⟨MonoidalClosed.uncurry lift, ?_, Limits.IsTerminal.hom_ext isTerminal _ _⟩
+  apply (IsPushout ∂Δ[m].ι Λ[2, 1].ι).hom_ext
+  · apply_fun curry
+    simpa [curry_natural_left]
+  · apply_fun curry
+    dsimp [PushoutProduct.inr] at fac_right
+    simp [← fac_right, curry_eq_iff]
+    rfl
 
 end _0079
 
 -- `0079`
 /- S is a quasicat iff Fun(Δ[2], S) ⟶ Fun((Λ[2, 1] : SSet), S) is a trivial Kan fib -/
 instance horn_tkf_iff_quasicat (S : SSet) : Quasicategory S ↔
-    trivialKanFibration ((Fun.map ((horn 2 1).ι).op).app S) := by
+    trivialKanFibration ((internalHom.map Λ[2, 1].ι.op).app S) := by
   rw [← quasicat_iff_extension_wrt_innerAnodyne.{w}, extension_iff_rlp_proj, class_rlp_iff_llp_morphism]
-  have := contains_innerAnodyne_iff_contains_pushout_maps.{w} _ (llp.WeaklySaturated.{_, _, w} (MorphismClass S.proj))
+  have := contains_innerAnodyne_iff_contains_pushout_maps _ (llp.WeaklySaturated (MorphismClass S.proj))
   rw [← this]
   refine ⟨?_, ?_⟩
   · intro h _ _ p hp
     induction hp with | mk m =>
     constructor
     intro α β sq
-    exact sqLift_of_newSqLift _ _ _ ((h m _ .mk).sq_hasLift (newSquare S m sq))
+    exact sqLift_of_newSqLift _ _ _ ((h m _ .mk).sq_hasLift (newSquare _ _ sq))
   · intro h m _ _ p hp
     induction hp
     constructor
     intro f g sq
-    exact (newSqLift_of_sqLift S m f g sq) ((h _ (.mk m)).sq_hasLift (newSq S m f))
+    exact (newSqLift_of_sqLift S m f g sq) ((h _ (.mk m)).sq_hasLift (newSq f))
 
 /- changing the square to apply the lifting property of p
    on the monomorphism `(B ◁ boundaryInclusion n)` -/
 lemma induced_tkf_aux (B X Y : SSet) (p : X ⟶ Y)
-    (n : ℕ) [h : HasLiftingProperty (B ◁ (boundary n).ι) p] :
-    HasLiftingProperty ((boundary n).ι) ((Fun.obj (Opposite.op B)).map p) where
+    (n : ℕ) [h : HasLiftingProperty (B ◁ ∂Δ[n].ι) p] :
+    HasLiftingProperty ∂Δ[n].ι ((internalHom.obj (.op B)).map p) where
   sq_hasLift sq :=
     (CommSq.left_adjoint_hasLift_iff sq (FunctorToTypes.adj B)).1
       (h.sq_hasLift (sq.left_adjoint (Closed.adj)))
@@ -259,10 +120,10 @@ lemma induced_tkf_aux (B X Y : SSet) (p : X ⟶ Y)
 /- if p : X ⟶ Y is a trivial Kan fib, then Fun(B,X) ⟶ Fun(B,Y) is -/
 noncomputable
 instance induced_tkf (B X Y : SSet) (p : X ⟶ Y) (hp: trivialKanFibration p) :
-    trivialKanFibration ((Fun.obj (.op B)).map p) := by
+    trivialKanFibration ((internalHom.obj (.op B)).map p) := by
   intro _ _ i hi
   induction hi with | mk n =>
-  rw [trivialKanFibration_eq_rlp_monomorphisms.{w}] at hp
+  rw [trivialKanFibration_eq_rlp_monomorphisms] at hp
   have := hp _ (boundaryInclusion_whisker_mono B n)
   apply induced_tkf_aux
 
@@ -272,16 +133,16 @@ instance induced_tkf (B X Y : SSet) (p : X ⟶ Y) (hp: trivialKanFibration p) :
 open MonoidalClosed in
 noncomputable
 def fun_quasicat_aux (S D : SSet) [Quasicategory D] :
-    trivialKanFibration ((Fun.map ((horn 2 1).ι).op).app ((Fun.obj (.op S)).obj D)) := by
+    trivialKanFibration ((internalHom.map Λ[2, 1].ι.op).app ((internalHom.obj (.op S)).obj D)) := by
   intro _ _ i hi
   induction hi with | mk n =>
   -- since Fun[Δ[n], D] ⟶ Fun[Λ[2,1], D] is a TKF by `0079`,
   -- get Fun(S, Fun(Δ[n], D)) ⟶ Fun(S, Fun(Λ[2,1], D)) is a TKF by `0071`
   have := (horn_tkf_iff_quasicat.{w} D).1 (by infer_instance)
-  have := (induced_tkf.{w} S _ _ ((Fun.map ((horn 2 1).ι).op).app D)) this _ (.mk n)
+  have := (induced_tkf S _ _ ((internalHom.map Λ[2, 1].ι.op).app D)) this _ (.mk n)
   dsimp at this
-  have H : Arrow.mk ((ihom S).map ((MonoidalClosed.pre ((horn 2 1).ι)).app D)) ≅
-      Arrow.mk ((Fun.map ((horn 2 1).ι).op).app ((Fun.obj (Opposite.op S)).obj D)) :=
+  have H : Arrow.mk ((ihom S).map ((MonoidalClosed.pre Λ[2, 1].ι).app D)) ≅
+      Arrow.mk ((internalHom.map Λ[2, 1].ι.op).app ((internalHom.obj (.op S)).obj D)) :=
     CategoryTheory.Comma.isoMk (ihom_iso' _ _ _) (ihom_iso' _ _ _)
   exact HasLiftingProperty.of_arrow_iso_right ((boundary n).ι) H
 
@@ -289,6 +150,6 @@ def fun_quasicat_aux (S D : SSet) [Quasicategory D] :
 /- if D is a quasicat, then Fun(S, D) is -/
 instance fun_quasicat (S D : SSet) [Quasicategory D] : Quasicategory ((Fun.obj (.op S)).obj D) :=
   -- instance inferred by `fun_quasicat_aux`
-  (horn_tkf_iff_quasicat.{w} ((Fun.obj (.op S)).obj D)).2 (fun_quasicat_aux.{w} S D)
+  (horn_tkf_iff_quasicat.{w} ((internalHom.obj (.op S)).obj D)).2 (fun_quasicat_aux.{w} S D)
 
 end SSet

@@ -288,14 +288,6 @@ namespace SSet
 
 open Limits Simplicial PushoutProduct
 
-/-- pushout in proof `0079` (for retract diagram) -/
-def Λ_pushout (m : ℕ) (i : Fin (m + 1)) :=
-  PushoutProduct.IsPushout (SSet.horn m i).ι (horn 2 1).ι
-
-noncomputable
-def Λ_pushoutProduct (m : ℕ) (i : Fin (m + 1)) : (Λ_pushout m i).cocone.pt ⟶ Δ[2] ⊗ Δ[m] :=
-  (horn m i).ι ◫ (horn 2 1).ι
-
 inductive bdryPushout : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk ⦃m : ℕ⦄ : bdryPushout ((boundary m).ι ◫ (horn 2 1).ι)
 

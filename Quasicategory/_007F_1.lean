@@ -7,10 +7,6 @@ import Quasicategory.PushoutProduct.TransfiniteComposition
 
 The first half of the proof of `007F`.
 
-# TODO
-
-Show `S` is stable under transfinite composition.
-
 -/
 
 universe w v u
@@ -22,7 +18,7 @@ open CategoryTheory Simplicial MorphismProperty MonoidalCategory PushoutProduct
 -- T = WeaklySaturatedOf bdryPushoutClass
 -- S is the class of all morphisms `i : A → B` such that the pushout product with `Λ[2, 1] ↪ Δ[2]` is in T
 def S : MorphismProperty SSet := fun _ _ i ↦
-    (WeaklySaturatedClassOf.{w} bdryPushoutClass) (i ◫ (horn 2 1).ι)
+  (WeaklySaturatedClassOf.{w} bdryPushoutClass) (i ◫ Λ[2, 1].ι)
 
 -- S is weakly saturated because T is
 set_option maxHeartbeats 800000 in
@@ -75,13 +71,6 @@ instance S.WeaklySaturated : WeaklySaturated.{w} S.{w} where
         · intro j hj
           exact WeaklySaturatedOf.pushout (newPushoutIsPushout hf.F (Limits.Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
         }}
-        /-
-        induction hf with
-        | mk F hF c hc =>
-        apply bdryPushoutClass.WeaklySaturatedClassOf.mem_of_transfinite_composition ?_ (c'_IsColimit F c hc)
-        · intro j hj
-          exact WeaklySaturatedOf.pushout (newPushoutIsPushout F c j) (hF j hj) }}
-        -/
 
 lemma BoundaryInclusions_le_S : BoundaryInclusions ≤ S := fun _ _ _ h ↦ by
   induction h with | mk =>
@@ -127,7 +116,7 @@ def standard_map (n : ℕ) (i : Fin (n + 1)) : Δ[n] ⟶ Δ[2] :=
 
 -- the above map restricted to the horn
 def horn_map (n : ℕ) (i : Fin (n + 1)) : (Λ[n, i] : SSet) ⟶ Δ[2] :=
-  ((horn n i).ι) ≫ (standard_map n i)
+  Λ[n, i].ι ≫ (standard_map n i)
 
 -- on vertices j maps to
 -- (j, 0) if j < i
@@ -140,15 +129,15 @@ def s_restricted (n : ℕ) (i : Fin (n + 1)) : (Λ[n, i] : SSet) ⟶ Δ[2] ⊗ (
   FunctorToTypes.prod.lift (horn_map n i) (𝟙 _)
 
 noncomputable
-def horn_to_pushout (n : ℕ) (i : Fin (n + 1)) : (Λ[n, i] : SSet) ⟶ (Λ_pushout n i).cocone.pt :=
-  s_restricted n i ≫ (Limits.pushout.inl ((horn 2 1).ι ▷ (Λ[n, i] : SSet)) ((Λ[2, 1] : SSet) ◁ (horn n i).ι))
+def horn_to_pushout (n : ℕ) (i : Fin (n + 1)) : (Λ[n, i] : SSet) ⟶ (PushoutProduct.pt Λ[n, i].ι Λ[2, 1].ι)  :=
+  s_restricted n i ≫ (Limits.pushout.inl (Λ[2, 1].ι ▷ Λ[n, i]) ((Λ[2, 1] : SSet) ◁ Λ[n, i].ι))
 
 lemma leftSqCommAux (n : ℕ) (i : Fin (n + 1)) :
-    s_restricted n i ≫ Δ[2] ◁ ((horn n i).ι) = ((horn n i).ι) ≫ s n i := rfl
+    s_restricted n i ≫ Δ[2] ◁ Λ[n, i].ι = Λ[n, i].ι ≫ s n i := rfl
 
-lemma leftSqComm (n : ℕ) (i : Fin (n + 1)) : horn_to_pushout n i ≫ Λ_pushoutProduct n i = ((horn n i).ι) ≫ s n i := by
+lemma leftSqComm (n : ℕ) (i : Fin (n + 1)) : horn_to_pushout n i ≫ Λ[n, i].ι ◫ Λ[2, 1].ι = Λ[n, i].ι ≫ s n i := by
   rw [← leftSqCommAux]
-  dsimp [horn_to_pushout, Λ_pushoutProduct, pushoutProduct]
+  dsimp [horn_to_pushout, pushoutProduct]
   rw [Category.assoc, IsPushout.inl_desc]
 
 def r_aux {n} (i : Fin (n + 1)) : Fin 3 × Fin (n + 1) →o Fin (n + 1) where
@@ -200,7 +189,7 @@ variable (n : ℕ) (i : Fin (n + 1)) (h0 : 0 < i) (hn : i < Fin.last n)
 
 -- r restricted along Λ[2, 1]
 noncomputable
-def r_restrict_horn_2 : (Λ[2, 1] : SSet) ⊗ Δ[n] ⟶ (Λ[n, i] : SSet) where
+def r_restrict_horn_2 : (Λ[2, 1] : SSet) ⊗ Δ[n] ⟶ Λ[n, i] where
   app k := by
     intro ⟨⟨x, hx⟩, y⟩
     refine ⟨(((horn 2 1).ι) ▷ Δ[n] ≫ r n i).app k ⟨⟨x, hx⟩, y⟩, ?_⟩
@@ -249,10 +238,10 @@ def r_restrict_horn_2 : (Λ[2, 1] : SSet) ⊗ Δ[n] ⟶ (Λ[n, i] : SSet) where
 
 -- r restricted along (Λ[n, i] : SSet)
 noncomputable
-def r_restrict_horn_n : Δ[2] ⊗ (Λ[n, i] : SSet) ⟶ (Λ[n, i] : SSet) where
+def r_restrict_horn_n : Δ[2] ⊗ Λ[n, i] ⟶ Λ[n, i] where
   app k := by
     intro ⟨x, ⟨y, hy⟩⟩
-    refine ⟨(Δ[2] ◁ ((horn n i).ι) ≫ r n i).app k ⟨x, ⟨y, hy⟩⟩, ?_⟩
+    refine ⟨(Δ[2] ◁ Λ[n, i].ι ≫ r n i).app k ⟨x, ⟨y, hy⟩⟩, ?_⟩
     dsimp [horn, ← ne_eq] at hy ⊢
     rw [Set.ne_univ_iff_exists_not_mem] at hy ⊢
     obtain ⟨a, this⟩ := hy
@@ -272,11 +261,11 @@ def r_restrict_horn_n : Δ[2] ⊗ (Λ[n, i] : SSet) ⟶ (Λ[n, i] : SSet) where
 
 open stdSimplex SimplexCategory in
 noncomputable
-def pushout_to_horn : (Λ_pushout n i).cocone.pt ⟶ (Λ[n, i] : SSet) :=
+def pushout_to_horn : (PushoutProduct.pt Λ[n, i].ι Λ[2, 1].ι) ⟶ (Λ[n, i] : SSet) :=
   Limits.pushout.desc (r_restrict_horn_n n i) (r_restrict_horn_2 n i h0 hn) rfl
 
-lemma rightSqComm : pushout_to_horn n i h0 hn ≫ (horn n i).ι = Λ_pushoutProduct n i ≫ r n i := by
-  dsimp [pushout_to_horn, Λ_pushoutProduct, pushoutProduct]
+lemma rightSqComm : pushout_to_horn n i h0 hn ≫ (Λ[n, i]).ι = (Λ[n, i].ι ◫ Λ[2, 1].ι) ≫ r n i := by
+  dsimp [pushout_to_horn, pushoutProduct]
   apply Limits.pushout.hom_ext; all_goals aesop
 
 lemma r_comp_s (n : ℕ) (i : Fin (n + 1)) : s n i ≫ r n i = 𝟙 Δ[n] := by
@@ -327,7 +316,7 @@ lemma restricted_r_comp_s : horn_to_pushout n i ≫ pushout_to_horn n i h0 hn = 
   aesop
 
 noncomputable
-instance hornRetract : RetractArrow ((horn n i).ι) (Λ_pushoutProduct n i) where
+instance hornRetract : RetractArrow Λ[n, i].ι (Λ[n, i].ι ◫ Λ[2, 1].ι) where
   i := {
     left := horn_to_pushout n i
     right := s n i

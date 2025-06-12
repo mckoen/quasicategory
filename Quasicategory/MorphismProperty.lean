@@ -97,23 +97,6 @@ lemma minimalWeaklySaturated (S T : MorphismProperty C) (h : T ≤ S) : WeaklySa
   | transfinite J f hF h' h'' =>
     refine (hS.IsStableUnderTransfiniteComposition.isStableUnderTransfiniteCompositionOfShape J).le _ ⟨hF, h''⟩
 
-lemma transfinite_pushouts_coproducts_eq (T : MorphismProperty C) :
-    transfiniteCompositions.{w, v, u} (coproducts.{w, v, u} T).pushouts = WeaklySaturatedClassOf.{w, v, u} T := by
-  apply le_antisymm
-  · rw [transfiniteCompositions_le_iff, pushouts_le_iff, coproducts_le_iff]
-    exact le_WeaklySaturatedClassOf T
-  · intro _ _ f hf
-    cases hf with
-    | of f h => exact le_transfiniteCompositions _ f (le_pushouts _ f (le_coproducts T f h))
-    | @pushout A B _ _ p i _ q h hp =>
-      apply le_transfiniteCompositions
-      dsimp [pushouts]
-      refine ⟨A, B, p, i, q, ?_, h⟩
-      apply le_coproducts
-      sorry
-    | retract _ _ => sorry
-    | transfinite J f hf _ => sorry
-
 end MorphismProperty
 
 end CategoryTheory
