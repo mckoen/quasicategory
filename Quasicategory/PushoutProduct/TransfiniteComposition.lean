@@ -27,9 +27,6 @@ instance rr {S : SSet} : PreservesColimitsOfSize (tensorLeft S) :=
 
 variable {m : J}
 
-#check Set.principalSegIio
-#check (Set.principalSegIio m).monotone.functor ⋙ F
-
 noncomputable
 def tempCocone (s : Cocone ((Set.principalSegIio m).monotone.functor ⋙ (F' F c))) :
     Cocone (((Set.principalSegIio m).monotone.functor ⋙ F) ⋙ tensorLeft Δ[2]) where

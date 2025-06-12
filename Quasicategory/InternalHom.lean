@@ -1,6 +1,7 @@
 import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 import Mathlib.CategoryTheory.Closed.FunctorToTypes
 import Mathlib.CategoryTheory.Limits.Shapes.FunctorToTypes
+import Quasicategory.TopCatModelCategory.SSet.Monoidal
 
 /-!
 
@@ -12,7 +13,7 @@ open CategoryTheory Simplicial MonoidalCategory MonoidalClosed
 
 namespace SSet
 
-instance : MonoidalClosed SSet := FunctorToTypes.monoidalClosed
+instance : MonoidalClosed SSet := by infer_instance
 
 noncomputable
 abbrev Fun : SSetᵒᵖ ⥤ SSet ⥤ SSet := internalHom

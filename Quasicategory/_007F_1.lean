@@ -27,7 +27,7 @@ def S : MorphismProperty SSet := fun _ _ i ↦
 -- S is weakly saturated because T is
 set_option maxHeartbeats 800000 in
 open Limits in
-instance S.WeaklySaturated : WeaklySaturated.{_, _, w} S.{w} where
+instance S.WeaklySaturated : WeaklySaturated.{w} S.{w} where
   IsStableUnderCobaseChange := ⟨by
     intro _ _ _ _ g _ f _ h hg
     exact (bdryPushoutClass).of_is.IsStableUnderCobaseChange.of_isPushout (pushoutCommSq_IsPushout h) hg⟩
@@ -88,8 +88,8 @@ lemma BoundaryInclusions_le_S : BoundaryInclusions ≤ S := fun _ _ _ h ↦ by
   apply WeaklySaturatedOf.of
   apply bdryPushout.mk
 
-lemma monomorphisms_le_S : monomorphisms SSet ≤ S.{w} := by
-  rw [mono_eq_bdryInclusions.{_, w}]
+lemma monomorphisms_le_S : monomorphisms SSet.{u} ≤ S.{u} := by
+  rw [mono_eq_bdryInclusions.{u}]
   apply minimalWeaklySaturated _ _ BoundaryInclusions_le_S S.WeaklySaturated
 
 -- [n] ⟶ [2] by j ↦
