@@ -9,12 +9,6 @@ import Quasicategory.TopCatModelCategory.SSet.SmallObject
 Defines some basic morphism properties (fibrations, anodyne morphisms) and a few immediate
 results about them.
 
-# TODO
-
-show `innerAnodyne = WeaklySaturatedClassOf InnerHornInclusions`
-
-rewrite all of this
-
 -/
 
 universe w v u
@@ -34,27 +28,6 @@ inductive BoundaryInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
 /-- The class of all boundary inclusions. -/
 def BoundaryInclusions : MorphismProperty SSet := fun _ _ p ↦ BoundaryInclusion p
 
-inductive HornInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
-  | mk ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (h0 : 0 ≤ i) (hn : i ≤ Fin.last (n+2)) :
-    HornInclusion (horn (n+2) i).ι
-
-/-- The class of all horn inclusions. -/
-def HornInclusions : MorphismProperty SSet := fun _ _ p ↦ HornInclusion p
-
-inductive LeftHornInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
-  | mk ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (h0 : 0 ≤ i) (hn : i < Fin.last (n+2)) :
-    LeftHornInclusion (horn (n+2) i).ι
-
-/-- The class of all left horn inclusions. -/
-def LeftHornInclusions : MorphismProperty SSet := fun _ _ p ↦ LeftHornInclusion p
-
-inductive RightHornInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
-  | mk ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (h0 : 0 < i) (hn : i ≤ Fin.last (n+2)) :
-    RightHornInclusion (horn (n+2) i).ι
-
-/-- The class of all right horn inclusions. -/
-def RightHornInclusions : MorphismProperty SSet := fun _ _ p ↦ RightHornInclusion p
-
 inductive InnerHornInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (h0 : 0 < i) (hn : i < Fin.last (n+2)) :
     InnerHornInclusion (horn (n+2) i).ι
@@ -66,27 +39,9 @@ def InnerHornInclusions : MorphismProperty SSet := fun _ _ p ↦ InnerHornInclus
   every boundary inclusion  `∂Δ[n] ⟶ Δ[n]`. -/
 abbrev trivialKanFibration := BoundaryInclusions.rlp
 
-abbrev kanFibration := HornInclusions.rlp
-
-abbrev leftFibration := LeftHornInclusions.rlp
-
-abbrev rightFibration := RightHornInclusions.rlp
-
 /- a morphism is an inner fibration if it has the right lifting property wrt
   every inner horn inclusion  `Λ[n, i] ⟶ Δ[n]`. -/
 abbrev innerFibration := InnerHornInclusions.rlp
-
--- left fibrations are inner fibrations
-lemma innerFibration_of_leftFibration {X Y : SSet} (p : X ⟶ Y) (hp : leftFibration p) :
-    innerFibration p := fun _ _ _ h ↦ by
-  induction h with
-  | mk h0 hn => exact hp _ (.mk (le_of_lt h0) hn)
-
--- right fibrations are inner fibrations
-lemma innerFibration_of_rightFibration {X Y : SSet} (p : X ⟶ Y) (hp : rightFibration p) :
-    innerFibration p := fun _ _ _ h ↦ by
-  induction h with
-  | mk h0 hn => exact hp _ (.mk h0 (le_of_lt hn))
 
 -- `01BB` S is a quasicategory iff S ⟶ Δ[0] is an inner fibration
 lemma quasicategory_iff_proj_innerFibration {S : SSet} :
@@ -116,14 +71,28 @@ lemma innerHorn_le_innerAnodyne : InnerHornInclusions ≤ innerAnodyne := fun _ 
   induction hp with
   | mk h0 hn => exact fun _ _ _ h ↦ h _ (.mk h0 hn)
 
-/-
-inductive InnerHornInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
-  | mk ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (h0 : 0 < i) (hn : i < Fin.last (n+2)) :
-    InnerHornInclusion (horn (n+2) i).ι
--/
-
 def J' : MorphismProperty SSet.{u} :=
-  ⨆ n, .ofHoms (fun (i : Fin (n + 3)) (h0 : 0 < i) (hn : i < Fin.last (n+2)) ↦ Λ[n + 2, i].ι)
+  ⨆ n, ofHoms (fun (j : { i : Fin (n + 3) // 0 < i ∧ i < Fin.last (n + 2) }) ↦ Λ[n + 2, j.1].ι)
+
+lemma J'_eq : J' = InnerHornInclusions.{u} := by
+  apply le_antisymm
+  · intro _ _ _ hf
+    cases hf with
+    | intro w h =>
+    simp at h
+    obtain ⟨⟨n, h⟩, hw⟩ := h
+    replace h := h.2 hw
+    cases h with
+    | mk i =>
+    obtain ⟨i, ⟨hi₁, hi₂⟩⟩ := i
+    exact InnerHornInclusion.mk hi₁ hi₂
+  · intro _ _ f hf
+    cases hf with
+    | @mk n i h0 hn =>
+    simp [J']
+    use n
+    rw [ofHoms_iff]
+    use ⟨i, ⟨h0, hn⟩⟩
 
 instance isCardinalForSmallObjectArgument_InnerHornInclusions :
     InnerHornInclusions.{u}.IsCardinalForSmallObjectArgument Cardinal.aleph0.{u} where
@@ -134,14 +103,13 @@ instance isCardinalForSmallObjectArgument_InnerHornInclusions :
     | mk n i =>
     infer_instance
   isSmall := by
-    rw [isSmall_iff_eq_ofHoms]
-
-    sorry
+    rw [← J'_eq, J']
+    infer_instance
 
 instance : HasSmallObjectArgument.{u} InnerHornInclusions.{u} where
   exists_cardinal := ⟨Cardinal.aleph0.{u}, inferInstance, inferInstance, inferInstance⟩
 
-lemma innerAnodyne_eq : innerAnodyne = WeaklySaturatedClassOf InnerHornInclusions := by
+lemma innerAnodyne_eq : innerAnodyne.{u} = WeaklySaturatedClassOf.{u} InnerHornInclusions := by
   refine le_antisymm ?_ (minimalWeaklySaturated innerAnodyne _ innerHorn_le_innerAnodyne (llp.WeaklySaturated _))
   dsimp [innerAnodyne, innerFibration]
   rw [llp_rlp_of_hasSmallObjectArgument InnerHornInclusions, retracts_le_iff,
@@ -202,7 +170,7 @@ instance quasicat_iff_extension_wrt_innerAnodyne {S : SSet} :
   intro hS
   rw [extension_iff_rlp_proj, class_rlp_iff_llp_morphism, innerAnodyne_eq]
   intro _ _ _
-  refine minimalWeaklySaturated ((MorphismClass S.proj).llp) InnerHornInclusions ?_ (llp.WeaklySaturated.{_, _, w} _) _
+  refine minimalWeaklySaturated ((MorphismClass S.proj).llp) InnerHornInclusions ?_ (llp.WeaklySaturated _) _
   intro _ _ i hi
   induction hi with | mk h0 hn =>
   intro _ _ f hf

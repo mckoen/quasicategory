@@ -92,7 +92,7 @@ end _0079
 /- S is a quasicat iff Fun(Δ[2], S) ⟶ Fun((Λ[2, 1] : SSet), S) is a trivial Kan fib -/
 instance horn_tkf_iff_quasicat (S : SSet) : Quasicategory S ↔
     trivialKanFibration ((internalHom.map Λ[2, 1].ι.op).app S) := by
-  rw [← quasicat_iff_extension_wrt_innerAnodyne.{w}, extension_iff_rlp_proj, class_rlp_iff_llp_morphism]
+  rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_rlp_proj, class_rlp_iff_llp_morphism]
   have := contains_innerAnodyne_iff_contains_pushout_maps _ (llp.WeaklySaturated (MorphismClass S.proj))
   rw [← this]
   refine ⟨?_, ?_⟩
@@ -138,7 +138,7 @@ def fun_quasicat_aux (S D : SSet) [Quasicategory D] :
   induction hi with | mk n =>
   -- since Fun[Δ[n], D] ⟶ Fun[Λ[2,1], D] is a TKF by `0079`,
   -- get Fun(S, Fun(Δ[n], D)) ⟶ Fun(S, Fun(Λ[2,1], D)) is a TKF by `0071`
-  have := (horn_tkf_iff_quasicat.{w} D).1 (by infer_instance)
+  have := (horn_tkf_iff_quasicat D).1 (by infer_instance)
   have := (induced_tkf S _ _ ((internalHom.map Λ[2, 1].ι.op).app D)) this _ (.mk n)
   dsimp at this
   have H : Arrow.mk ((ihom S).map ((MonoidalClosed.pre Λ[2, 1].ι).app D)) ≅
@@ -150,6 +150,6 @@ def fun_quasicat_aux (S D : SSet) [Quasicategory D] :
 /- if D is a quasicat, then Fun(S, D) is -/
 instance fun_quasicat (S D : SSet) [Quasicategory D] : Quasicategory ((Fun.obj (.op S)).obj D) :=
   -- instance inferred by `fun_quasicat_aux`
-  (horn_tkf_iff_quasicat.{w} ((internalHom.obj (.op S)).obj D)).2 (fun_quasicat_aux.{w} S D)
+  (horn_tkf_iff_quasicat ((internalHom.obj (.op S)).obj D)).2 (fun_quasicat_aux S D)
 
 end SSet
