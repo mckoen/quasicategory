@@ -77,6 +77,9 @@ instance of_is (T : MorphismProperty C) : WeaklySaturated.{w, v, u} (WeaklySatur
 instance (T : MorphismProperty C) : T.WeaklySaturatedClassOf.IsStableUnderCobaseChange :=
   T.of_is.IsStableUnderCobaseChange
 
+instance (T : MorphismProperty C) : T.WeaklySaturatedClassOf.IsStableUnderRetracts :=
+  T.of_is.IsStableUnderRetracts
+
 instance (T : MorphismProperty C) : IsStableUnderTransfiniteComposition.{w, v, u} (WeaklySaturatedClassOf.{w, v, u} T) :=
   (of_is.{w, v, u} T).IsStableUnderTransfiniteComposition
 

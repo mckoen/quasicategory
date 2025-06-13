@@ -1,6 +1,8 @@
 import Mathlib.AlgebraicTopology.Quasicategory.Basic
+import Mathlib.CategoryTheory.SmallObject.Basic
 import Quasicategory.MorphismProperty
 import Quasicategory.Terminal
+import Quasicategory.TopCatModelCategory.SSet.SmallObject
 
 /-!
 
@@ -15,9 +17,14 @@ rewrite all of this
 
 -/
 
-universe w
+universe w v u
 
 namespace SSet
+
+attribute [local instance] Cardinal.fact_isRegular_aleph0
+
+attribute [local instance] Cardinal.aleph0_isRegular
+  Cardinal.orderbot_aleph0_ord_to_type
 
 open CategoryTheory Simplicial MorphismProperty
 
@@ -109,10 +116,37 @@ lemma innerHorn_le_innerAnodyne : InnerHornInclusions ≤ innerAnodyne := fun _ 
   induction hp with
   | mk h0 hn => exact fun _ _ _ h ↦ h _ (.mk h0 hn)
 
+/-
+inductive InnerHornInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
+  | mk ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (h0 : 0 < i) (hn : i < Fin.last (n+2)) :
+    InnerHornInclusion (horn (n+2) i).ι
+-/
+
+def J' : MorphismProperty SSet.{u} :=
+  ⨆ n, .ofHoms (fun (i : Fin (n + 3)) (h0 : 0 < i) (hn : i < Fin.last (n+2)) ↦ Λ[n + 2, i].ι)
+
+instance isCardinalForSmallObjectArgument_InnerHornInclusions :
+    InnerHornInclusions.{u}.IsCardinalForSmallObjectArgument Cardinal.aleph0.{u} where
+  hasIterationOfShape := by infer_instance
+  preservesColimit i hi f hf := by
+    simp only [InnerHornInclusions, iSup_iff] at hi
+    cases hi with
+    | mk n i =>
+    infer_instance
+  isSmall := by
+    rw [isSmall_iff_eq_ofHoms]
+
+    sorry
+
+instance : HasSmallObjectArgument.{u} InnerHornInclusions.{u} where
+  exists_cardinal := ⟨Cardinal.aleph0.{u}, inferInstance, inferInstance, inferInstance⟩
+
 lemma innerAnodyne_eq : innerAnodyne = WeaklySaturatedClassOf InnerHornInclusions := by
-  ext X Y p
-  refine ⟨?_, minimalWeaklySaturated innerAnodyne _ innerHorn_le_innerAnodyne (llp.WeaklySaturated _) p⟩
-  · sorry
+  refine le_antisymm ?_ (minimalWeaklySaturated innerAnodyne _ innerHorn_le_innerAnodyne (llp.WeaklySaturated _))
+  dsimp [innerAnodyne, innerFibration]
+  rw [llp_rlp_of_hasSmallObjectArgument InnerHornInclusions, retracts_le_iff,
+    transfiniteCompositions_le_iff, pushouts_le_iff, coproducts_le_iff]
+  exact le_WeaklySaturatedClassOf _
 
 /-
 -- `01C3` aux
