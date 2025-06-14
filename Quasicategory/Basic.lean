@@ -4,13 +4,6 @@ import Quasicategory.MorphismProperty
 import Quasicategory.Terminal
 import Quasicategory.TopCatModelCategory.SSet.SmallObject
 
-/-!
-
-Defines some basic morphism properties (fibrations, anodyne morphisms) and a few immediate
-results about them.
-
--/
-
 universe w v u
 
 namespace SSet
@@ -109,12 +102,15 @@ instance isCardinalForSmallObjectArgument_InnerHornInclusions :
 instance : HasSmallObjectArgument.{u} InnerHornInclusions.{u} where
   exists_cardinal := ⟨Cardinal.aleph0.{u}, inferInstance, inferInstance, inferInstance⟩
 
-lemma innerAnodyne_eq : innerAnodyne.{u} = WeaklySaturatedClassOf.{u} InnerHornInclusions := by
-  refine le_antisymm ?_ (minimalWeaklySaturated innerAnodyne _ innerHorn_le_innerAnodyne (llp.WeaklySaturated _))
-  dsimp [innerAnodyne, innerFibration]
-  rw [llp_rlp_of_hasSmallObjectArgument InnerHornInclusions, retracts_le_iff,
+lemma llp_rlp_eq_WeaklySaturatedClassOf {T : MorphismProperty SSet.{u}} [HasSmallObjectArgument.{u} T] :
+    T.rlp.llp = WeaklySaturatedClassOf.{u} T := by
+  refine le_antisymm ?_ (minimalWeaklySaturated _ _ (le_llp_rlp T) (llp.WeaklySaturated _))
+  rw [llp_rlp_of_hasSmallObjectArgument, retracts_le_iff,
     transfiniteCompositions_le_iff, pushouts_le_iff, coproducts_le_iff]
   exact le_WeaklySaturatedClassOf _
+
+lemma innerAnodyne_eq : innerAnodyne.{u} = WeaklySaturatedClassOf.{u} InnerHornInclusions :=
+  llp_rlp_eq_WeaklySaturatedClassOf
 
 /-
 -- `01C3` aux

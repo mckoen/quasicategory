@@ -3,20 +3,11 @@ import Mathlib.CategoryTheory.Closed.FunctorToTypes
 import Mathlib.CategoryTheory.Limits.Shapes.FunctorToTypes
 import Quasicategory.TopCatModelCategory.SSet.Monoidal
 
-/-!
-
-Some isomorphisms of internal homs, used in `0066`.
-
--/
-
 open CategoryTheory Simplicial MonoidalCategory MonoidalClosed
 
 namespace SSet
 
 instance : MonoidalClosed SSet := by infer_instance
-
-noncomputable
-abbrev Fun : SSetᵒᵖ ⥤ SSet ⥤ SSet := internalHom
 
 open FunctorToTypes
 

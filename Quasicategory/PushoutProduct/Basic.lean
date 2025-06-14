@@ -4,14 +4,6 @@ import Mathlib.Combinatorics.Quiver.ReflQuiver
 import Mathlib.AlgebraicTopology.SimplicialSet.Horn
 import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 
-/-!
-
-Defines pushout-products and a little bit of API.
-
-Everything here should be generalized and more API should be added.
-
--/
-
 universe v u
 
 open CategoryTheory MonoidalCategory Limits
@@ -50,12 +42,6 @@ abbrev inl : Y ⊗ A ⟶ pt f g := (IsPushout f g).cocone.inl
 @[simp]
 noncomputable
 abbrev inr : X ⊗ B ⟶ pt f g := (IsPushout f g).cocone.inr
-
-lemma inl_desc {W : SSet} (h : Y ⊗ A ⟶ W) (k : X ⊗ B ⟶ W) (w : g ▷ A ≫ h = X ◁ f ≫ k) :
-    (inl f g) ≫ (desc f g) h k w = h := (IsPushout f g).inl_desc _ _ _
-
-lemma inr_desc {W : SSet} (h : Y ⊗ A ⟶ W) (k : X ⊗ B ⟶ W) (w : g ▷ A ≫ h = X ◁ f ≫ k) :
-    (inr f g) ≫ (desc f g) h k w = k := (IsPushout f g).inr_desc _ _ _
 
 lemma w : g ▷ A ≫ inl f g = X ◁ f ≫ inr f g  := (IsPushout f g).toCommSq.w
 
@@ -271,7 +257,8 @@ def compPushoutCoconeIsColimit : Limits.IsColimit (compPushoutCocone f f' g) := 
       Limits.PushoutCocone.ι_app_right, IsPushout.cocone_inr, desc, pushoutProduct, inr,
       IsPushout.inr_desc]
     change inr f' g ≫ m = inr (f ≫ f') g ≫ s.inl
-    rw [← this, ← Category.assoc, inr_desc]
+    rw [← this, ← Category.assoc]
+    simp
 
 def compPushout : CategoryTheory.IsPushout (descComp f f' g) (f ◫ g) (compDesc f f' g) (inl f' g) :=
   IsPushout.of_isColimit (compPushoutCoconeIsColimit f f' g)
@@ -289,7 +276,7 @@ namespace SSet
 open Limits Simplicial PushoutProduct
 
 inductive bdryPushout : {X Y : SSet} → (X ⟶ Y) → Prop
-  | mk ⦃m : ℕ⦄ : bdryPushout ((boundary m).ι ◫ (horn 2 1).ι)
+  | mk (m : ℕ) : bdryPushout ((boundary m).ι ◫ (horn 2 1).ι)
 
 /-- the class of pushout products of `∂Δ[n] ↪ Δ[n]` with `Λ[n, i] ↪ Δ[n]`. -/
 def bdryPushoutClass : MorphismProperty SSet := fun _ _ p ↦ bdryPushout p

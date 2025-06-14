@@ -5,20 +5,6 @@ import Mathlib.CategoryTheory.MorphismProperty.FunctorCategory
 import Mathlib.CategoryTheory.Types.Monomorphisms
 import Quasicategory.TopCatModelCategory.SSet.Skeleton
 
-/-!
-
-Some results about monomorphisms, and the proof of `0077`.
-
-# TODO
-
- - show monomorphisms are stable under transfinite composition.
-
- - finish proof of `0077` which relies on `SimplicialSubset` API.
-
- - generalize a lot of statements, rewrite most of this
-
--/
-
 universe w v u
 
 namespace SSet

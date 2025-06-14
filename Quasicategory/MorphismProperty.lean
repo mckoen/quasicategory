@@ -1,12 +1,5 @@
 import Mathlib.CategoryTheory.SmallObject.TransfiniteCompositionLifting
-
-/-!
-
-Defines `WeaklySaturated`.
-
-need to update with the new API in mathlib
-
--/
+import Mathlib.SetTheory.Cardinal.Order
 
 universe w v u
 
@@ -40,7 +33,27 @@ class WeaklySaturated (P : MorphismProperty C) : Prop where
   IsStableUnderRetracts : P.IsStableUnderRetracts
   IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposition.{w, v, u} P
 
-instance (T : MorphismProperty C) [WeaklySaturated T] : T.IsStableUnderCoproducts := sorry
+instance (T : MorphismProperty C) [h : WeaklySaturated T] : T.IsStableUnderCobaseChange :=
+  h.IsStableUnderCobaseChange
+
+instance (T : MorphismProperty C) [h : WeaklySaturated T] : T.IsStableUnderRetracts :=
+  h.IsStableUnderRetracts
+
+instance (T : MorphismProperty C) [h : WeaklySaturated.{w} T] : IsStableUnderTransfiniteComposition.{w} T :=
+  h.IsStableUnderTransfiniteComposition
+
+variable (J : Type w)
+
+instance (T : MorphismProperty C) [h : WeaklySaturated.{w} T] : IsStableUnderCoproducts.{w} T := by
+  refine { isStableUnderCoproductsOfShape := ?_ }
+  dsimp [IsStableUnderCoproductsOfShape]
+  simp [isStableUnderColimitsOfShape_iff_colimitsOfShape_le]
+  intro J
+  obtain ⟨F, hF⟩ := exists_wellOrder J
+  intro X Y f hf
+  cases hf with
+  | mk X₁ X₂ c₁ c₂ h₁ h₂ f _ =>
+  sorry
 
 instance llp.WeaklySaturated (T : MorphismProperty C) : WeaklySaturated T.llp :=
   ⟨T.llp_isStableUnderCobaseChange, T.llp_isStableUnderRetracts, llp.IsStableUnderTransfiniteComposition⟩
@@ -73,15 +86,6 @@ instance of_is (T : MorphismProperty C) : WeaklySaturated.{w, v, u} (WeaklySatur
   IsStableUnderTransfiniteComposition := {
     isStableUnderTransfiniteCompositionOfShape := fun J _ _ _ _ ↦
       ⟨fun _ _ f hf ↦ .transfinite J f _ hf.some.map_mem⟩}
-
-instance (T : MorphismProperty C) : T.WeaklySaturatedClassOf.IsStableUnderCobaseChange :=
-  T.of_is.IsStableUnderCobaseChange
-
-instance (T : MorphismProperty C) : T.WeaklySaturatedClassOf.IsStableUnderRetracts :=
-  T.of_is.IsStableUnderRetracts
-
-instance (T : MorphismProperty C) : IsStableUnderTransfiniteComposition.{w, v, u} (WeaklySaturatedClassOf.{w, v, u} T) :=
-  (of_is.{w, v, u} T).IsStableUnderTransfiniteComposition
 
 lemma le_WeaklySaturatedClassOf (T : MorphismProperty C) : T ≤ WeaklySaturatedClassOf T := .of
 

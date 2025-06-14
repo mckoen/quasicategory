@@ -1,13 +1,5 @@
 import Quasicategory._007F
 
-/-!
-
-The main result, `0066`.
-
-Every proof here should be redone (and everything should be seriously reworked).
-
--/
-
 universe w
 
 namespace SSet
@@ -15,8 +7,6 @@ namespace SSet
 open CategoryTheory Simplicial MorphismProperty MonoidalCategory MonoidalClosed
 
 open PushoutProduct
-
-section _0079
 
 variable {S : SSet} {m : ℕ}
   (α : (∂Δ[m] : SSet) ⟶ (ihom Δ[2]).obj S) (β : Δ[m] ⟶ (ihom (Λ[2, 1] : SSet)).obj S)
@@ -86,8 +76,6 @@ lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)
     simp [← fac_right, curry_eq_iff]
     rfl
 
-end _0079
-
 -- `0079`
 /- S is a quasicat iff Fun(Δ[2], S) ⟶ Fun((Λ[2, 1] : SSet), S) is a trivial Kan fib -/
 instance horn_tkf_iff_quasicat (S : SSet) : Quasicategory S ↔
@@ -148,8 +136,7 @@ def fun_quasicat_aux (S D : SSet) [Quasicategory D] :
 
 -- `0066`
 /- if D is a quasicat, then Fun(S, D) is -/
-instance fun_quasicat (S D : SSet) [Quasicategory D] : Quasicategory ((Fun.obj (.op S)).obj D) :=
-  -- instance inferred by `fun_quasicat_aux`
+instance fun_quasicat (S D : SSet) [Quasicategory D] : Quasicategory ((internalHom.obj (.op S)).obj D) :=
   (horn_tkf_iff_quasicat ((internalHom.obj (.op S)).obj D)).2 (fun_quasicat_aux S D)
 
 end SSet
