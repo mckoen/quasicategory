@@ -87,6 +87,78 @@ instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposi
       · intro j hj
         exact WeaklySaturatedOf.pushout (newPushoutIsPushout hf.F (Limits.Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
 
+instance T_coprod : IsStableUnderCoproducts (WeaklySaturatedClassOf bdryPushoutClass) := sorry
+
+noncomputable
+def c₁' {J : Type*} {X₁ X₂ : Discrete J ⥤ SSet}
+    {c₁ : Limits.Cocone X₁} (c₂ : Limits.Cocone X₂)
+    (h₁ : Limits.IsColimit c₁) (f : X₁ ⟶ X₂) :
+    Limits.Cocone (natTransLeftFunctor f Λ[2, 1].ι) := {
+      pt := PushoutProduct.pt (h₁.desc { pt := c₂.pt, ι := f ≫ c₂.ι }) Λ[2, 1].ι
+      ι := {
+        app j := by
+          apply Limits.pushout.desc
+            (Δ[2] ◁ c₁.ι.app j ≫ (Limits.pushout.inl _ _))
+            ((Λ[2, 1] : SSet) ◁ c₂.ι.app j ≫ (Limits.pushout.inr _ _))
+          have := h₁.fac { pt := c₂.pt, ι := f ≫ c₂.ι } j
+          dsimp at this
+          rw [← MonoidalCategory.whiskerLeft_comp_assoc, ← this, MonoidalCategory.whiskerLeft_comp_assoc,
+            ← Limits.pushout.condition, whisker_exchange_assoc]
+        naturality := by
+          intro j k s
+          dsimp
+          apply Limits.pushout.hom_ext
+          · simp only [Fin.isValue, IsPushout.inl_desc_assoc, Category.assoc,
+              Limits.colimit.ι_desc, Limits.PushoutCocone.mk_pt, Limits.PushoutCocone.mk_ι_app,
+              Category.comp_id]
+            rw [← MonoidalCategory.whiskerLeft_comp_assoc, c₁.ι.naturality]
+            rfl
+          · simp only [Fin.isValue, IsPushout.inr_desc_assoc, Category.assoc,
+              Limits.colimit.ι_desc, Limits.PushoutCocone.mk_pt, Limits.PushoutCocone.mk_ι_app,
+              Category.comp_id]
+            rw [← MonoidalCategory.whiskerLeft_comp_assoc, c₂.ι.naturality]
+            rfl } }
+
+noncomputable
+def c₁'_isColimit {J : Type*} {X₁ X₂ : Discrete J ⥤ SSet}
+    {c₁ : Limits.Cocone X₁} (c₂ : Limits.Cocone X₂)
+    (h₁ : Limits.IsColimit c₁) (h₂ : Limits.IsColimit c₂) (f : X₁ ⟶ X₂) : Limits.IsColimit (c₁' c₂ h₁ f) where
+  desc s := by
+    dsimp [c₁']
+    let s₁ := Limits.Cocone.mk s.pt (inlDescFunctor f Λ[2, 1].ι ≫ s.ι)
+    let s₂ := Limits.Cocone.mk s.pt (inrDescFunctor f Λ[2, 1].ι ≫ s.ι)
+    let hs₁ := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) h₁)
+    let hs₂ := (Limits.isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) h₂)
+    apply Limits.pushout.desc (hs₁.desc s₁) (hs₂.desc s₂)
+    simp [s₁, s₂, hs₁, hs₂]
+    --have := inrDescFunctor f Λ[2, 1].ι ≫ (c₁' c₂ h₁ f).ι
+    sorry
+
+set_option maxHeartbeats 400000 in
+instance S.IsStableUnderCoproducts : IsStableUnderCoproducts S where
+  isStableUnderCoproductsOfShape J := by
+    refine (isStableUnderColimitsOfShape_iff_colimitsOfShape_le S (Discrete J)).mpr ?_
+    intro X Y f hf
+    cases hf with
+    | mk X₁ X₂ c₁ c₂ h₁ h₂ f hf =>
+    dsimp only [S]
+    dsimp only [MorphismProperty.functorCategory, S] at hf
+    apply (T_coprod.isStableUnderCoproductsOfShape J).colimitsOfShape_le
+    let α := h₁.desc { pt := c₂.pt, ι := f ≫ c₂.ι }
+    let f' := descFunctor f Λ[2, 1].ι
+    let c₁' := c₁' c₂ h₁ f
+    let h₁' : Limits.IsColimit c₁' := c₁'_isColimit c₂ h₁ h₂ f
+    let c₂' := (tensorLeft Δ[2]).mapCocone c₂
+    let h₂' : Limits.IsColimit c₂' := Limits.isColimitOfPreserves (tensorLeft Δ[2]) h₂
+    convert colimitsOfShape.mk (natTransLeftFunctor f Λ[2, 1].ι) (X₂ ⋙ tensorLeft Δ[2]) c₁' c₂' h₁' h₂' f' hf
+    convert h₁'.uniq _ _ _
+    · rfl
+    · rfl
+    · intro j
+      dsimp only [c₁', SSet.c₁', c₂', f', descFunctor, tensorLeft, curriedTensor,
+        Functor.mapCocone]
+      aesop
+
 -- S is weakly saturated because T is
 instance S.WeaklySaturated : WeaklySaturated.{w} S.{w} where
   IsStableUnderCobaseChange := by infer_instance

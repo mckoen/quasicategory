@@ -276,9 +276,9 @@ namespace SSet
 open Limits Simplicial PushoutProduct
 
 inductive bdryPushout : {X Y : SSet} → (X ⟶ Y) → Prop
-  | mk (m : ℕ) : bdryPushout ((boundary m).ι ◫ (horn 2 1).ι)
+  | mk (m : ℕ) : bdryPushout (∂Δ[m].ι ◫ Λ[2, 1].ι)
 
-/-- the class of pushout products of `∂Δ[n] ↪ Δ[n]` with `Λ[n, i] ↪ Δ[n]`. -/
+/-- the class of pushout products of `∂Δ[m] ↪ Δ[m]` with `Λ[2, 1] ↪ Δ[2]`. -/
 def bdryPushoutClass : MorphismProperty SSet := fun _ _ p ↦ bdryPushout p
 
 end SSet
