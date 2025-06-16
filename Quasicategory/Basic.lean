@@ -19,22 +19,18 @@ inductive BoundaryInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk n : BoundaryInclusion (boundary n).ι
 
 /-- The class of all boundary inclusions. -/
-def BoundaryInclusions : MorphismProperty SSet := fun _ _ p ↦ BoundaryInclusion p
+def bdryInclusions : MorphismProperty SSet := fun _ _ p ↦ BoundaryInclusion p
 
 inductive InnerHornInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (h0 : 0 < i) (hn : i < Fin.last (n+2)) :
     InnerHornInclusion (horn (n+2) i).ι
 
 /-- The class of all inner horn inclusions. -/
-def InnerHornInclusions : MorphismProperty SSet := fun _ _ p ↦ InnerHornInclusion p
+def innerHornInclusions : MorphismProperty SSet := fun _ _ p ↦ InnerHornInclusion p
 
-/- a morphism is a trivial Kan fibration if it has the right lifting property wrt
-  every boundary inclusion  `∂Δ[n] ⟶ Δ[n]`. -/
-abbrev trivialKanFibration := BoundaryInclusions.rlp
+abbrev trivialKanFibration := bdryInclusions.rlp
 
-/- a morphism is an inner fibration if it has the right lifting property wrt
-  every inner horn inclusion  `Λ[n, i] ⟶ Δ[n]`. -/
-abbrev innerFibration := InnerHornInclusions.rlp
+abbrev innerFibration := innerHornInclusions.rlp
 
 -- `01BB` S is a quasicategory iff S ⟶ Δ[0] is an inner fibration
 lemma quasicategory_iff_proj_innerFibration {S : SSet} :
@@ -60,14 +56,14 @@ instance quasicategory_of_innerFibration {X Y : SSet} (p : X ⟶ Y) (hp : innerF
 /- a morphism is inner anodyne if it has the left lifting property wrt all inner fibrations. -/
 abbrev innerAnodyne := innerFibration.llp
 
-lemma innerHorn_le_innerAnodyne : InnerHornInclusions ≤ innerAnodyne := fun _ _ _ hp ↦ by
+lemma innerHorn_le_innerAnodyne : innerHornInclusions ≤ innerAnodyne := fun _ _ _ hp ↦ by
   induction hp with
   | mk h0 hn => exact fun _ _ _ h ↦ h _ (.mk h0 hn)
 
 def J' : MorphismProperty SSet.{u} :=
   ⨆ n, ofHoms (fun (j : { i : Fin (n + 3) // 0 < i ∧ i < Fin.last (n + 2) }) ↦ Λ[n + 2, j.1].ι)
 
-lemma J'_eq : J' = InnerHornInclusions.{u} := by
+lemma J'_eq : J' = innerHornInclusions.{u} := by
   apply le_antisymm
   · intro _ _ _ hf
     cases hf with
@@ -87,11 +83,11 @@ lemma J'_eq : J' = InnerHornInclusions.{u} := by
     rw [ofHoms_iff]
     use ⟨i, ⟨h0, hn⟩⟩
 
-instance isCardinalForSmallObjectArgument_InnerHornInclusions :
-    InnerHornInclusions.{u}.IsCardinalForSmallObjectArgument Cardinal.aleph0.{u} where
+instance isCardinalForSmallObjectArgument_innerHornInclusions :
+    innerHornInclusions.{u}.IsCardinalForSmallObjectArgument Cardinal.aleph0.{u} where
   hasIterationOfShape := by infer_instance
   preservesColimit i hi f hf := by
-    simp only [InnerHornInclusions, iSup_iff] at hi
+    simp only [innerHornInclusions, iSup_iff] at hi
     cases hi with
     | mk n i =>
     infer_instance
@@ -99,18 +95,20 @@ instance isCardinalForSmallObjectArgument_InnerHornInclusions :
     rw [← J'_eq, J']
     infer_instance
 
-instance : HasSmallObjectArgument.{u} InnerHornInclusions.{u} where
+instance : HasSmallObjectArgument.{u} innerHornInclusions.{u} where
   exists_cardinal := ⟨Cardinal.aleph0.{u}, inferInstance, inferInstance, inferInstance⟩
 
-lemma llp_rlp_eq_WeaklySaturatedClassOf {T : MorphismProperty SSet.{u}} [HasSmallObjectArgument.{u} T] :
-    T.rlp.llp = WeaklySaturatedClassOf.{u} T := by
-  refine le_antisymm ?_ (minimalWeaklySaturated _ _ (le_llp_rlp T) (llp.WeaklySaturated _))
-  rw [llp_rlp_of_hasSmallObjectArgument, retracts_le_iff,
-    transfiniteCompositions_le_iff, pushouts_le_iff, coproducts_le_iff]
-  exact le_WeaklySaturatedClassOf _
+lemma llp_rlp_eq_saturation {T : MorphismProperty SSet.{u}} [HasSmallObjectArgument.{u} T] :
+    T.rlp.llp = saturation.{u} T := by
+  apply le_antisymm
+  · rw [llp_rlp_of_hasSmallObjectArgument, retracts_le_iff,
+      transfiniteCompositions_le_iff, pushouts_le_iff, coproducts_le_iff]
+    exact le_saturation _
+  · rw [← WeaklySaturated.le_iff]
+    exact T.le_llp_rlp
 
-lemma innerAnodyne_eq : innerAnodyne.{u} = WeaklySaturatedClassOf.{u} InnerHornInclusions :=
-  llp_rlp_eq_WeaklySaturatedClassOf
+lemma innerAnodyne_eq : innerAnodyne.{u} = saturation.{u} innerHornInclusions :=
+  llp_rlp_eq_saturation
 
 /-
 -- `01C3` aux
@@ -164,12 +162,9 @@ instance quasicat_iff_extension_wrt_innerAnodyne {S : SSet} :
   refine ⟨fun h ↦
     ⟨fun n i σ₀ h0 hn ↦ h _ (innerHorn_le_innerAnodyne (horn (n + 2) i).ι (.mk h0 hn)) σ₀⟩, ?_⟩
   intro hS
-  rw [extension_iff_rlp_proj, class_rlp_iff_llp_morphism, innerAnodyne_eq]
-  intro _ _ _
-  refine minimalWeaklySaturated ((MorphismClass S.proj).llp) InnerHornInclusions ?_ (llp.WeaklySaturated _) _
-  intro _ _ i hi
+  rw [extension_iff_rlp_proj, morphism_rlp_iff, innerAnodyne_eq, ← WeaklySaturated.le_iff]
+  intro _ _ i hi _ _ f hf
   induction hi with | mk h0 hn =>
-  intro _ _ f hf
   induction hf with | mk =>
   constructor
   intro σ₀ _ sq

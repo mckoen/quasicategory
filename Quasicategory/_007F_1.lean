@@ -15,20 +15,20 @@ namespace SSet
 
 open CategoryTheory Simplicial MorphismProperty MonoidalCategory PushoutProduct
 
--- T = WeaklySaturatedOf bdryPushoutClass
+-- T = WeaklySaturatedOf bdryHornPushouts
 -- S is the class of all morphisms `i : A → B` such that the pushout product with `Λ[2, 1] ↪ Δ[2]` is in T
 def S : MorphismProperty SSet := fun _ _ i ↦
-  (WeaklySaturatedClassOf.{w} bdryPushoutClass) (i ◫ Λ[2, 1].ι)
+  (saturation.{w} bdryHornPushouts) (i ◫ Λ[2, 1].ι)
 
 instance S.IsStableUnderCobaseChange : S.IsStableUnderCobaseChange where
   of_isPushout := by
     intro _ _ _ _ g _ f _ h hg
-    exact (bdryPushoutClass).of_is.IsStableUnderCobaseChange.of_isPushout (pushoutCommSq_IsPushout h) hg
+    exact (saturation_isWeaklySaturated _).IsStableUnderCobaseChange.of_isPushout (pushoutCommSq_IsPushout h) hg
 
 instance S.IsStableUnderRetracts : S.IsStableUnderRetracts where
   of_retract := by
     intro _ _ _ _ f g h hg
-    exact (bdryPushoutClass).of_is.IsStableUnderRetracts.of_retract (pushoutProduct.RetractArrow h) hg
+    exact (saturation_isWeaklySaturated _).IsStableUnderRetracts.of_retract (pushoutProduct.RetractArrow h) hg
 
 set_option maxHeartbeats 8000000 in
 open Limits in
@@ -73,7 +73,7 @@ instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposi
     isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := by
       rw [isStableUnderTransfiniteCompositionOfShape_iff]
       intro X Y f ⟨hf⟩
-      refine WeaklySaturatedOf.transfinite J _ ?_ ?_
+      refine .transfinite J _ ?_ ?_
       · refine {
         F := F' hf.F (Limits.Cocone.mk _ hf.incl)
         isoBot := F'_isoBot hf
@@ -85,9 +85,9 @@ instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposi
           · simp [descFunctor, ← MonoidalCategory.whiskerLeft_comp, TransfiniteCompositionOfShape.fac, F'_isoBot]
           · simp [descFunctor, F'_isoBot] }
       · intro j hj
-        exact WeaklySaturatedOf.pushout (newPushoutIsPushout hf.F (Limits.Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
+        exact .pushout (newPushoutIsPushout hf.F (Limits.Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
 
-instance T_coprod : IsStableUnderCoproducts (WeaklySaturatedClassOf bdryPushoutClass) := sorry
+instance T_coprod : IsStableUnderCoproducts bdryHornPushouts.saturation := sorry
 
 noncomputable
 def c₁' {J : Type*} {X₁ X₂ : Discrete J ⥤ SSet}
@@ -165,11 +165,11 @@ instance S.WeaklySaturated : WeaklySaturated.{w} S.{w} where
   IsStableUnderRetracts := by infer_instance
   IsStableUnderTransfiniteComposition := by infer_instance
 
-lemma BoundaryInclusions_le_S : BoundaryInclusions ≤ S := fun _ _ _ ⟨_⟩ ↦ .of _ (.mk _)
+lemma bdryInclusions_le_S : bdryInclusions ≤ S := fun _ _ _ ⟨_⟩ ↦ .of _ (.mk _)
 
 lemma monomorphisms_le_S : monomorphisms SSet.{u} ≤ S.{u} := by
-  rw [mono_eq_bdryInclusions]
-  exact minimalWeaklySaturated _ _ BoundaryInclusions_le_S S.WeaklySaturated
+  rw [mono_eq_bdryInclusions, ← WeaklySaturated.le_iff]
+  exact bdryInclusions_le_S
 
 variable {n : ℕ} (i : Fin (n + 1))
 

@@ -9,10 +9,10 @@ open CategoryTheory Simplicial MorphismProperty MonoidalCategory MonoidalClosed
 open PushoutProduct
 
 variable {S : SSet} {m : ℕ}
-  (α : (∂Δ[m] : SSet) ⟶ (ihom Δ[2]).obj S) (β : Δ[m] ⟶ (ihom (Λ[2, 1] : SSet)).obj S)
+  (α : ∂Δ[m].toSSet ⟶ (ihom Δ[2]).obj S) (β : Δ[m] ⟶ (ihom Λ[2, 1].toSSet).obj S)
 
 lemma commSq_uncurry (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
-    CommSq (Λ[2, 1].ι ▷ ∂Δ[m]) ((Λ[2, 1] : SSet) ◁ ∂Δ[m].ι)
+    CommSq (Λ[2, 1].ι ▷ ∂Δ[m]) (Λ[2, 1].toSSet ◁ ∂Δ[m].ι)
       (MonoidalClosed.uncurry α) (MonoidalClosed.uncurry β) := by
   constructor
   dsimp [MonoidalClosed.uncurry, Adjunction.homEquiv]
@@ -80,17 +80,14 @@ lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)
 /- S is a quasicat iff Fun(Δ[2], S) ⟶ Fun((Λ[2, 1] : SSet), S) is a trivial Kan fib -/
 instance horn_tkf_iff_quasicat (S : SSet) : Quasicategory S ↔
     trivialKanFibration ((internalHom.map Λ[2, 1].ι.op).app S) := by
-  rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_rlp_proj, class_rlp_iff_llp_morphism]
-  have := contains_innerAnodyne_iff_contains_pushout_maps _ (llp.WeaklySaturated (MorphismClass S.proj))
-  rw [← this]
-  refine ⟨?_, ?_⟩
-  · intro h _ _ p hp
-    induction hp with | mk m =>
+  rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_rlp_proj, morphism_rlp_iff,
+    ← contains_innerAnodyne_iff_contains_pushout_maps]
+  constructor
+  · intro h _ _ _ ⟨m⟩
     constructor
     intro α β sq
-    exact sqLift_of_newSqLift _ _ _ ((h m _ .mk).sq_hasLift (newSquare _ _ sq))
-  · intro h m _ _ p hp
-    induction hp
+    exact sqLift_of_newSqLift α β sq ((h _ (.mk m) _ ⟨⟩).sq_hasLift (newSquare _ _ sq))
+  · intro h _ _ _ ⟨m⟩ _ _ _ ⟨⟩
     constructor
     intro f g sq
     exact (newSqLift_of_sqLift S m f g sq) ((h _ (.mk m)).sq_hasLift (newSq f))
@@ -106,7 +103,6 @@ lemma induced_tkf_aux (B X Y : SSet) (p : X ⟶ Y)
 
 -- `0071` (special case of `0070`)
 /- if p : X ⟶ Y is a trivial Kan fib, then Fun(B,X) ⟶ Fun(B,Y) is -/
-noncomputable
 instance induced_tkf (B X Y : SSet) (p : X ⟶ Y) (hp: trivialKanFibration p) :
     trivialKanFibration ((internalHom.obj (.op B)).map p) := by
   intro _ _ i hi
@@ -119,7 +115,6 @@ instance induced_tkf (B X Y : SSet) (p : X ⟶ Y) (hp: trivialKanFibration p) :
 /- the map Fun(Δ[2], Fun(S, D)) ⟶ Fun(Λ[2,1], Fun(S, D)) is a trivial Kan fib -/
 -- apply `ihom_equiv` and `0079`
 open MonoidalClosed in
-noncomputable
 def fun_quasicat_aux (S D : SSet) [Quasicategory D] :
     trivialKanFibration ((internalHom.map Λ[2, 1].ι.op).app ((internalHom.obj (.op S)).obj D)) := by
   intro _ _ i hi
@@ -136,7 +131,7 @@ def fun_quasicat_aux (S D : SSet) [Quasicategory D] :
 
 -- `0066`
 /- if D is a quasicat, then Fun(S, D) is -/
-instance fun_quasicat (S D : SSet) [Quasicategory D] : Quasicategory ((internalHom.obj (.op S)).obj D) :=
+instance internalHom_isQuasicategory (S D : SSet) [Quasicategory D] : Quasicategory ((internalHom.obj (.op S)).obj D) :=
   (horn_tkf_iff_quasicat ((internalHom.obj (.op S)).obj D)).2 (fun_quasicat_aux S D)
 
 end SSet
