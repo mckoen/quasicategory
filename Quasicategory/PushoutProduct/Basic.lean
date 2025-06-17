@@ -58,18 +58,18 @@ def id_pushoutProduct_iso_desc (W : C) :
 
 @[simp]
 noncomputable
-def rightFunctor_map_left {X Y : C} (h : X ⟶ Y) (f g : Arrow C) (sq : f ⟶ g) :
-    (pt f.hom h) ⟶ (pt g.hom h) := by
-  apply pushout.desc (Y ◁ sq.left ≫ (inl g.hom h)) (X ◁ sq.right ≫ (inr g.hom h)) _
-  rw [← Category.assoc, ← whisker_exchange, Category.assoc]
+def rightFunctor_map_left (h f g : Arrow C) (sq : f ⟶ g) :
+    (pt f.hom h.hom) ⟶ (pt g.hom h.hom) := by
+  apply pushout.desc (_ ◁ sq.left ≫ (inl g.hom h.hom)) (_ ◁ sq.right ≫ (inr g.hom h.hom)) _
+  rw [← whisker_exchange_assoc]
   simp [pushout.condition, ← Category.assoc, ← MonoidalCategory.whiskerLeft_comp, sq.w]
 
 @[simp]
 noncomputable
-def rightFunctor_map {X Y : C} (h : X ⟶ Y) (f g : Arrow C) (sq : f ⟶ g):
-    Arrow.mk (f.hom ◫ h) ⟶ Arrow.mk (g.hom ◫ h) where
+def rightFunctor_map (h f g : Arrow C) (sq : f ⟶ g):
+    Arrow.mk (f.hom ◫ h.hom) ⟶ Arrow.mk (g.hom ◫ h.hom) where
   left := rightFunctor_map_left h f g sq
-  right := Y ◁ sq.right
+  right := h.right ◁ sq.right
   w := by
     refine pushout.hom_ext ?_ ?_
     · simp [rightFunctor_map_left, ← MonoidalCategory.whiskerLeft_comp, sq.w]
@@ -77,8 +77,8 @@ def rightFunctor_map {X Y : C} (h : X ⟶ Y) (f g : Arrow C) (sq : f ⟶ g):
 
 @[simp]
 noncomputable
-def rightFunctor {X Y : C} (h : X ⟶ Y) : Arrow C ⥤ Arrow C where
-  obj f := f.hom ◫ h
+def rightFunctor (h : Arrow C) : Arrow C ⥤ Arrow C where
+  obj f := f.hom ◫ h.hom
   map sq := rightFunctor_map h _ _ sq
   map_id _ := by
     apply Arrow.hom_ext
@@ -103,7 +103,7 @@ def rightBifunctor_map_left {f g : Arrow C} (sq : f ⟶ g) (f' : Arrow C) :
 @[simp]
 noncomputable
 def rightBifunctor_map {f g : Arrow C} (sq : f ⟶ g) :
-    rightFunctor f.hom ⟶ rightFunctor g.hom where
+    rightFunctor f ⟶ rightFunctor g where
   app f' := {
     left := rightBifunctor_map_left sq f'
     right := sq.right ▷ f'.right
@@ -120,13 +120,8 @@ def rightBifunctor_map {f g : Arrow C} (sq : f ⟶ g) :
 @[simp]
 noncomputable
 def rightBifunctor : Arrow C ⥤ Arrow C ⥤ Arrow C where
-  obj h := rightFunctor h.hom
+  obj := rightFunctor
   map := rightBifunctor_map
-  map_comp _ _ := by
-    ext : 2
-    apply Arrow.hom_ext
-    · aesop
-    · simp
 
 end
 
@@ -153,6 +148,7 @@ noncomputable
 def natTransLeftFunctor : D ⥤ C := (NatTrans.arrowFunctor h) ⋙ rightFunctor g ⋙ Arrow.leftFunc
 --  pt (h.app A) g ⟶ pt (h.app B) g
 
+@[simp]
 noncomputable
 def natTransLeftFunctor_comp {G' : D ⥤ C} (h' : G ⟶ G') :
     (natTransLeftFunctor h g) ⟶ (natTransLeftFunctor (h ≫ h') g) :=

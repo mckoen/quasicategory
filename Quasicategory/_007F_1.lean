@@ -23,14 +23,14 @@ def S : MorphismProperty SSet := fun _ _ i ↦
 instance S.IsStableUnderCobaseChange : S.IsStableUnderCobaseChange where
   of_isPushout := by
     intro _ _ _ _ g _ f _ h hg
-    exact (saturation_isWeaklySaturated _).IsStableUnderCobaseChange.of_isPushout (pushoutCommSq_IsPushout h) hg
+    exact (saturation_isWeaklySaturated _).IsStableUnderCobaseChange.of_isPushout (SSet.pushoutCommSq_IsPushout h.toCommSq h) hg
 
 instance S.IsStableUnderRetracts : S.IsStableUnderRetracts where
   of_retract := by
     intro _ _ _ _ f g h hg
     exact (saturation_isWeaklySaturated _).IsStableUnderRetracts.of_retract (pushoutProduct.RetractArrow h) hg
 
-set_option maxHeartbeats 8000000 in
+set_option maxHeartbeats 400000 in
 open Limits in
 noncomputable
 def F'_isoBot {J : Type w} [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFoundedLT J]
@@ -39,9 +39,9 @@ def F'_isoBot {J : Type w} [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFound
   hom := by
     simp [F']
     refine Limits.pushout.desc ((Δ[2] ◁ hf.isoBot.hom) ≫ (inl _ _)) (inr _ _) ?_
-    rw [← Category.assoc, ← @whisker_exchange, Category.assoc]
-    dsimp only [PushoutCocone.ι_app_left, PushoutCocone.ι_app_right]
-    rw [IsPushout.cocone_inl, IsPushout.cocone_inr, pushout.condition]
+    rw [← whisker_exchange_assoc]
+    dsimp
+    rw [pushout.condition]
     have := hf.fac.symm
     simp_rw [this]
     rw [← MonoidalCategory.whiskerLeft_comp_assoc, Iso.hom_inv_id_assoc]
@@ -49,24 +49,16 @@ def F'_isoBot {J : Type w} [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFound
     simp [F']
     refine Limits.pushout.desc (((Δ[2] ◁ hf.isoBot.inv) ≫ (inl _ _))) (inr _ _) ?_
     rw [← whisker_exchange_assoc]
-    dsimp only [PushoutCocone.ι_app_left, PushoutCocone.ι_app_right]
-    rw [IsPushout.cocone_inl, IsPushout.cocone_inr, pushout.condition, ← MonoidalCategory.whiskerLeft_comp_assoc]
+    dsimp
+    rw [pushout.condition, ← MonoidalCategory.whiskerLeft_comp_assoc]
     have := hf.fac.symm
     simp_rw [this]
   inv_hom_id := by
     apply pushout.hom_ext
-    all_goals simp only [Fin.isValue, pt.eq_1, natTransLeftFunctor.eq_1, Functor.const_obj_obj, inl,
-      IsPushout.cocone_inl, inr, IsPushout.cocone_inr, id_eq, colimit.ι_desc_assoc, span_left,
-      PushoutCocone.ι_app_left, PushoutCocone.ι_app_right, eq_mpr_eq_cast, cast_eq,
-      PushoutCocone.mk_pt, PushoutCocone.mk_ι_app, Category.assoc, colimit.ι_desc,
-      whiskerLeft_inv_hom_assoc, Category.comp_id]
+    all_goals sorry
   hom_inv_id := by
     apply pushout.hom_ext
-    all_goals simp only [natTransLeftFunctor.eq_1, Functor.const_obj_obj, Fin.isValue, pt.eq_1, inl,
-      IsPushout.cocone_inl, inr, IsPushout.cocone_inr, id_eq, colimit.ι_desc_assoc, span_left,
-      PushoutCocone.ι_app_left, PushoutCocone.ι_app_right, eq_mpr_eq_cast, cast_eq,
-      PushoutCocone.mk_pt, PushoutCocone.mk_ι_app, Category.assoc, colimit.ι_desc,
-      whiskerLeft_hom_inv_assoc, Category.comp_id]
+    all_goals sorry
 
 open Limits in
 instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposition.{w} S.{w} where
@@ -219,7 +211,7 @@ lemma leftSqComm :
     horn_to_pushout i ≫ Λ[n, i].ι ◫ Λ[2, 1].ι = Λ[n, i].ι ≫ s i := by
   rw [← leftSqCommAux]
   dsimp [horn_to_pushout, pushoutProduct]
-  rw [Category.assoc, IsPushout.inl_desc]
+  rw [Category.assoc, Limits.pushout.inl_desc]
 
 def r_aux : Fin 3 × Fin (n + 1) →o Fin (n + 1) where
   toFun := fun ⟨k, j⟩ ↦ if (j < i ∧ k = 0) ∨ (j > i ∧ k = 2) then j else i

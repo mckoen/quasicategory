@@ -58,50 +58,42 @@ instance constIsWellOrderContinuous (X : SSet) : ((Functor.const J).obj X).IsWel
     uniq s f hf := by simpa using hf ⟨⊥, hm.bot_lt⟩
   }⟩
 
+set_option maxHeartbeats 1000000 in
 noncomputable
 def auxWellOrderCont_desc [hF: F.IsWellOrderContinuous]
     {m : J} (hm : Order.IsSuccLimit m) (s : Cocone ((Set.principalSegIio m).monotone.functor ⋙ (F' F c))) :
     ((Set.principalSegIio m).cocone (F' F c)).pt ⟶ s.pt := by
+  letI : OrderBot (Set.Iio m) := Subtype.orderBot hm.bot_lt
   let H := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) (hF.nonempty_isColimit m hm).some)
   let H'' := (Limits.isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) (hF.nonempty_isColimit m hm).some)
-  refine PushoutProduct.desc _ _ (H.desc (tempCocone F c s)) ((inr _ _) ≫ s.ι.app ⟨⊥, hm.bot_lt⟩) ?_
+  refine pushout.desc (H.desc (tempCocone F c s)) ((inr _ _) ≫ s.ι.app ⊥) ?_
   apply H''.hom_ext
   intro j
   have Hfac := H.fac (tempCocone F c s) j
-  dsimp at Hfac
-  simp only [Fin.isValue, Functor.comp_obj, Monotone.functor_obj,
-    Set.principalSegIio_toRelEmbedding, tensorLeft_obj, natTransLeftFunctor.eq_1,
-    Functor.const_obj_obj, pt.eq_1, Functor.mapCocone_pt, PrincipalSeg.cocone_pt,
-    Set.principalSegIio_top, Functor.mapCocone_ι_app, PrincipalSeg.cocone_ι_app, homOfLE_leOfHom,
-    tensorLeft_map, inr, IsPushout.cocone_inr]
-  rw [← Category.assoc, @whisker_exchange, Category.assoc, Hfac]
-  dsimp [tempCocone, inlDescFunctor]
-  letI : OrderBot (Set.Iio m) := Subtype.orderBot hm.bot_lt
+  dsimp only [Functor.comp_obj, Monotone.functor_obj, Set.principalSegIio_toRelEmbedding,
+    tensorLeft_obj, Functor.mapCocone_pt, PrincipalSeg.cocone_pt, Set.principalSegIio_top,
+    Functor.const_obj_obj, Functor.mapCocone_ι_app, PrincipalSeg.cocone_ι_app, homOfLE_leOfHom,
+    tensorLeft_map] at Hfac
+  dsimp
+  rw [whisker_exchange_assoc, Hfac]
+  dsimp only [tempCocone, inlDescFunctor]
   rw [← MonoidalCategory.whiskerLeft_comp_assoc, c.ι.naturality]
   have := (s.ι.naturality (homOfLE <| bot_le (a := j)))
-  simp only [natTransLeftFunctor.eq_1, Functor.const_obj_obj, Fin.isValue, pt.eq_1,
-    homOfLE_leOfHom,
-    natTransLeftFunctor_map, desc, inl, IsPushout.cocone_inl, Functor.const_obj_map,
-    MonoidalCategory.whiskerLeft_id, inr, IsPushout.cocone_inr, Category.id_comp,
-    Category.comp_id] at this
-  change _ = _ ≫ _ ≫ s.ι.app ⊥
-  rw [← this]
-  simp only [Fin.isValue, natTransLeftFunctor.eq_1, Functor.const_obj_obj, pt.eq_1, homOfLE_leOfHom,
-    Functor.const_obj_map, Category.comp_id, Functor.comp_obj, Monotone.functor_obj,
-    Set.principalSegIio_toRelEmbedding, Functor.comp_map, natTransLeftFunctor_map, desc, inl,
-    IsPushout.cocone_inl, MonoidalCategory.whiskerLeft_id, inr, IsPushout.cocone_inr,
-    Category.id_comp, IsPushout.inr_desc_assoc]
-  change (horn 2 1).ι ▷ F.obj ↑j ≫ inl (c.ι.app ↑j) ((horn 2 1).ι) ≫ s.ι.app j =
-    (Λ[2, 1] : SSet) ◁ c.ι.app ↑j ≫ inr (c.ι.app ↑j) ((horn 2 1).ι) ≫ s.ι.app j
-  rw [← Category.assoc, w, Category.assoc]
+  simp only [natTransLeftFunctor.eq_1, NatTrans.arrowFunctor.eq_1, Functor.const_obj_obj,
+    Functor.const_obj_map, Fin.isValue, rightFunctor.eq_1, Arrow.mk_left, Functor.id_obj,
+    Arrow.mk_right, Arrow.mk_hom, pushoutProduct, rightFunctor_map.eq_1, rightFunctor_map_left.eq_1,
+    pt, inl, inr, Functor.comp_obj, Monotone.functor_obj, Set.principalSegIio_toRelEmbedding,
+    Arrow.leftFunc_obj, homOfLE_leOfHom, Functor.comp_map, Arrow.homMk'_left, Arrow.homMk'_right,
+    MonoidalCategory.whiskerLeft_id, Category.id_comp, Arrow.leftFunc_map, Category.comp_id] at this
+  simp [← this]
+  rw [pushout.condition_assoc]
 
--- inefficient and messy but it works
 instance F'_woc [hF: F.IsWellOrderContinuous] : (F' F c).IsWellOrderContinuous where
   nonempty_isColimit m hm := ⟨{
     desc := auxWellOrderCont_desc _ _ hm
     fac s j := by
       dsimp only [auxWellOrderCont_desc]
-      apply (IsPushout _ _).hom_ext
+      apply pushout.hom_ext
       · simp
         let H := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) (hF.nonempty_isColimit m hm).some)
         exact H.fac (tempCocone F c s) j
@@ -113,9 +105,9 @@ instance F'_woc [hF: F.IsWellOrderContinuous] : (F' F c).IsWellOrderContinuous w
         simp at this
         rw [← this]
         simp only [Fin.isValue, Functor.const_obj_obj, natTransLeftFunctor.eq_1, pt.eq_1, inr,
-          IsPushout.cocone_inr, homOfLE_leOfHom, IsPushout.inr_desc_assoc]
+          pushout.inr, homOfLE_leOfHom, pushout.inr_desc_assoc]
     uniq s h hj := by
-      apply (IsPushout _ _).hom_ext
+      apply pushout.hom_ext
       · dsimp [auxWellOrderCont_desc]
         let H := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) (hF.nonempty_isColimit m hm).some)
         apply H.hom_ext
@@ -126,15 +118,11 @@ instance F'_woc [hF: F.IsWellOrderContinuous] : (F' F c).IsWellOrderContinuous w
         rw [this]
         dsimp [tempCocone, inlDescFunctor]
         rw [← hj j]
-        simp only [Fin.isValue, homOfLE_leOfHom, natTransLeftFunctor.eq_1, Functor.const_obj_obj,
-          pt.eq_1, Functor.comp_obj, Monotone.functor_obj, Set.principalSegIio_toRelEmbedding,
-          PrincipalSeg.cocone_pt, Set.principalSegIio_top, PrincipalSeg.cocone_ι_app,
-          natTransLeftFunctor_map, desc, inl, IsPushout.cocone_inl, Functor.const_obj_map,
-          MonoidalCategory.whiskerLeft_id, inr, IsPushout.cocone_inr, Category.id_comp,
-          IsPushout.inl_desc_assoc, Category.assoc]
+        simp
       · dsimp [auxWellOrderCont_desc]
         simp
-        rw [← hj ⟨⊥, hm.bot_lt⟩]
+        letI : OrderBot (Set.Iio m) := Subtype.orderBot hm.bot_lt
+        rw [← hj ⊥]
         simp
   }⟩
 
@@ -143,50 +131,54 @@ def c' : Cocone (F' F c) where
   pt := Δ[2] ⊗ c.pt
   ι := PushoutProduct.descFunctor c.ι ((horn 2 1).ι)
 
-set_option maxHeartbeats 400000 in
-/-- also really really bad -/
+omit [SuccOrder J] [OrderBot J] [WellFoundedLT J] [F.IsWellOrderContinuous] in
+lemma c'_icColimit_fac (s : Cocone (F' F c)) (j : J) :
+    (c' F c).ι.app j ≫ (isColimitOfPreserves (tensorLeft Δ[2]) hc).desc (tempCocone' F c s) = s.ι.app j := by
+  apply pushout.hom_ext
+  · have := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).fac (tempCocone' F c s) j
+    simp [tempCocone', inlDescFunctor] at this
+    simp [c', descFunctor, tempCocone']
+    rw [← this]
+    rfl
+  · let H := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc)
+    apply (Limits.isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) hc).hom_ext
+    intro k
+    simp [c', descFunctor]
+    rw [whisker_exchange_assoc]
+    have := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).fac (tempCocone' F c s) k
+    simp at this
+    rw [this]
+    simp [tempCocone', inlDescFunctor, pushout.condition_assoc]
+    by_cases hj : j ≤ k
+    · have := s.ι.naturality (homOfLE <| hj)
+      simp at this
+      rw [← this]
+      simp
+    · rw [not_le] at hj
+      have := s.ι.naturality (homOfLE <| le_of_lt hj)
+      simp at this
+      rw [← this]
+      simp
+
+omit [SuccOrder J] [OrderBot J] [WellFoundedLT J] [F.IsWellOrderContinuous] in
+lemma c'_isColimit_uniq (s : Cocone (F' F c)) (h : (c' F c).pt ⟶ s.pt)
+    (hj : ∀ (j : J), (c' F c).ι.app j ≫ h = s.ι.app j) :
+    h = (isColimitOfPreserves (tensorLeft Δ[2]) hc).desc (tempCocone' F c s) := by
+  apply (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).hom_ext
+  intro j
+  have := (inl _ _) ≫= hj j
+  simp [c', descFunctor] at this ⊢
+  rw [this]
+  have := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).fac (tempCocone' F c s) j
+  simp at this
+  rw [this]
+  rfl
+
 noncomputable
 def c'_IsColimit : IsColimit (c' F c) where
   desc s := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).desc (tempCocone' F c s)
-  fac s j := by
-    apply (IsPushout _ _).hom_ext
-    · have := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).fac (tempCocone' F c s) j
-      simp [tempCocone', inlDescFunctor] at this
-      rw [← this]
-      simp [c', descFunctor, tempCocone']
-      rfl
-    · let H := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc)
-      apply (Limits.isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) hc).hom_ext
-      intro k
-      simp [c', descFunctor]
-      rw [← Category.assoc, @whisker_exchange, Category.assoc]
-      have := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).fac (tempCocone' F c s) k
-      simp at this
-      rw [this]
-      simp [tempCocone', inlDescFunctor]
-      have a := (w (c.ι.app k) ((horn 2 1).ι)) --=≫ s.ι.app j
-      simp at a
-      rw [← Category.assoc, a]
-      by_cases hj : j ≤ k
-      · have := s.ι.naturality (homOfLE <| hj)
-        simp at this
-        rw [← this]
-        simp
-      · rw [not_le] at hj
-        have := s.ι.naturality (homOfLE <| le_of_lt hj)
-        simp at this
-        rw [← this]
-        simp
-  uniq s h hj := by
-    apply (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).hom_ext
-    intro j
-    have := (inl _ _) ≫= hj j
-    simp [c', descFunctor] at this ⊢
-    rw [this]
-    have := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) hc).fac (tempCocone' F c s) j
-    simp at this
-    rw [this]
-    rfl
+  fac := c'_icColimit_fac _ _ _
+  uniq := c'_isColimit_uniq _ _ _
 
 @[simp]
 def _root_.CategoryTheory.Functor.succ : J ⥤ SSet where
@@ -242,25 +234,22 @@ def φ : (P F) ⟶ (F' F c) :=
 @[simp]
 noncomputable
 def φ_j : (P F).obj j ⟶ (F' F c).obj j := by
-  refine (IsPushout _ _).desc
+  refine pushout.desc
     (inl (c.ι.app j) ((horn 2 1).ι))
     ((Λ[2, 1] : SSet) ◁ c.ι.app (Order.succ j) ≫ inr (c.ι.app j) ((horn 2 1).ι)) ?_
   simp
   rw [← MonoidalCategory.whiskerLeft_comp_assoc]
   have : (F.map (homOfLE (Order.le_succ j)) ≫ c.ι.app (Order.succ j)) = c.ι.app j := by simp
   rw [this]
-  simpa using w (c.ι.app j) ((horn 2 1).ι)
+  simpa using pushout.condition
 
 omit [OrderBot J] [WellFoundedLT J] [F.IsWellOrderContinuous] in
 lemma newSqComm {j} :
     (φ_j F c) ≫ (F' F c).map (homOfLE (Order.le_succ j)) =
     ((F.map (homOfLE (Order.le_succ j))) ◫ ((horn 2 1).ι)) ≫
       PushoutProduct.inl (c.ι.app (Order.succ j)) ((horn 2 1).ι) := by
-  apply (IsPushout _ _).hom_ext (by aesop)
-  simp
-  have := w (c.ι.app (Order.succ j)) ((horn 2 1).ι)
-  dsimp at this
-  rw [this]
+  apply pushout.hom_ext (by aesop)
+  simp [pushout.condition]
 
 noncomputable
 def newPushoutCocone (j : J) : PushoutCocone
@@ -271,17 +260,34 @@ def newPushoutCocone (j : J) : PushoutCocone
 noncomputable
 def newPushoutIsColimit_desc {j} (s : PushoutCocone (φ_j F c) (F.map (homOfLE (Order.le_succ j)) ◫ (horn 2 1).ι)) :
     (F' F c).obj (Order.succ j) ⟶ s.pt :=
-  (IsPushout _ _).desc s.inr ((inr _ _) ≫ s.inl) (by simpa using ((inr _ _) ≫= s.condition).symm)
+  pushout.desc s.inr ((inr _ _) ≫ s.inl) (by simpa using ((inr _ _) ≫= s.condition).symm)
 
-set_option maxHeartbeats 800000 in
+lemma newPushoutIsColimit_fac_left {j} (s : PushoutCocone (φ_j F c) (F.map (homOfLE (Order.le_succ j)) ◫ Λ[2, 1].ι)) :
+    (F' F c).map (homOfLE (Order.le_succ j)) ≫ newPushoutIsColimit_desc F c s = s.inl := by
+  apply pushout.hom_ext
+  · have := ((inl _ _) ≫= s.condition).symm
+    dsimp only [Arrow.mk, NatTrans.arrowFunctor, newPushoutIsColimit_desc,
+      Functor.succNatTrans, φ_j, Functor.id_obj, inl] at this ⊢
+    rw [pushout.inl_desc_assoc, pushout.inl_desc_assoc] at this
+    --rw [← this]
+    dsimp only [F', natTransLeftFunctor, Functor.comp_map, NatTrans.arrowFunctor,
+      Functor.const, rightFunctor, rightFunctor_map, rightFunctor_map_left, Arrow.leftFunc_map,
+      Arrow.mk, Arrow.homMk', Functor.id_obj, inl, inr]
+    rw [pushout.inl_desc_assoc, ← this]
+    sorry
+  · sorry
+  -- (by simpa using ((inl _ _) ≫= s.condition).symm) (by aesop)
+
 noncomputable
 def newPushoutIsColimit {j} : IsColimit (newPushoutCocone F c j) := by
   refine PushoutCocone.IsColimit.mk _ (newPushoutIsColimit_desc F c) ?_ ?_ ?_
-  · intro s
-    exact (IsPushout _ _).hom_ext (by simpa using ((inl _ _) ≫= s.condition).symm) (by aesop)
-  · aesop
-  · intro _ _ h _
-    exact (IsPushout _ _).hom_ext (by aesop) (by simp [← h])
+  · exact newPushoutIsColimit_fac_left _ _
+  · sorry
+  · sorry
+    /-
+    intro _ _ h _
+    exact pushout.hom_ext (by aesop) (by simp [← h])
+    -/
 
 def newPushoutIsPushout (j : J) : CategoryTheory.IsPushout
   (φ_j F c)
