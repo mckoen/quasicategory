@@ -15,8 +15,9 @@ variable {s : X ⟶ A} {t : Y ⟶ B} (h : CommSq s g f t)
   of `g ◫ Λ[2, 1]` and `f ◫ Λ[2, 1]`. -/
 @[simp]
 noncomputable
-def pushoutProductSq_left : (pt g Λ[2, 1].ι) ⟶ (pt f Λ[2, 1].ι) := by
-  convert (rightFunctor (Arrow.mk Λ[2, 1].ι) ⋙ Arrow.leftFunc).map (Arrow.homMk' s t h.w)
+def pushoutProductSq_left (g f : Arrow SSet) (h : g ⟶ f) :
+    (pt g.hom Λ[2, 1].ι) ⟶ (pt f.hom Λ[2, 1].ι) :=
+  (rightFunctor (Arrow.mk Λ[2, 1].ι) ⋙ Arrow.leftFunc).map h
 
 @[simp]
 noncomputable
@@ -26,7 +27,7 @@ example : (g ◫ Λ[2, 1].ι) = pushoutProductSq_right g := rfl
 
 /-- the `PushoutCocone` determined by the above `CommSq`. -/
 noncomputable
-def pushoutCommSq_cocone : PushoutCocone (pushoutProductSq_left g f h) (g ◫ Λ[2, 1].ι) :=
+def pushoutCommSq_cocone : PushoutCocone (pushoutProductSq_left g f (Arrow.homMk' _ _ h.w)) (g ◫ Λ[2, 1].ι) :=
     .mk _ _ ((rightBifunctor.obj (Arrow.mk Λ[2, 1].ι)).map (Arrow.homMk' s t h.w)).w
 
 instance {S : SSet} : Functor.IsLeftAdjoint (tensorLeft S) where
@@ -50,7 +51,7 @@ def whiskerPushout (S : SSet) : CategoryTheory.IsPushout (S ◁ s) (S ◁ g) (S 
   (whiskerPushoutAux s g S).of_iso (Iso.refl _) (Iso.refl _) (Iso.refl _)
     ((whiskerLeftIso S h'.isoPushout).symm) rfl rfl (by aesop) (by aesop)
 
-variable (C : PushoutCocone (pushoutProductSq_left g f h'.toCommSq) (g ◫ Λ[2, 1].ι))
+variable (C : PushoutCocone (pushoutProductSq_left g f (Arrow.homMk' _ _ h'.w)) (g ◫ Λ[2, 1].ι))
 
 /-- such a `PushoutCocone` gives us a `PushoutCocone` of `Δ[2] ◁ s` and `Δ[2] ◁ g`. -/
 noncomputable
@@ -72,8 +73,7 @@ lemma pushoutCommSq_IsColimit'_fac_left :
   apply pushout.hom_ext
   · simp
   · apply (whiskerPushout h' _).hom_ext
-    ·
-      change ((Λ[2, 1] : SSet) ◁ f ≫ PushoutProduct.inr f Λ[2, 1].ι) ≫
+    · change ((Λ[2, 1] : SSet) ◁ f ≫ PushoutProduct.inr f Λ[2, 1].ι) ≫
         (f ◫ Λ[2, 1].ι) ≫ pushoutCommSq_IsColimit'_desc h' C =
         (Λ[2, 1] : SSet) ◁ f ≫ PushoutProduct.inr f Λ[2, 1].ι ≫ C.inl
       rw [← Category.assoc, ← pushout.condition, Category.assoc, Category.assoc,
@@ -118,7 +118,7 @@ noncomputable
 def pushoutCommSq_IsColimit' :
     Limits.IsColimit
       (PushoutCocone.mk (f ◫ Λ[2, 1].ι) (Δ[2] ◁ t)
-        ((rightBifunctor.obj (Arrow.mk Λ[2, 1].ι)).map (Arrow.homMk' s t h.w)).w) :=
+        ((rightBifunctor.obj (Arrow.mk Λ[2, 1].ι)).map (Arrow.homMk' s t h'.w)).w) :=
   PushoutCocone.IsColimit.mk _
     (pushoutCommSq_IsColimit'_desc h')
     (pushoutCommSq_IsColimit'_fac_left h')
@@ -126,10 +126,10 @@ def pushoutCommSq_IsColimit' :
     (pushoutCommSq_IsColimit'_uniq h')
 
 def pushoutCommSq_IsPushout :
-    CategoryTheory.IsPushout (pushoutProductSq_left g f h'.toCommSq) (g ◫ Λ[2, 1].ι)
+    CategoryTheory.IsPushout (pushoutProductSq_left g f (Arrow.homMk' s t h'.w)) (g ◫ Λ[2, 1].ι)
       (f ◫ Λ[2, 1].ι) (Δ[2] ◁ t) where
   w := ((rightBifunctor.obj (Arrow.mk Λ[2, 1].ι)).map (Arrow.homMk' s t h'.w)).w
-  isColimit' := ⟨pushoutCommSq_IsColimit' h h'⟩
+  isColimit' := ⟨pushoutCommSq_IsColimit' h'⟩
 
 
 

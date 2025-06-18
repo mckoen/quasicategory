@@ -1,5 +1,4 @@
 import Quasicategory.Monomorphism
-import Quasicategory.PushoutProduct.Retract
 import Quasicategory.PushoutProduct.Pushout
 import Quasicategory.PushoutProduct.TransfiniteComposition
 
@@ -9,7 +8,7 @@ The first half of the proof of `007F`.
 
 -/
 
-universe w v u
+universe w u
 
 namespace SSet
 
@@ -18,17 +17,15 @@ open CategoryTheory Simplicial MorphismProperty MonoidalCategory PushoutProduct
 -- T = WeaklySaturatedOf bdryHornPushouts
 -- S is the class of all morphisms `i : A → B` such that the pushout product with `Λ[2, 1] ↪ Δ[2]` is in T
 def S : MorphismProperty SSet := fun _ _ i ↦
-  (saturation.{w} bdryHornPushouts) (i ◫ Λ[2, 1].ι)
+  (saturation.{u} bdryHornPushouts) (i ◫ Λ[2, 1].ι)
 
 instance S.IsStableUnderCobaseChange : S.IsStableUnderCobaseChange where
-  of_isPushout := by
-    intro _ _ _ _ g _ f _ h hg
-    exact (saturation_isWeaklySaturated _).IsStableUnderCobaseChange.of_isPushout (SSet.pushoutCommSq_IsPushout h.toCommSq h) hg
+  of_isPushout h hg :=
+    (saturation_isWeaklySaturated _).IsStableUnderCobaseChange.of_isPushout (SSet.pushoutCommSq_IsPushout h) hg
 
 instance S.IsStableUnderRetracts : S.IsStableUnderRetracts where
-  of_retract := by
-    intro _ _ _ _ f g h hg
-    exact (saturation_isWeaklySaturated _).IsStableUnderRetracts.of_retract (pushoutProduct.RetractArrow h) hg
+  of_retract h hg :=
+    (saturation_isWeaklySaturated _).IsStableUnderRetracts.of_retract (Retract.map h (rightBifunctor.obj (.mk Λ[2, 1].ι))) hg
 
 set_option maxHeartbeats 400000 in
 open Limits in
@@ -94,20 +91,17 @@ def c₁' {J : Type*} {X₁ X₂ : Discrete J ⥤ SSet}
             ((Λ[2, 1] : SSet) ◁ c₂.ι.app j ≫ (Limits.pushout.inr _ _))
           have := h₁.fac { pt := c₂.pt, ι := f ≫ c₂.ι } j
           dsimp at this
+          simp
           rw [← MonoidalCategory.whiskerLeft_comp_assoc, ← this, MonoidalCategory.whiskerLeft_comp_assoc,
             ← Limits.pushout.condition, whisker_exchange_assoc]
         naturality := by
           intro j k s
           dsimp
           apply Limits.pushout.hom_ext
-          · simp only [Fin.isValue, IsPushout.inl_desc_assoc, Category.assoc,
-              Limits.colimit.ι_desc, Limits.PushoutCocone.mk_pt, Limits.PushoutCocone.mk_ι_app,
-              Category.comp_id]
+          · simp
             rw [← MonoidalCategory.whiskerLeft_comp_assoc, c₁.ι.naturality]
             rfl
-          · simp only [Fin.isValue, IsPushout.inr_desc_assoc, Category.assoc,
-              Limits.colimit.ι_desc, Limits.PushoutCocone.mk_pt, Limits.PushoutCocone.mk_ι_app,
-              Category.comp_id]
+          · simp
             rw [← MonoidalCategory.whiskerLeft_comp_assoc, c₂.ι.naturality]
             rfl } }
 

@@ -12,7 +12,7 @@ namespace CategoryTheory.PushoutProduct
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [HasPushouts C]
 
-section
+section Defs
 
 variable {A B X Y : C} (f : A ⟶ B) (g : X ⟶ Y)
 
@@ -32,7 +32,8 @@ scoped infixr:80 " ◫ " => PushoutProduct.pushoutProduct
 @[simp]
 noncomputable
 abbrev desc {W : C} (h : Y ⊗ A ⟶ W) (k : X ⊗ B ⟶ W) (w : g ▷ A ≫ h = X ◁ f ≫ k) :
-    pt f g ⟶ W := pushout.desc h k w
+    pt f g ⟶ W :=
+  pushout.desc h k w
 
 @[simp]
 noncomputable
@@ -41,10 +42,6 @@ abbrev inl : Y ⊗ A ⟶ pt f g := pushout.inl _ _
 @[simp]
 noncomputable
 abbrev inr : X ⊗ B ⟶ pt f g := pushout.inr _ _
-
-@[simp]
-lemma desc_id : (desc f g) (inl f g) (inr f g) pushout.condition = 𝟙 (pt f g) :=
-  pushout.hom_ext (by aesop) (by aesop)
 
 @[simp]
 noncomputable
@@ -56,57 +53,52 @@ def id_pushoutProduct_iso_desc (W : C) :
     (id_pushoutProduct_iso g W).inv ≫ (𝟙 W) ◫ g = 𝟙 (Y ⊗ W) := by
   apply (Iso.inv_comp_eq_id (id_pushoutProduct_iso g W)).2 (by aesop)
 
-@[simp]
-noncomputable
-def rightFunctor_map_left (h f g : Arrow C) (sq : f ⟶ g) :
-    (pt f.hom h.hom) ⟶ (pt g.hom h.hom) := by
-  apply pushout.desc (_ ◁ sq.left ≫ (inl g.hom h.hom)) (_ ◁ sq.right ≫ (inr g.hom h.hom)) _
-  rw [← whisker_exchange_assoc]
-  simp [pushout.condition, ← Category.assoc, ← MonoidalCategory.whiskerLeft_comp, sq.w]
+end Defs
+
+section Functor
+
+variable (h : Arrow C) {f g : Arrow C} (sq : f ⟶ g)
 
 @[simp]
 noncomputable
-def rightFunctor_map (h f g : Arrow C) (sq : f ⟶ g):
+def rightFunctor_map_left  :
+    pt f.hom h.hom ⟶ pt g.hom h.hom :=
+  pushout.map _ _ _ _
+    (h.right ◁ sq.left) (h.left ◁ sq.right) (h.left ◁ sq.left)
+    (whisker_exchange h.hom sq.left).symm (by simp [pushout.condition, ← MonoidalCategory.whiskerLeft_comp, Arrow.w])
+
+@[simp]
+noncomputable
+def rightFunctor_map :
     Arrow.mk (f.hom ◫ h.hom) ⟶ Arrow.mk (g.hom ◫ h.hom) where
-  left := rightFunctor_map_left h f g sq
+  left := rightFunctor_map_left h sq
   right := h.right ◁ sq.right
   w := by
-    refine pushout.hom_ext ?_ ?_
-    · simp [rightFunctor_map_left, ← MonoidalCategory.whiskerLeft_comp, sq.w]
-    · simp [rightFunctor_map_left, ← whisker_exchange]
+    apply pushout.hom_ext
+    · simp [← MonoidalCategory.whiskerLeft_comp, sq.w]
+    · simp [← whisker_exchange]
 
 @[simp]
 noncomputable
-def rightFunctor (h : Arrow C) : Arrow C ⥤ Arrow C where
+def rightFunctor : Arrow C ⥤ Arrow C where
   obj f := f.hom ◫ h.hom
-  map sq := rightFunctor_map h _ _ sq
-  map_id _ := by
-    apply Arrow.hom_ext
-    all_goals aesop
-  map_comp _ _ := by
-    apply Arrow.hom_ext
-    all_goals aesop
+  map := rightFunctor_map h
 
 @[simp]
 noncomputable
-def rightBifunctor_map_left {f g : Arrow C} (sq : f ⟶ g) (f' : Arrow C) :
-    pt f'.hom f.hom ⟶ pt f'.hom g.hom := by
-  dsimp [rightFunctor, rightFunctor_map, rightFunctor_map_left]
-  refine pushout.desc ?_ ?_ ?_
-  · exact (sq.right ▷ f'.left) ≫ (inl _ _)
-  · exact (sq.left ▷ f'.right) ≫ (inr _ _)
-  · have : sq.left ≫ g.hom = f.hom ≫ sq.right := sq.w
-    dsimp only [inl, inr]
-    rw [← comp_whiskerRight_assoc, ← this, comp_whiskerRight, whisker_exchange_assoc,
-      pushout.inl, pushout.inr, Category.assoc, pushout.condition]
+def rightBifunctor_map_left :
+    pt h.hom f.hom ⟶ pt h.hom g.hom :=
+  pushout.map _ _ _ _
+    (sq.right ▷ h.left) (sq.left ▷ h.right) (sq.left ▷ h.left)
+    (by simp [← comp_whiskerRight, ← Arrow.w_mk_right]) (whisker_exchange sq.left h.hom)
 
 @[simp]
 noncomputable
-def rightBifunctor_map {f g : Arrow C} (sq : f ⟶ g) :
+def rightBifunctor_map :
     rightFunctor f ⟶ rightFunctor g where
-  app f' := {
-    left := rightBifunctor_map_left sq f'
-    right := sq.right ▷ f'.right
+  app h := {
+    left := rightBifunctor_map_left h sq
+    right := sq.right ▷ h.right
     w := by
       apply pushout.hom_ext
       · simp [whisker_exchange]
@@ -115,15 +107,15 @@ def rightBifunctor_map {f g : Arrow C} (sq : f ⟶ g) :
     apply Arrow.hom_ext
     · apply pushout.hom_ext
       all_goals simp [← whisker_exchange_assoc]
-    · exact whisker_exchange _ _
+    · exact whisker_exchange sq.right _
 
-@[simp]
+@[simps!]
 noncomputable
 def rightBifunctor : Arrow C ⥤ Arrow C ⥤ Arrow C where
   obj := rightFunctor
   map := rightBifunctor_map
 
-end
+end Functor
 
 section NatTrans
 
@@ -133,17 +125,17 @@ variable {F G : D ⥤ C} (h : F ⟶ G)
 
 variable {X Y : C} (g : X ⟶ Y)
 
-@[simp]
+@[simps!]
 def _root_.CategoryTheory.NatTrans.arrowFunctor : D ⥤ Arrow C where
   obj A := Arrow.mk (h.app A)
   map f := Arrow.homMk' _ _ (h.naturality f)
 
-@[simp]
+@[simps]
 def _root_.CategoryTheory.NatTrans.arrowFunctor_NatTrans {G' : D ⥤ C} (h' : G ⟶ G') :
     NatTrans.arrowFunctor h ⟶ NatTrans.arrowFunctor (h ≫ h') where
   app X := Arrow.homMk' (𝟙 _) (h'.app X)
 
-@[simp]
+@[simps!]
 noncomputable
 def natTransLeftFunctor : D ⥤ C := (NatTrans.arrowFunctor h) ⋙ rightFunctor g ⋙ Arrow.leftFunc
 --  pt (h.app A) g ⟶ pt (h.app B) g
@@ -154,19 +146,21 @@ def natTransLeftFunctor_comp {G' : D ⥤ C} (h' : G ⟶ G') :
     (natTransLeftFunctor h g) ⟶ (natTransLeftFunctor (h ≫ h') g) :=
   whiskerRight (NatTrans.arrowFunctor_NatTrans h h') _
 
+@[simps!]
 noncomputable
 def inlDescFunctor : (F ⋙ tensorLeft Y) ⟶ (natTransLeftFunctor h g) where
   app A := inl (h.app A) g
 
+@[simps!]
 noncomputable
 def inrDescFunctor : (G ⋙ tensorLeft X) ⟶ (natTransLeftFunctor h g) where
   app A := inr (h.app A) g
 
-/-- very slow :( -/
+@[simps!]
 noncomputable
 def descFunctor : (natTransLeftFunctor h g) ⟶ (G ⋙ tensorLeft Y) where
-  app A := (h.app A) ◫ g
-  naturality _ _ f := by
+  app A := h.app A ◫ g
+  naturality _ _ _ := by
     apply pushout.hom_ext
     · simp [← MonoidalCategory.whiskerLeft_comp]
     · simp [whisker_exchange]
@@ -239,7 +233,7 @@ end CategoryTheory.PushoutProduct
 
 namespace SSet
 
-open Limits Simplicial PushoutProduct
+open Simplicial PushoutProduct
 
 inductive bdryHornPushout : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk (m : ℕ) : bdryHornPushout (∂Δ[m].ι ◫ Λ[2, 1].ι)
