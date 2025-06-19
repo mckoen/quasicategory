@@ -263,32 +263,7 @@ def newPushoutIsColimit_desc {j} (s : PushoutCocone ((φ F c).app j) (F.map (hom
     (natTransLeftFunctor c.ι Λ[2, 1].ι).obj (Order.succ j) ⟶ s.pt :=
   pushout.desc s.inr ((inr _ _) ≫ s.inl) (by simpa using ((inr _ _) ≫= s.condition).symm)
 
-lemma newPushoutIsColimit_fac_left_aux {j} (s : PushoutCocone ((φ F c).app j) (F.map (homOfLE (Order.le_succ j)) ◫ Λ[2, 1].ι)) :
-    pushout.inl ((Arrow.mk Λ[2, 1].ι).hom ▷ (𝟭 SSet).obj ((NatTrans.arrowFunctor c.ι).obj j).left)
-        ((𝟭 SSet).obj (Arrow.mk Λ[2, 1].ι).left ◁ ((NatTrans.arrowFunctor c.ι).obj j).hom) ≫
-      (F' F c).map (homOfLE (Order.le_succ j)) ≫ newPushoutIsColimit_desc F c s =
-    pushout.inl ((Arrow.mk Λ[2, 1].ι).hom ▷ (𝟭 SSet).obj ((NatTrans.arrowFunctor c.ι).obj j).left)
-        ((𝟭 SSet).obj (Arrow.mk Λ[2, 1].ι).left ◁ ((NatTrans.arrowFunctor c.ι).obj j).hom) ≫
-      s.inl := by
-  have := ((pushout.inl _ _) ≫= s.condition).symm
-  dsimp only [F', newPushoutIsColimit_desc, NatTrans.arrowFunctor, Arrow.mk, natTransLeftFunctor,
-    Functor.comp_map, Arrow.homMk', rightFunctor, rightFunctor_map, Arrow.leftFunc_map,
-    rightFunctor_map_left, Functor.id_obj, Functor.const, inl, inr]
-  dsimp only [Arrow.mk, Functor.id_obj, Functor.succNatTrans, NatTrans.arrowFunctor, φ, φ_j,
-    inl] at this
-  rw [pushout.inl_desc_assoc, pushout.inl_desc_assoc] at this
-  rw [pushout.inl_desc_assoc, ← this]
-  have := congr_app (cocone_ι_facs F c) j
-  dsimp only [Functor.succNatTrans, natTransSucc, NatTrans.comp_app] at this
-  have := c.ι.naturality (homOfLE (Order.le_succ j))
-  simp only [Functor.const, Category.comp_id] at this
-  /-
-  have : (Λ[2, 1].toSSet ◁ c.ι.app j) = (Λ[2, 1].toSSet ◁ (F.map (homOfLE (Order.le_succ j)) ≫ c.ι.app (Order.succ j) )) := by
-    rw [this]
-  have := pushout.congrHom (show (Λ[2, 1].ι ▷ F.obj j) = (Λ[2, 1].ι ▷ F.obj j) by rfl) this.symm
-  -/
-  sorry
-
+omit [OrderBot J] [WellFoundedLT J] [F.IsWellOrderContinuous] in
 lemma newPushoutIsColimit_fac_left {j} (s : PushoutCocone ((φ F c).app j) (F.map (homOfLE (Order.le_succ j)) ◫ Λ[2, 1].ι)) :
     (F' F c).map (homOfLE (Order.le_succ j)) ≫ newPushoutIsColimit_desc F c s = s.inl := by
   dsimp only [F', newPushoutIsColimit_desc, NatTrans.arrowFunctor, Arrow.mk, natTransLeftFunctor,
@@ -296,12 +271,13 @@ lemma newPushoutIsColimit_fac_left {j} (s : PushoutCocone ((φ F c).app j) (F.ma
     rightFunctor_map_left, Functor.id_obj, Functor.const, inl, inr, pushout.map]
   simp_rw [MonoidalCategory.whiskerLeft_id, Category.id_comp]
   apply pushout.hom_ext
-  · --simpa using ((pushout.inl _ _) ≫= s.condition).symm
-    exact newPushoutIsColimit_fac_left_aux _ _ _
+  · simpa only [Functor.succ, homOfLE_leOfHom, Functor.succNatTrans, Fin.isValue, pt,
+    pushoutProduct, φ, natTransLeftFunctor, NatTrans.arrowFunctor, Arrow.mk, Functor.const_obj_obj,
+    Functor.const_obj_map, φ_j, Functor.id_obj, inl, pushout.inl, inr, pushout.inr,
+    PushoutCocone.ι_app_right, PushoutCocone.ι_app_left, pushout.inl_desc_assoc, Category.assoc,
+    pushout.inl_desc] using ((inl _ _) ≫= s.condition).symm
   · rw [pushout.inr_desc_assoc, pushout.inr_desc]
 
-/--/
-set_option maxHeartbeats 300000 in
 noncomputable
 def newPushoutIsColimit {j} : IsColimit (newPushoutCocone F c j) := by
   refine PushoutCocone.IsColimit.mk _ (newPushoutIsColimit_desc F c) ?_ ?_ ?_

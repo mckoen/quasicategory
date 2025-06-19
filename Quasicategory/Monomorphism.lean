@@ -44,6 +44,7 @@ instance IsStableUnderTransfiniteComposition.monomorphisms :
 instance monomorphisms.WeaklySaturated : WeaklySaturated.{u} (monomorphisms SSet.{u}) :=
   ⟨ IsStableUnderCobaseChange.monomorphisms,
     IsStableUnderRetracts.monomorphisms,
+    by infer_instance,
     IsStableUnderTransfiniteComposition.monomorphisms⟩
 
 open modelCategoryQuillen in

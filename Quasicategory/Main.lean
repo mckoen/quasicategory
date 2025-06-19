@@ -68,7 +68,7 @@ lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)
     (newSq f).HasLift → sq.HasLift := by
   intro ⟨lift, fac_left, fac_right⟩
   refine ⟨MonoidalClosed.uncurry lift, ?_, Limits.IsTerminal.hom_ext isTerminal _ _⟩
-  apply (IsPushout ∂Δ[m].ι Λ[2, 1].ι).hom_ext
+  apply Limits.pushout.hom_ext
   · apply_fun curry
     simpa [curry_natural_left]
   · apply_fun curry

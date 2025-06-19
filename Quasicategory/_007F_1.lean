@@ -25,37 +25,34 @@ instance S.IsStableUnderCobaseChange : S.IsStableUnderCobaseChange where
 
 instance S.IsStableUnderRetracts : S.IsStableUnderRetracts where
   of_retract h hg :=
-    (saturation_isWeaklySaturated _).IsStableUnderRetracts.of_retract (Retract.map h (rightBifunctor.obj (.mk Λ[2, 1].ι))) hg
+    (saturation_isWeaklySaturated _).IsStableUnderRetracts.of_retract (Retract.map h (rightFunctor Λ[2, 1].ι)) hg
 
-set_option maxHeartbeats 400000 in
+set_option maxHeartbeats 800000 in
 open Limits in
 noncomputable
 def F'_isoBot {J : Type w} [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFoundedLT J]
     {X Y : SSet} {f : X ⟶ Y} (hf : S.TransfiniteCompositionOfShape J f) :
       (F' hf.F (Limits.Cocone.mk _ hf.incl)).obj ⊥ ≅ (PushoutProduct.pt f Λ[2, 1].ι) where
   hom := by
-    simp [F']
-    refine Limits.pushout.desc ((Δ[2] ◁ hf.isoBot.hom) ≫ (inl _ _)) (inr _ _) ?_
-    rw [← whisker_exchange_assoc]
-    dsimp
-    rw [pushout.condition]
-    have := hf.fac.symm
-    simp_rw [this]
+    apply Limits.pushout.desc ((Δ[2] ◁ hf.isoBot.hom) ≫ (inl _ _)) (inr _ _)
+    simp [← whisker_exchange_assoc, pushout.condition]
+    have := congr_arg (MonoidalCategory.whiskerLeft Λ[2, 1].toSSet) hf.fac
+    simp_rw [← this]
     rw [← MonoidalCategory.whiskerLeft_comp_assoc, Iso.hom_inv_id_assoc]
   inv := by
-    simp [F']
-    refine Limits.pushout.desc (((Δ[2] ◁ hf.isoBot.inv) ≫ (inl _ _))) (inr _ _) ?_
-    rw [← whisker_exchange_assoc]
+    apply Limits.pushout.desc (((Δ[2] ◁ hf.isoBot.inv) ≫ (inl _ _))) (inr _ _)
     dsimp
-    rw [pushout.condition, ← MonoidalCategory.whiskerLeft_comp_assoc]
+    rw [← whisker_exchange_assoc, pushout.condition, ← MonoidalCategory.whiskerLeft_comp_assoc]
     have := hf.fac.symm
     simp_rw [this]
   inv_hom_id := by
     apply pushout.hom_ext
-    all_goals sorry
+    · simp
+    · simp
   hom_inv_id := by
     apply pushout.hom_ext
-    all_goals sorry
+    · simp
+    · simp
 
 open Limits in
 instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposition.{w} S.{w} where
@@ -75,8 +72,6 @@ instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposi
           · simp [descFunctor, F'_isoBot] }
       · intro j hj
         exact .pushout (newPushoutIsPushout hf.F (Limits.Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
-
-instance T_coprod : IsStableUnderCoproducts bdryHornPushouts.saturation := sorry
 
 noncomputable
 def c₁' {J : Type*} {X₁ X₂ : Discrete J ⥤ SSet}
@@ -105,23 +100,61 @@ def c₁' {J : Type*} {X₁ X₂ : Discrete J ⥤ SSet}
             rw [← MonoidalCategory.whiskerLeft_comp_assoc, c₂.ι.naturality]
             rfl } }
 
+set_option maxHeartbeats 800000 in
+open Limits in
 noncomputable
 def c₁'_isColimit {J : Type*} {X₁ X₂ : Discrete J ⥤ SSet}
-    {c₁ : Limits.Cocone X₁} (c₂ : Limits.Cocone X₂)
-    (h₁ : Limits.IsColimit c₁) (h₂ : Limits.IsColimit c₂) (f : X₁ ⟶ X₂) : Limits.IsColimit (c₁' c₂ h₁ f) where
+    {c₁ : Cocone X₁} (c₂ : Cocone X₂)
+    (h₁ : IsColimit c₁) (h₂ : IsColimit c₂) (f : X₁ ⟶ X₂) : IsColimit (c₁' c₂ h₁ f) where
   desc s := by
     dsimp [c₁']
-    let s₁ := Limits.Cocone.mk s.pt (inlDescFunctor f Λ[2, 1].ι ≫ s.ι)
-    let s₂ := Limits.Cocone.mk s.pt (inrDescFunctor f Λ[2, 1].ι ≫ s.ι)
-    let hs₁ := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) h₁)
-    let hs₂ := (Limits.isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) h₂)
-    apply Limits.pushout.desc (hs₁.desc s₁) (hs₂.desc s₂)
-    simp [s₁, s₂, hs₁, hs₂]
-    --have := inrDescFunctor f Λ[2, 1].ι ≫ (c₁' c₂ h₁ f).ι
-    sorry
+    let s₁ := Cocone.mk s.pt (inlDescFunctor f Λ[2, 1].ι ≫ s.ι)
+    let s₂ := Cocone.mk s.pt (inrDescFunctor f Λ[2, 1].ι ≫ s.ι)
+    let hs₁ := (isColimitOfPreserves (tensorLeft Δ[2]) h₁)
+    let hs₂ := (isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) h₂)
+    let hs₁' := (isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) h₁)
+    apply pushout.desc (hs₁.desc s₁) (hs₂.desc s₂)
+    apply hs₁'.hom_ext
+    intro j
+    let hs₁_fac := hs₁.fac s₁ j
+    let hs₂_fac := hs₂.fac s₂ j
+    simp [s₁, s₂, hs₁, hs₂] at hs₁_fac hs₂_fac ⊢
+    rw [whisker_exchange_assoc, ← MonoidalCategory.whiskerLeft_comp_assoc, hs₁_fac]
+    simp [hs₂_fac, pushout.condition_assoc]
+  fac s j := by
+    simp [c₁']
+    apply pushout.hom_ext
+    · simp
+      exact (isColimitOfPreserves (tensorLeft Δ[2]) h₁).fac { pt := s.pt, ι := inlDescFunctor f Λ[2, 1].ι ≫ s.ι } j
+    · let s₂ := Cocone.mk s.pt (inrDescFunctor f Λ[2, 1].ι ≫ s.ι)
+      let hs₂ := (isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) h₂)
+      let hs₂_fac := hs₂.fac s₂ j
+      simp [s₂] at hs₂_fac ⊢
+      rw [hs₂_fac]
+  uniq s m hj := by
+    simp
+    apply pushout.hom_ext
+    · let s₁ := Cocone.mk s.pt (inlDescFunctor f Λ[2, 1].ι ≫ s.ι)
+      let hs₁ := (isColimitOfPreserves (tensorLeft Δ[2]) h₁)
+      apply hs₁.hom_ext
+      intro j
+      simp
+      have := hs₁.fac s₁ j
+      dsimp [s₁, c₁'] at this
+      rw [this, ← hj j]
+      simp [c₁']
+    · let s₂ := Cocone.mk s.pt (inrDescFunctor f Λ[2, 1].ι ≫ s.ι)
+      let hs₂ := (isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) h₂)
+      apply hs₂.hom_ext
+      intro j
+      simp
+      have := hs₂.fac s₂ j
+      dsimp [s₂] at this
+      rw [this, ← hj j]
+      simp [c₁']
 
 set_option maxHeartbeats 400000 in
-instance S.IsStableUnderCoproducts : IsStableUnderCoproducts S where
+instance S.IsStableUnderCoproducts : IsStableUnderCoproducts.{w} S.{w} where
   isStableUnderCoproductsOfShape J := by
     refine (isStableUnderColimitsOfShape_iff_colimitsOfShape_le S (Discrete J)).mpr ?_
     intro X Y f hf
@@ -129,7 +162,7 @@ instance S.IsStableUnderCoproducts : IsStableUnderCoproducts S where
     | mk X₁ X₂ c₁ c₂ h₁ h₂ f hf =>
     dsimp only [S]
     dsimp only [MorphismProperty.functorCategory, S] at hf
-    apply (T_coprod.isStableUnderCoproductsOfShape J).colimitsOfShape_le
+    apply (WeaklySaturated.IsStableUnderCoproducts.isStableUnderCoproductsOfShape J).colimitsOfShape_le
     let α := h₁.desc { pt := c₂.pt, ι := f ≫ c₂.ι }
     let f' := descFunctor f Λ[2, 1].ι
     let c₁' := c₁' c₂ h₁ f
@@ -149,6 +182,7 @@ instance S.IsStableUnderCoproducts : IsStableUnderCoproducts S where
 instance S.WeaklySaturated : WeaklySaturated.{w} S.{w} where
   IsStableUnderCobaseChange := by infer_instance
   IsStableUnderRetracts := by infer_instance
+  IsStableUnderCoproducts := by infer_instance
   IsStableUnderTransfiniteComposition := by infer_instance
 
 lemma bdryInclusions_le_S : bdryInclusions ≤ S := fun _ _ _ ⟨_⟩ ↦ .of _ (.mk _)
