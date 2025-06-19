@@ -162,21 +162,20 @@ instance (b : Fin n) : OrderTop (Fin b.succ) where
   top := ⟨b, Nat.lt_add_one b⟩
   le_top a := Nat.le_of_lt_succ a.isLt
 
-lemma _root_.Sigma.Fin_top_eq :
-    (⊤ : Σₗ (b : Fin (n + 1)), Fin b.succ) = ⟨Fin.last n, Fin.last n⟩ := rfl
-
 def τ' (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : (Δ[n] ⊗ Δ[2] : SSet) _⦋n + 2⦌ :=
   (stdSimplex.objEquiv.symm (σ (⟨i.2, by omega⟩ : Fin (n + 2)) ≫ σ i.1), τ.objMk₂ i)
 
 def σ' (i : Σₗ (b : Fin n), Fin b.succ) : (Δ[n] ⊗ Δ[2] : SSet) _⦋n + 1⦌ :=
   (stdSimplex.objEquiv.symm (σ i.2), σ.objMk₂ i)
 
+/-
 /-- for all `0 ≤ a ≤ b < n`, we get a nondegenerate `(n+1)`-simplex. -/
 def σ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin n), Fin b.succ) :
     (Δ[n] ⊗ Δ[2] : SSet).nonDegenerate (n + 1) := by
   refine ⟨σ' i, ?_⟩
   rcases i with ⟨b, a⟩
   sorry
+-/
 
 /-- for all `0 ≤ a ≤ b ≤ n`, we get a nondegenerate `(n+2)`-simplex. -/
 def τ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
@@ -402,6 +401,98 @@ def τ.nonDegenerateEquiv :
         rw [thm0] at this
         simp at this
         omega
+
+lemma Sigma.Lex.top :
+    (⊤ : Σₗ (b : Fin (n + 1)), Fin b.succ) = ⟨Fin.last n, Fin.last n⟩ := rfl
+
+@[simp]
+def Sigma.Lex.succ : (Σₗ (b : Fin (n + 1)), Fin b.succ) → (Σₗ (b : Fin (n + 1)), Fin b.succ) :=
+  fun ⟨b, a⟩ ↦
+    if a.1 < b then ⟨b, ⟨a.succ, sorry⟩⟩ -- if a < b, then ⟨b, a + 1⟩
+    else if b = Fin.last n then ⟨Fin.last n, Fin.last n⟩ -- if a = b = n, then don't change
+    else ⟨⟨b.succ, by sorry⟩, ⟨0, Nat.zero_lt_succ _⟩⟩ -- if a = b < n, then ⟨b + 1, 0⟩
+
+lemma Sigma.Lex.le_succ : ∀ (a : Σₗ (b : Fin (n + 1)), Fin b.succ), a ≤ succ a := by
+    intro ⟨b, a⟩
+    simp
+    split
+    · simp [le_def, Fin.le_iff_val_le_val]
+    · split
+      · next h =>
+        simp [le_def, Fin.le_iff_val_le_val]
+        right
+        use h
+        omega
+      · next h =>
+        simp [le_def, Fin.lt_iff_val_lt_val]
+
+lemma Sigma.Lex.max_of_succ_le : ∀ {a : Σₗ (b : Fin (n + 1)), Fin b.succ}, succ a ≤ a → IsMax a := by
+    intro ⟨b, a⟩
+    simp
+    split
+    · next h =>
+      intro h'
+      cases h'
+      · omega
+      · next h' =>
+        simp [Fin.le_iff_val_le_val] at h'
+    · next h =>
+      split
+      · next h' =>
+        intro h''
+        rw [top]
+        simp [le_def] at h''
+        aesop
+      · next h' =>
+        intro h''
+        exfalso
+        simp [le_def, Fin.lt_iff_val_lt_val] at h''
+        rw [Fin.eq_mk_iff_val_eq] at h'
+        simp at h'
+        cases h''
+        · next h''' =>
+          rename_i h''''
+          rw [Fin.eq_mk_iff_val_eq] at h''''
+          simp at h''''
+
+lemma Sigma.Lex.succ_le_of_lt : ∀ {a b : Σₗ (b : Fin (n + 1)), Fin b.succ}, a < b → Sigma.Lex.succ a ≤ b := by
+    intro ⟨b, a⟩ ⟨b', a'⟩ h
+    rw [lt_def] at h
+    rw [le_def]
+    cases h
+    · next h =>
+      simp at h ⊢
+      simp_rw [Fin.le_iff_val_le_val, Fin.lt_iff_val_lt_val]
+      split
+      · aesop
+      · next hab =>
+        split
+        · aesop
+        · next h' =>
+          by_cases h'' : b.succ.1 < b'
+          · left
+            simpa
+          · right
+            simp at h'' ⊢
+            rw [Fin.lt_iff_val_lt_val] at h
+            have : ⟨b.succ.1, sorry⟩ = b' := by
+              apply le_antisymm
+              all_goals
+              · simp [Fin.le_iff_val_le_val]
+                omega
+            simp at this
+            use this
+            sorry
+    · next h =>
+      obtain ⟨h, h'⟩ := h
+      simp at h h'
+      sorry
+
+instance Sigma.Lex.SuccOrder : SuccOrder (Σₗ (b : Fin (n + 1)), Fin b.succ) where
+  succ := succ
+  le_succ := le_succ
+  max_of_succ_le := max_of_succ_le
+  succ_le_of_lt := succ_le_of_lt
 
 /-
 namespace τ

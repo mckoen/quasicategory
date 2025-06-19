@@ -10,6 +10,9 @@ universe w v u
 
 open CategoryTheory MorphismProperty Simplicial SSet PushoutProduct
 
+#check HomotopicalAlgebra.RelativeCellComplex
+#check HomotopicalAlgebra.RelativeCellComplex.transfiniteCompositionOfShape
+
 lemma innerAnodyne_eq_T : innerAnodyne.{u} = (saturation.{u} bdryHornPushouts) := by
   rw [innerAnodyne_eq]
   apply le_antisymm
@@ -26,7 +29,7 @@ lemma innerAnodyne_eq_T : innerAnodyne.{u} = (saturation.{u} bdryHornPushouts) :
 
 -- `007F` (a)
 lemma monoPushout_innerAnodyne {A B : SSet} (i : A ⟶ B) [Mono i] :
-    innerAnodyne (i ◫ (horn 2 1).ι) := by
+    innerAnodyne (i ◫ Λ[2, 1].ι) := by
   rw [innerAnodyne_eq_T]
   exact monomorphisms_le_S i (.infer_property _)
 
@@ -35,7 +38,5 @@ lemma contains_innerAnodyne_iff_contains_pushout_maps
     (S : MorphismProperty SSet) [WeaklySaturated.{u} S] :
     (bdryHornPushouts ≤ S) ↔ (innerAnodyne.{u} ≤ S) := by
   constructor
-  · rw [innerAnodyne_eq_T, ← WeaklySaturated.le_iff]
-    exact fun h ↦ h
-  · intro h _ _ _ ⟨m⟩
-    exact h _ (monoPushout_innerAnodyne ∂Δ[m].ι)
+  · simp [innerAnodyne_eq_T, ← WeaklySaturated.le_iff]
+  · exact fun h _ _ _ ⟨m⟩ ↦ h _ (monoPushout_innerAnodyne ∂Δ[m].ι)
