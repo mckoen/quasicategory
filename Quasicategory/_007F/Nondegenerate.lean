@@ -408,9 +408,9 @@ lemma Sigma.Lex.top :
 @[simp]
 def Sigma.Lex.succ : (Σₗ (b : Fin (n + 1)), Fin b.succ) → (Σₗ (b : Fin (n + 1)), Fin b.succ) :=
   fun ⟨b, a⟩ ↦
-    if a.1 < b then ⟨b, ⟨a.succ, sorry⟩⟩ -- if a < b, then ⟨b, a + 1⟩
-    else if b = Fin.last n then ⟨Fin.last n, Fin.last n⟩ -- if a = b = n, then don't change
-    else ⟨⟨b.succ, by sorry⟩, ⟨0, Nat.zero_lt_succ _⟩⟩ -- if a = b < n, then ⟨b + 1, 0⟩
+    if h₁ : a.1 < b then ⟨b, ⟨a.succ, by simpa using h₁⟩⟩ -- if a < b, then ⟨b, a + 1⟩
+    else if h₂ : b = Fin.last n then ⟨Fin.last n, Fin.last n⟩ -- if a = b = n, then don't change
+    else ⟨⟨b.succ, by simp_all [Fin.ext_iff]; omega⟩, ⟨0, Nat.zero_lt_succ _⟩⟩ -- if a = b < n, then ⟨b + 1, 0⟩
 
 lemma Sigma.Lex.le_succ : ∀ (a : Σₗ (b : Fin (n + 1)), Fin b.succ), a ≤ succ a := by
     intro ⟨b, a⟩
@@ -482,6 +482,7 @@ lemma Sigma.Lex.succ_le_of_lt : ∀ {a b : Σₗ (b : Fin (n + 1)), Fin b.succ},
                 omega
             simp at this
             use this
+            simp
             sorry
     · next h =>
       obtain ⟨h, h'⟩ := h
