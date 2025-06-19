@@ -482,7 +482,6 @@ lemma Sigma.Lex.succ_le_of_lt : ∀ {a b : Σₗ (b : Fin (n + 1)), Fin b.succ},
                 omega
             simp at this
             use this
-            simp
             sorry
     · next h =>
       obtain ⟨h, h'⟩ := h
