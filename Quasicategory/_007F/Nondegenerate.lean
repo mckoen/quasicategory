@@ -163,19 +163,102 @@ instance (b : Fin n) : OrderTop (Fin b.succ) where
   le_top a := Nat.le_of_lt_succ a.isLt
 
 def τ' (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : (Δ[n] ⊗ Δ[2] : SSet) _⦋n + 2⦌ :=
-  (stdSimplex.objEquiv.symm (σ (⟨i.2, by omega⟩ : Fin (n + 2)) ≫ σ i.1), τ.objMk₂ i)
+  (stdSimplex.objEquiv.symm (σ ⟨i.2, by omega⟩ ≫ σ i.1), τ.objMk₂ i)
 
 def σ' (i : Σₗ (b : Fin n), Fin b.succ) : (Δ[n] ⊗ Δ[2] : SSet) _⦋n + 1⦌ :=
-  (stdSimplex.objEquiv.symm (σ i.2), σ.objMk₂ i)
+  (stdSimplex.objEquiv.symm (σ ⟨i.2, by omega⟩), σ.objMk₂ i)
 
-/-
 /-- for all `0 ≤ a ≤ b < n`, we get a nondegenerate `(n+1)`-simplex. -/
 def σ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin n), Fin b.succ) :
     (Δ[n] ⊗ Δ[2] : SSet).nonDegenerate (n + 1) := by
   refine ⟨σ' i, ?_⟩
   rcases i with ⟨b, a⟩
-  sorry
--/
+  rw [prodStdSimplex.nonDegenerate_iff']
+  simp [σ']
+  simp [SSet.yonedaEquiv, yonedaCompUliftFunctorEquiv, stdSimplex.objEquiv, Equiv.ulift]
+  intro x y h
+  simp at h
+  ext i
+  fin_cases i
+  have h₁ := congr_arg Prod.fst h
+  have h₂ := congr_arg Prod.snd h
+  rw [stdSimplex.ext'_iff, SimplexCategory.Hom.ext_iff, OrderHom.ext_iff] at h₁ h₂
+  simp [stdSimplex, σ, objMk₂, SSet.uliftFunctor, stdSimplex.objEquiv, stdSimplex.objMk] at h₁ h₂
+  replace h₁ := congr_fun h₁ 0
+  replace h₂ := congr_fun h₂ 0
+  simp [Hom.toOrderHom, Fin.predAbove] at h₁ h₂
+  simp_rw [Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val, Fin.ext_iff] at h₁ h₂
+  simp
+  split at h₂
+  · next h =>
+    simp at h
+    rw [Nat.mod_eq_of_lt (by omega)] at h
+    simp_all only [Fin.isValue, Fin.val_zero, Fin.val_natCast]
+    split at h₁
+    next h_2 =>
+      split at h₂
+      next h_3 =>
+        split at h₁
+        next h_4 =>
+          simp_all only [Fin.isValue, Fin.val_zero, Fin.coe_pred]
+          change (x 0).1.pred = (y 0).1.pred at h₁
+          refine Nat.pred_inj ?_ ?_ h₁
+          · change _ < (x 0).1 at h_2
+            omega
+          · change _ < (y 0).1 at h_4
+            omega
+        omega
+      omega
+    next h_2 =>
+      split at h₂
+      next h_3 =>
+        split at h₁
+        next h_4 =>
+          rw [Nat.mod_eq_of_lt (by omega)] at h_3
+          omega
+        simpa
+      next h_3 =>
+        split at h₁
+        all_goals
+          split at h₂
+          all_goals omega
+  · next h =>
+    simp at h
+    rw [Nat.mod_eq_of_lt (by omega)] at h
+    simp [h] at h₁
+    split at h₁
+    · next h' =>
+      change (x 0).1.pred = (y 0).1.pred at h₁
+      refine Nat.pred_inj ?_ ?_ h₁
+      · change _ < (x 0).1 at h
+        omega
+      · change _ < (y 0).1 at h'
+        omega
+    · next h' =>
+      exfalso
+      simp at h₁
+      simp_all only [Fin.isValue, Fin.val_natCast, not_lt]
+      split at h₂
+      next h_2 =>
+        split at h₂
+        next h_3 => simp_all only [Fin.isValue, Fin.val_one, Fin.val_zero, one_ne_zero]
+        next h_3 =>
+          split at h₂
+          next h_4 =>
+            simp_all only [Fin.isValue, not_le, Fin.val_one]
+            rw [Nat.mod_eq_of_lt (by omega)] at h_3
+            omega
+          omega
+      next h_2 =>
+        split at h₂
+        omega
+        next h_3 =>
+          split at h₂
+          omega
+          next h_4 =>
+            simp_all only [Fin.isValue, not_le, Fin.val_two]
+            rw [Nat.mod_eq_of_lt (by omega)] at h_3
+            omega
 
 /-- for all `0 ≤ a ≤ b ≤ n`, we get a nondegenerate `(n+2)`-simplex. -/
 def τ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
@@ -196,7 +279,7 @@ def τ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
       exact Eq.symm (Nat.eq_add_of_sub_eq (le_of_add_le_right h') rfl)
     · next h' =>
       simp [h', not_lt.1 h']
-      exact Nat.sub_add_cancel (Nat.one_le_of_lt h)
+      omega
   · next h =>
     simp_rw [Fin.lt_castPred_iff]
     simp [not_lt.1 h]
@@ -205,6 +288,20 @@ def τ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
       simp [Fin.le_iff_val_le_val]
       omega
     simp [(h.trans this).not_lt]
+
+/-
+-- `σab = ⟨(0, 0),..., (0, a), (1, a),..., (1, b), (2, b + 1),..., (2, n)⟩`
+-- `(b + 2)`-th face of `τab` and of `τa(b+1)`
+/-- There is a bijection (via `σ`) between pairs `0 ≤ a ≤ b < n` and nondegenerate
+  `(n + 1)`-simplices. -/
+noncomputable
+def σ.nonDegenerateEquiv :
+    (Σₗ (b : Fin n), Fin b.succ) ≃ (Δ[n] ⊗ Δ[2] : SSet).nonDegenerate (n + 1) := by
+  refine Equiv.ofBijective (σ.nonDegenerateEquiv.toFun) ?_
+  constructor
+  · exact fun _ _ h ↦ σ.objMk₂_injective (congr_arg (Prod.snd ∘ Subtype.val) h)
+  · sorry
+-/
 
 /-- There is a bijection (via `τ`) between pairs `0 ≤ a ≤ b ≤ n` and nondegenerate
   `(n + 2)`-simplices. -/
@@ -402,9 +499,6 @@ def τ.nonDegenerateEquiv :
         simp at this
         omega
 
-lemma Sigma.Lex.top :
-    (⊤ : Σₗ (b : Fin (n + 1)), Fin b.succ) = ⟨Fin.last n, Fin.last n⟩ := rfl
-
 @[simp]
 def Sigma.Lex.succ : (Σₗ (b : Fin (n + 1)), Fin b.succ) → (Σₗ (b : Fin (n + 1)), Fin b.succ) :=
   fun ⟨b, a⟩ ↦
@@ -440,7 +534,6 @@ lemma Sigma.Lex.max_of_succ_le : ∀ {a : Σₗ (b : Fin (n + 1)), Fin b.succ}, 
       split
       · next h' =>
         intro h''
-        rw [top]
         simp [le_def] at h''
         aesop
       · next h' =>
@@ -457,42 +550,56 @@ lemma Sigma.Lex.max_of_succ_le : ∀ {a : Σₗ (b : Fin (n + 1)), Fin b.succ}, 
 
 lemma Sigma.Lex.succ_le_of_lt : ∀ {a b : Σₗ (b : Fin (n + 1)), Fin b.succ}, a < b → Sigma.Lex.succ a ≤ b := by
     intro ⟨b, a⟩ ⟨b', a'⟩ h
-    rw [lt_def] at h
-    rw [le_def]
-    cases h
-    · next h =>
-      simp at h ⊢
-      simp_rw [Fin.le_iff_val_le_val, Fin.lt_iff_val_lt_val]
+    dsimp
+    split
+    · next h' =>
+      rw [le_def]
+      rw [lt_def] at h
+      aesop
+    · next h'=>
       split
-      · aesop
-      · next hab =>
-        split
-        · aesop
+      · next h'' =>
+        subst h''
+        have : a = Fin.last n := by omega
+        subst this
+        exact h.le
+      · next h'' =>
+        rw [lt_def] at h
+        cases h
         · next h' =>
-          by_cases h'' : b.succ.1 < b'
-          · left
-            simpa
-          · right
-            simp at h'' ⊢
-            rw [Fin.lt_iff_val_lt_val] at h
-            have : ⟨b.succ.1, sorry⟩ = b' := by
-              apply le_antisymm
-              all_goals
-              · simp [Fin.le_iff_val_le_val]
-                omega
-            simp at this
-            use this
-            sorry
-    · next h =>
-      obtain ⟨h, h'⟩ := h
-      simp at h h'
-      sorry
+          simp at h'
+          by_cases hb : b.1 + 1 < b'
+          · rw [le_def]
+            aesop
+          · have hb : (⟨⟨b.1 + 1,  by simp_all [Fin.ext_iff]; omega⟩, ⟨0, Nat.zero_lt_succ _⟩⟩ :  Σₗ (b : Fin (n + 1)), Fin b.succ ) =
+                ⟨b', ⟨0, Nat.zero_lt_succ ↑b'⟩⟩ := by
+              congr
+              omega
+              omega
+              omega
+            dsimp at hb
+            rw [hb]
+            right
+            exact Fin.zero_le a'
+        · next h' =>
+          obtain ⟨h₁, h₂⟩ := h'
+          simp at h₁
+          subst h₁
+          simp at h₂
+          omega
 
-instance Sigma.Lex.SuccOrder : SuccOrder (Σₗ (b : Fin (n + 1)), Fin b.succ) where
+instance Sigma.Lex.succOrder : SuccOrder (Σₗ (b : Fin (n + 1)), Fin b.succ) where
   succ := succ
   le_succ := le_succ
   max_of_succ_le := max_of_succ_le
   succ_le_of_lt := succ_le_of_lt
+
+noncomputable
+instance : OrderBot (Σₗ (b : Fin (n + 1)), Fin b.succ) :=
+  letI : OrderBot (Fin (⊥ : Fin (n + 1)).succ) := {
+    bot := ⟨0, Nat.zero_lt_succ _⟩
+    bot_le _ := Fin.zero_le _ }
+  Sigma.Lex.orderBot
 
 /-
 namespace τ

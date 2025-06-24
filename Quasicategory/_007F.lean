@@ -1,4 +1,5 @@
 import Quasicategory._007F_1
+import Quasicategory._007F.Tau
 
 /-!
 
@@ -9,6 +10,13 @@ The second half of the proof of `007F`, which is much more technical.
 universe w v u
 
 open CategoryTheory MorphismProperty Simplicial SSet PushoutProduct
+
+variable {n : ℕ}
+
+#synth LinearOrder (Σₗ (b : Fin (n + 1)), Fin b.succ)
+#synth OrderBot (Σₗ (b : Fin (n + 1)), Fin b.succ)
+#synth SuccOrder (Σₗ (b : Fin (n + 1)), Fin b.succ)
+#synth WellFoundedLT (Σₗ (b : Fin (n + 1)), Fin b.succ)
 
 #check HomotopicalAlgebra.RelativeCellComplex
 #check HomotopicalAlgebra.RelativeCellComplex.transfiniteCompositionOfShape

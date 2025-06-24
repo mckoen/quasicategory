@@ -57,12 +57,31 @@ noncomputable
 def τ (a b : Fin (n + 1)) : (Δ[n] ⊗ Δ[2]).Subcomplex :=
   range (g a b)
 
+abbrev σ.simplex (i : Σₗ (b : Fin n), Fin b.succ) := σ.nonDegenerateEquiv.toFun i
+
 noncomputable
 abbrev τ.simplex (i : Σₗ (b : Fin (n + 1)), Fin b.succ) := τ.nonDegenerateEquiv i
+
+noncomputable
+abbrev σ.ιSimplex (i : Σₗ (b : Fin n), Fin b.succ) :
+    Δ[n + 1] ⟶ Δ[n] ⊗ Δ[2] :=
+  yonedaEquiv.symm (σ.simplex i)
 
 noncomputable abbrev τ.ιSimplex (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     Δ[n + 2] ⟶ Δ[n] ⊗ Δ[2] :=
   yonedaEquiv.symm (τ.simplex i)
+
+lemma σ.eq_f (i : Σₗ (b : Fin n), Fin b.succ) :
+    σ.ιSimplex i = f ⟨i.2, by omega⟩ i.1 := by
+  simp [ιSimplex, f, simplex, nonDegenerateEquiv.toFun, σ']
+  congr
+  exact (Nat.mod_eq_of_lt (by omega)).symm
+  ext
+  simp [objMk₂, f₂, f₂']
+  congr
+  all_goals
+    simp [Fin.ext_iff]
+    omega
 
 lemma τ.eq_g (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     τ.ιSimplex i = g ⟨i.2, by omega⟩ i.1 := rfl
@@ -73,11 +92,25 @@ lemma τ.eq_τ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     Subcomplex.range_eq_ofSimplex]
   rfl
 
-lemma τ.eq_τ' (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
-    Subcomplex.ofSimplex (τ.simplex i).1 = τ ⟨i.2, by omega⟩ i.1 := by
-  simp [τ, simplex, nonDegenerateEquiv, nonDegenerateEquiv.toFun, τ', g,
+lemma σ.eq_σ (i : Σₗ (b : Fin n), Fin b.succ) :
+    Subcomplex.ofSimplex (σ.simplex i).1 = σ ⟨i.2, by omega⟩ i.1 := by
+  simp [σ, Subcomplex.range_eq_ofSimplex, σ]
+  congr
+  simp [σ, simplex, nonDegenerateEquiv.toFun, σ', f,
     Subcomplex.range_eq_ofSimplex]
-  rfl
+  congr
+  exact (Nat.mod_eq_of_lt (by omega)).symm
+  ext
+  simp [objMk₂, f₂, f₂']
+  congr
+  all_goals
+    simp [Fin.ext_iff]
+    omega
+
+-- f is a mono
+instance (i : Σₗ (b : Fin n), Fin b.succ) : Mono (σ.ιSimplex i) := by
+  rw [stdSimplex.mono_iff]
+  refine (prodStdSimplex.nonDegenerate_iff' _).1 (σ.nonDegenerateEquiv.toFun i).2
 
 -- g is a mono
 instance (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : Mono (τ.ιSimplex i) := by
@@ -87,102 +120,13 @@ instance (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : Mono (τ.ιSimplex i) := by
 open stdSimplex
 
 open SimplexCategory in
-instance (a b : Fin n) : Mono (f a b) := by
-  rw [mono_iff]
-  intro g g' h
-  ext e
-  rw [Prod.ext_iff] at h
-  obtain ⟨h₁, h₂⟩ := h
-  simp [f, f₂, SSet.yonedaEquiv, SSet.uliftFunctor, yonedaCompUliftFunctorEquiv, stdSimplex,
-    objEquiv, SimplexCategory.σ, SimplexCategory.δ, Fin.succAboveOrderEmb, objMk] at h₁ h₂
-  rw [SimplexCategory.Hom.ext_iff, OrderHom.ext_iff] at h₁ h₂
-  replace h₁ := congr_fun h₁ e
-  replace h₂ := congr_fun h₂ e
-  simp [Fin.predAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val] at h₁ h₂
-  refine Fin.val_eq_of_eq ?_
-  split at h₁
-  next h =>
-    simp [h.not_le] at h₂
-    aesop
-  next h =>
-    simp [not_lt.1 h] at h₂
-    split at h₁
-    next h' =>
-      simp [h'.not_le] at h₂
-      aesop
-    next h' => aesop
+instance f_mono {a b : Fin n} (hab : a ≤ b) : Mono (f a b) := by
+  have : Mono (σ.ιSimplex ⟨b, ⟨a, by simp; omega⟩⟩) := by infer_instance
+  convert this
+  rw [σ.eq_f]
 
 open SimplexCategory in
 /-- only works for `0 ≤ a ≤ b ≤ n` -/
 instance g_mono (a b : Fin (n + 1)) (hab : a ≤ b) : Mono (g a b) := by
   change Mono (τ.ιSimplex ⟨b, ⟨a, by simp ;omega⟩⟩)
   infer_instance
-
-  /-
-  rw [mono_iff]
-  dsimp [g]
-  rw [← prodStdSimplex.nonDegenerate_iff', prodStdSimplex.nonDegenerate_iff _ rfl]
-  ext i
-  simp [f₂, SimplexCategory.σ]
-  rw [← stdSimplex.map_objEquiv_symm, map_objEquiv_symm_apply]
-  cases i using Fin.lastCases with
-  | last =>
-    simp
-    split
-    next h =>
-      simp_all only [Fin.isValue, Fin.val_zero, OfNat.zero_ne_ofNat]
-      rw [Fin.eq_mk_iff_val_eq] at h
-      simp only [Fin.coe_castSucc, Fin.val_last] at h
-      omega
-    next h =>
-      split
-      next h_1 =>
-        simp_all only [Fin.isValue, Fin.val_one, OfNat.one_ne_ofNat]
-        rw [Fin.eq_mk_iff_val_eq] at h_1
-        simp only [Fin.coe_castSucc, Fin.val_last] at h_1
-        omega
-      next h_1 => simp_all only [Fin.isValue, Fin.val_two]
-  | cast i =>
-    cases i using Fin.cases with
-    | zero => simp
-    | succ i =>
-      simp [Fin.predAbove]
-      split
-      next h =>
-        simp_all
-        split
-        next h_1 =>
-          simp_all only [Fin.coe_pred, Fin.coe_castSucc, Fin.isValue]
-          split
-          next
-            h_2 => omega
-          next h_2 =>
-            simp_all only [not_lt, Fin.isValue]
-            split
-            next h_2 =>
-              simp_all only [Fin.isValue, Fin.val_one, add_left_inj]
-              exfalso
-              rw [Fin.le_iff_val_le_val] at h_2
-              simp only [Fin.coe_castSucc, Fin.val_succ, add_le_add_iff_right,
-                Fin.val_fin_le] at h_2
-              omega
-            next h_2 => omega
-        next h_1 =>
-          simp_all only [not_lt, Fin.isValue, add_right_inj]
-          split
-          next h_2 => omega
-          next h_2 =>
-            simp_all only [not_lt, Fin.isValue]
-            split
-            next h_2 => simp_all only [Fin.isValue, Fin.val_one]
-            next h_2 =>
-              simp_all only [not_le, Fin.isValue, Fin.val_two, OfNat.ofNat_ne_one]
-              apply h_2.not_le
-              rw [Fin.le_iff_val_le_val] at h_1 ⊢
-              aesop
-      next h =>
-        simp_all
-        split
-        next => omega
-        next => aesop
-  -/
