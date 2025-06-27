@@ -154,8 +154,9 @@ lemma innerHornImage_zero_le_filtration₁ (n : ℕ) (b : Fin (n + 1)) :
 
 /-- a subcomplex `A` of `Δ[n] ⊗ Δ[2]` which is contained in `σ a b` is contained in the image of
   `Λ[n + 1, a + 1]` under `f a b` iff the `(a + 1)`-th face of `σ a b` is not contained in `A`. -/
-lemma subcomplex_le_innerHornImage_iff {a b : Fin n} (A : (Δ[n] ⊗ Δ[2]).Subcomplex) (hA : A ≤ σ a b) :
+lemma subcomplex_le_innerHornImage_iff {a b : Fin n} (hab : a ≤ b) (A : (Δ[n] ⊗ Δ[2]).Subcomplex) (hA : A ≤ σ a b) :
     A ≤ innerHornImage a b ↔ ¬ faceImage a.succ.castSucc (f a b) ≤ A :=
+  letI := f_mono hab
   subcomplex_le_horn_image_iff (f a b) A hA a.succ.castSucc
 
 /-- for `0 ≤ a < b < n`, the `((a + 1) + 1)`-th face of `σ (a + 1) b` is not contained in
@@ -351,8 +352,6 @@ lemma faceImage_one_not_le_filtration₁ (n : ℕ) (b : Fin (n + 1)) :
           omega
         · omega
 
-end σ
-
 /-
 for `0 ≤ a < b < n`, (so for `n ≥ 2`) the following square
 
@@ -377,7 +376,7 @@ def filtrationPushout_intermediate (a : Fin b) :
   max_eq := by rw [filtration₂_succ b a, sup_comm]
   min_eq := by
     apply le_antisymm
-    · rw [σ.subcomplex_le_innerHornImage_iff _ inf_le_left, le_inf_iff, not_and]
+    · rw [σ.subcomplex_le_innerHornImage_iff (by simp [Fin.le_iff_val_le_val]; omega) _ inf_le_left, le_inf_iff, not_and]
       exact fun _ ↦ (σ.faceImage_succ_not_le_filtration₂ b a)
     · exact le_inf (σ.innerHornImage_le _ _) (σ.innerHornImage_succ_le_filtration₂ _ _)
 
@@ -403,7 +402,7 @@ def filtrationPushout_join (n : ℕ) (b : Fin (n + 1)) :
       rfl
   min_eq := by
     apply le_antisymm
-    · rw [σ.subcomplex_le_innerHornImage_iff _ inf_le_left, le_inf_iff, not_and]
+    · rw [σ.subcomplex_le_innerHornImage_iff (by simp [Fin.le_iff_val_le_val]) _ inf_le_left, le_inf_iff, not_and]
       exact fun _ ↦ σ.faceImage_one_not_le_filtration₁ n b
     · apply le_inf (σ.innerHornImage_le 0 _) (σ.innerHornImage_zero_le_filtration₁ n b)
 
@@ -436,12 +435,12 @@ def filtrationPushout_zero (n : ℕ) :
     Sq
       (σ.innerHornImage 0 0)
       (σ 0 0)
-      (filtration₁ 0)
+      (∂Δ[n + 1].unionProd Λ[2, 1])
       (filtration₁ (1 : Fin (n + 2))) := by
   have h := filtration₁_succ (0 : Fin (n + 1))
   have h' := filtration₂_zero (Nat.zero_ne_add_one n).symm 0
   dsimp at h h'
-  rw [h]
+  rw [← filtration₁_zero, h]
   simp
   rw [← h']
   exact filtrationPushout_join n 0
@@ -459,7 +458,7 @@ def filtrationPushout_zero1 :
     Sq
       (σ.innerHornImage (n := 1) 0 0)
       (σ 0 0)
-      (filtration₁ 0)
+      (∂Δ[1].unionProd Λ[2, 1])
       (filtration₁ 1) :=
   filtrationPushout_zero 0
 
@@ -474,7 +473,7 @@ def filtrationPushout_zero2 :
     Sq
       (σ.innerHornImage (n := 2) 0 0)
       (σ 0 0)
-      (filtration₁ 0)
+      (∂Δ[2].unionProd Λ[2, 1])
       (filtration₁ 1) :=
   filtrationPushout_zero 1
 
@@ -515,6 +514,7 @@ variable (b : Fin n) (a : Fin b.1)
 #check Subcomplex.isColimitPushoutCoconeOfPullback (f (n := n) ⟨a.succ, by omega⟩ b)
   (filtration₂ b a.castSucc) (filtration₂ b a.succ) (Λ[n + 1, a + 2]) ⊤
 -/
+end σ
 
 noncomputable
 def mono_iso {S T : SSet} (f : S ⟶ T) [h : Mono f] : S ≅ (range f).toSSet where

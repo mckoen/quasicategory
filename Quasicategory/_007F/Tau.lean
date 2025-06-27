@@ -799,8 +799,6 @@ lemma faceImage_one_not_le_filtration₃ :
           aesop
         · omega
 
-end τ
-
 /-- a subcomplex `A` of `Δ[n] ⊗ Δ[2]` which is contained in `τ a b` is contained in the image of
   `Λ[n + 2, a + 1]` under `g a b` iff the `(a + 1)`-th face of `τ a b` is not contained in `A`. -/
 lemma subcomplex_le_innerHornImage_iff {a b : Fin (n + 1)} (ha : a ≤ b)
@@ -904,3 +902,5 @@ def filtrationPushout_zero (n : ℕ) :
   simp [Fin.last]
   rw [← h', ← filtration₃_zero]
   exact filtrationPushout_join 0
+
+end τ

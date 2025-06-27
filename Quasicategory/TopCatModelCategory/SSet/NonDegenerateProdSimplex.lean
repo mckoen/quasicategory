@@ -380,6 +380,20 @@ lemma nonDegenerate_ext {n : ℕ} {z₁ z₂ : (Δ[p] ⊗ Δ[q] : SSet.{u}).nonD
     simpa only [orderHomOfSimplex_coe, h, Fin.ext_iff, add_right_inj]
       using DFunLike.congr_fun (h₁.trans h₂.symm) i
 
+lemma nonDegenerate_ext' {n : ℕ} {z₁ z₂ : (Δ[p] ⊗ Δ[q] : SSet.{u}).nonDegenerate n}
+    (hn : p + q = n) (h : z₁.1.2 = z₂.1.2) :
+    z₁ = z₂ := by
+  ext
+  apply objEquiv.injective
+  dsimp
+  ext i : 3
+  · have h₁ := z₁.2
+    have h₂ := z₂.2
+    rw [nonDegenerate_iff _ hn] at h₁ h₂
+    simpa [orderHomOfSimplex_coe, h, Fin.ext_iff, add_right_inj] using
+      DFunLike.congr_fun (h₁.trans h₂.symm) i
+  · exact DFunLike.congr_fun h i
+
 lemma _root_.Fin.prod_zero_zero_lt_iff (i : Fin (p + 1) × Fin (q + 1)) :
     (0, 0) < i ↔ 0 < i.1.1 + i.2.1 := by
   rw [Prod.lt_iff]
