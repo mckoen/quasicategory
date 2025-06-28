@@ -14,20 +14,12 @@ open CategoryTheory MorphismProperty Simplicial SSet PushoutProduct MonoidalCate
 
 variable {n : ℕ}
 
-#synth LinearOrder (Σₗ (b : Fin (n + 1)), Fin b.succ)
-#synth OrderBot (Σₗ (b : Fin (n + 1)), Fin b.succ)
-#synth SuccOrder (Σₗ (b : Fin (n + 1)), Fin b.succ)
-#synth WellFoundedLT (Σₗ (b : Fin (n + 1)), Fin b.succ)
-
-#check HomotopicalAlgebra.RelativeCellComplex
-#check HomotopicalAlgebra.RelativeCellComplex.transfiniteCompositionOfShape
-
 open Subcomplex.unionProd in
 noncomputable
-def unionProd_toSSet_iso :
-    PushoutProduct.pt ∂Δ[n + 1].ι Λ[2, 1].ι ≅
-      (∂Δ[n + 1].unionProd Λ[2, 1]).toSSet :=
-  (IsPushout.isoPushout (isPushout Λ[2, 1] ∂Δ[n + 1])).symm ≪≫ symmIso _ _
+def unionProd_toSSet_iso (A : Subcomplex Δ[n]):
+    PushoutProduct.pt A.ι Λ[2, 1].ι ≅
+      (A.unionProd Λ[2, 1]).toSSet :=
+  (IsPushout.isoPushout (isPushout Λ[2, 1] A)).symm ≪≫ symmIso _ _
 
 open Subcomplex in
 def σ.filtrationPushout_zero' (n : ℕ) :
@@ -74,12 +66,35 @@ def τ.filtrationPushout_zero' (n : ℕ) :
       apply le_iSup_of_le ⟨⟨b, hb⟩, ⟨a, ha⟩⟩
       exact le_rfl
 
+noncomputable
+def σ.innerHornImage_arrowIso (a b : Fin n) (hab : a ≤ b) :
+    (Arrow.mk (Subcomplex.homOfLE (σ.innerHornImage_le a b))) ≅ (Arrow.mk Λ[n + 1, a.succ.castSucc].ι) := by
+  letI : Mono (f a b) := f_mono hab
+  refine Arrow.isoMk ?_ ((mono_iso (f a b)).symm) ?_
+  · simp [Subcomplex.image_eq_range]
+    exact (mono_iso (Λ[n + 1, a.succ.castSucc].ι ≫ (f a b))).symm
+  · simp [mono_iso]
+    --have := Subcomplex.iso
+    sorry
+
+noncomputable
+def zero_unionProd_arrowIso :
+    Arrow.mk ((⊥ : Δ[0].Subcomplex).unionProd Λ[2, 1]).ι ≅
+      Arrow.mk Λ[2, 1].ι := by
+  refine Arrow.isoMk ?_ (stdSimplex.leftUnitor Δ[2]) ?_
+  · dsimp
+    refine (unionProd_toSSet_iso (⊥ : Δ[0].Subcomplex)).symm ≪≫ ?_
+    simp
+    --have := Subcomplex.botIsInitial Δ[0]
+    sorry
+  · sorry
+
 lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1]).ι := by
   rw [innerAnodyne_eq]
   cases n
   · rw [boundary_zero]
-    dsimp [Subcomplex.unionProd]
-    sorry -- if n=0, case should collapse
+    apply (MorphismProperty.arrow_mk_iso_iff _ zero_unionProd_arrowIso).2
+    exact .of _ <| .mk Fin.zero_lt_one Fin.one_lt_last
   next n =>
   let σsq := (σ.filtrationPushout_zero'.{u} n)
   let τsq := (τ.filtrationPushout_zero'.{u} n)
@@ -91,9 +106,25 @@ lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1])
     (innerHornInclusions.saturation).comp_mem _ _ ?_ <|
     (innerHornInclusions.saturation).comp_mem _ _ ?_ <|
     (innerHornInclusions.saturation).comp_mem _ _ ?_ <|
-    (innerHornInclusions.saturation).comp_mem _ _ ?_ <|
+    (innerHornInclusions.saturation).comp_mem _ _ ?_ ?_
+  · apply (innerHornInclusions.saturation).of_isPushout (Subcomplex.Sq.isPushout σsq).flip
+    apply (MorphismProperty.arrow_mk_iso_iff _ (σ.innerHornImage_arrowIso 0 0 (Fin.zero_le 0))).2
+    exact .of _ <| .mk Fin.zero_lt_one Fin.one_lt_last
+  ·
+    sorry
+  · -- do
+    sorry
+  ·
+    sorry
+  · apply of_isIso
+  · apply of_isIso
 
-  sorry
+noncomputable
+def arrow_unionProd_iso : Arrow.mk (∂Δ[n].ι ◫ Λ[2, 1].ι) ≅ Arrow.mk (∂Δ[n].unionProd Λ[2, 1]).ι := by
+  refine Arrow.isoMk (unionProd_toSSet_iso _) (β_ Δ[2] Δ[n]) ?_
+  simp [unionProd_toSSet_iso]
+  apply Limits.pushout.hom_ext
+  all_goals aesop
 
 lemma innerAnodyne_eq_T : innerAnodyne.{u} = (saturation.{u} bdryHornPushouts) := by
   rw [innerAnodyne_eq]
@@ -105,7 +136,9 @@ lemma innerAnodyne_eq_T : innerAnodyne.{u} = (saturation.{u} bdryHornPushouts) :
       apply WeaklySaturatedClass.retract (hornRetract i h0 hn) -- reduces to showing horn inclusion is a retract of a boundary pushout maps
       exact monomorphisms_le_S _ (monomorphisms.infer_property _)
   · intro _ _ f ⟨n⟩
-    sorry
+    apply (MorphismProperty.arrow_mk_iso_iff _ arrow_unionProd_iso).2
+    rw [← innerAnodyne_eq]
+    exact unionProd_ι_innerAnodyne
 
 -- `007F` (a)
 lemma monoPushout_innerAnodyne {A B : SSet} (i : A ⟶ B) [Mono i] :
