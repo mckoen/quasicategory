@@ -804,7 +804,7 @@ lemma faceImage_one_not_le_filtration₃ :
 lemma subcomplex_le_innerHornImage_iff {a b : Fin (n + 1)} (ha : a ≤ b)
     (A : (Δ[n] ⊗ Δ[2]).Subcomplex) (hA : A ≤ τ a b) :
     A ≤ τ.innerHornImage a b ↔ ¬ τ.faceImage a.succ.castSucc (g a b) ≤ A :=
-  letI := g_mono a b ha
+  letI := g_mono ha
   subcomplex_le_horn_image_iff (g a b) A hA a.succ.castSucc
 
 /-

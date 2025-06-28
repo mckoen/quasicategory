@@ -516,37 +516,6 @@ variable (b : Fin n) (a : Fin b.1)
 -/
 end σ
 
-noncomputable
-def mono_iso {S T : SSet} (f : S ⟶ T) [h : Mono f] : S ≅ (range f).toSSet where
-  hom := {
-    app n x := ⟨f.app n x, ⟨x, rfl⟩⟩
-    naturality n m g := by
-      ext
-      simp
-      congr
-      apply FunctorToTypes.naturality }
-  inv := {
-    app n x := x.2.choose
-    naturality n m g := by
-      ext x
-      apply (mono_iff_injective (f.app m)).1 (((NatTrans.mono_iff_mono_app f).1 h) m)
-      dsimp
-      let a := ((range f).toPresheaf.map g x).property
-      rw [a.choose_spec, ← types_comp_apply (S.map g) (f.app m),
-        congr_fun (f.naturality g) x.property.choose, types_comp_apply, x.property.choose_spec]
-      rfl
-    }
-  hom_inv_id := by
-    ext n x
-    apply (mono_iff_injective _).1 (((NatTrans.mono_iff_mono_app _).1 h) n)
-    exact Exists.choose_spec (Set.mem_range_self x)
-  inv_hom_id := by
-    ext n x
-    simp
-    congr
-    exact x.2.choose_spec
-
-
 /-
 if `n = 2`, `0 < 1 < 2`
 

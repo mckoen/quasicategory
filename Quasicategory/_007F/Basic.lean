@@ -127,6 +127,6 @@ instance f_mono {a b : Fin n} (hab : a ≤ b) : Mono (f a b) := by
 
 open SimplexCategory in
 /-- only works for `0 ≤ a ≤ b ≤ n` -/
-instance g_mono (a b : Fin (n + 1)) (hab : a ≤ b) : Mono (g a b) := by
+instance g_mono {a b : Fin (n + 1)} (hab : a ≤ b) : Mono (g a b) := by
   change Mono (τ.ιSimplex ⟨b, ⟨a, by simp ;omega⟩⟩)
   infer_instance
