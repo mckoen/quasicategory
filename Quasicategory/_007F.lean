@@ -81,59 +81,87 @@ def image_arrow_iso_of_mono {X Y : SSet} (f : X ⟶ Y) [Mono f] (A : Subcomplex 
   sorry
 
 noncomputable
-def σ.innerHornImage_arrowIso (a b : Fin n) (hab : a ≤ b) :
+def σ.innerHornImage_arrowIso {a b : Fin n} (hab : a ≤ b) :
     (Arrow.mk (Subcomplex.homOfLE (σ.innerHornImage_le a b))) ≅ (Arrow.mk Λ[n + 1, a.succ.castSucc].ι) :=
   letI : Mono (f a b) := f_mono hab
   image_arrow_iso_of_mono _ _
 
 noncomputable
-def τ.innerHornImage_arrowIso (a b : Fin (n + 1)) (hab : a ≤ b) :
+def τ.innerHornImage_arrowIso {a b : Fin (n + 1)} (hab : a ≤ b) :
     (Arrow.mk (Subcomplex.homOfLE (τ.innerHornImage_le a b))) ≅ (Arrow.mk Λ[n + 2, a.succ.castSucc].ι) :=
   letI : Mono (g a b) := g_mono hab
   image_arrow_iso_of_mono _ _
 
+instance {X Y Z : SSet} : Subsingleton ((Y ⊗ (⊥ : X.Subcomplex).toSSet) ⟶ Z) where
+  allEq f g := by
+    ext _ ⟨_, ⟨x, hx⟩⟩
+    simp at hx
+
+instance {X Y Z : SSet} : Inhabited ((Y ⊗ (⊥ : X.Subcomplex).toSSet) ⟶ Z) where
+  default :=
+    { app _ := fun ⟨_, ⟨_, hx⟩⟩ ↦ by simp at hx
+      naturality _ _ _ := by
+        ext ⟨_, ⟨_, hx⟩⟩
+        simp at hx }
+
+instance {X Y Z : SSet} : Unique ((Y ⊗ (⊥ : X.Subcomplex).toSSet) ⟶ Z)  where
+  uniq _ := Subsingleton.elim _ _
+
+noncomputable
+def SSet.Subcomplex.tensorBotIsInitial {X Y : SSet} : Limits.IsInitial (Y ⊗ (⊥ : X.Subcomplex).toSSet) :=
+  Limits.IsInitial.ofUnique _
+
+noncomputable
+def pt_terminal_iso :
+    Limits.pushout (Λ[2, 1].ι ▷ (⊥ : Δ[0].Subcomplex).toSSet) (Λ[2, 1].toSSet ◁ ((⊥ : Δ[0].Subcomplex)).ι) ≅
+      Λ[2, 1].toSSet ⊗ Δ[0] where
+  hom := Limits.pushout.desc (Limits.IsInitial.to Subcomplex.tensorBotIsInitial _) (𝟙 _) (by aesop_cat)
+  inv := Limits.pushout.inr _ _
+  hom_inv_id := by
+    apply Limits.pushout.hom_ext
+    all_goals aesop_cat
+
+noncomputable
+def zero_unionProd_arrowIso' :
+    Arrow.mk (Λ[2, 1].unionProd (⊥ : Δ[0].Subcomplex)).ι ≅
+      Arrow.mk (Λ[2, 1].ι ▷ Δ[0]) := by
+  refine Arrow.isoMk ((IsPushout.isoPushout (Subcomplex.unionProd.isPushout _ _)) ≪≫ pt_terminal_iso) (Iso.refl _) ?_
+  apply IsPushout.hom_ext (Subcomplex.unionProd.isPushout _ _)
+  · aesop_cat
+  · simp [pt_terminal_iso]
+
 noncomputable
 def zero_unionProd_arrowIso :
     Arrow.mk ((⊥ : Δ[0].Subcomplex).unionProd Λ[2, 1]).ι ≅
-      Arrow.mk Λ[2, 1].ι := by
-  refine Arrow.isoMk ?_ (stdSimplex.leftUnitor Δ[2]) ?_
-  · dsimp
-    refine (unionProd_toSSet_iso (⊥ : Δ[0].Subcomplex)).symm ≪≫ ?_
-    simp
-    --have := Subcomplex.botIsInitial Δ[0]
-    sorry
-  · sorry
+      Arrow.mk (Λ[2, 1].ι) := by
+  refine ?_ ≪≫ zero_unionProd_arrowIso' ≪≫ ?_
+  · exact Arrow.isoMk (Subcomplex.unionProd.symmIso _ _) (β_ _ _) rfl
+  · exact Arrow.isoMk (stdSimplex.rightUnitor _) (stdSimplex.rightUnitor _) rfl
 
+open Subcomplex in
 lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1]).ι := by
   rw [innerAnodyne_eq]
   cases n
   · rw [boundary_zero]
-    apply (MorphismProperty.arrow_mk_iso_iff _ zero_unionProd_arrowIso).2
-    exact .of _ <| .mk Fin.zero_lt_one Fin.one_lt_last
+    exact (arrow_mk_iso_iff _ zero_unionProd_arrowIso).2 <| .of _ <| .mk Fin.zero_lt_one Fin.one_lt_last
   next n =>
-  let σsq := (σ.filtrationPushout_zero'.{u} n)
-  let τsq := (τ.filtrationPushout_zero'.{u} n)
+  let σsq := (σ.filtrationPushout_zero' n)
+  let τsq := (τ.filtrationPushout_zero' n)
   change innerHornInclusions.saturation
-      ((Subcomplex.homOfLE σsq.le₃₄) ≫ (Subcomplex.homOfLE (filtration₁_monotone bot_le)) ≫ (Subcomplex.homOfLE τsq.le₃₄) ≫
-      (Subcomplex.homOfLE (filtration₂_monotone bot_le)) ≫ (Subcomplex.isoOfEq filtration₂_last').hom ≫
-      (Subcomplex.topIso (Δ[n + 1] ⊗ Δ[2])).hom)
-  refine (innerHornInclusions.saturation).comp_mem _ _ ?_ <|
-    (innerHornInclusions.saturation).comp_mem _ _ ?_ <|
-    (innerHornInclusions.saturation).comp_mem _ _ ?_ <|
-    (innerHornInclusions.saturation).comp_mem _ _ ?_ <|
-    (innerHornInclusions.saturation).comp_mem _ _ ?_ ?_
-  · apply (innerHornInclusions.saturation).of_isPushout (Subcomplex.Sq.isPushout σsq).flip
-    apply (MorphismProperty.arrow_mk_iso_iff _ (σ.innerHornImage_arrowIso 0 0 (Fin.zero_le 0))).2
+      ((homOfLE σsq.le₃₄) ≫ (homOfLE (filtration₁_monotone bot_le)) ≫ (homOfLE τsq.le₃₄) ≫
+      (homOfLE (filtration₂_monotone bot_le)) ≫ (isoOfEq filtration₂_last').hom ≫
+      (topIso (Δ[n + 1] ⊗ Δ[2])).hom)
+  refine comp_mem _ _ _ ?_ <| comp_mem _ _ _ ?_ <| comp_mem _ _ _ ?_ <| comp_mem _ _ _ ?_ <| comp_mem _ _ _ (of_isIso _ _) (of_isIso _ _)
+  · apply of_isPushout (Sq.isPushout σsq).flip
+    apply (arrow_mk_iso_iff _ (σ.innerHornImage_arrowIso (Fin.zero_le 0))).2
     exact .of _ <| .mk Fin.zero_lt_one Fin.one_lt_last
   · -- (filtration₁' ⊥).toSSet ⟶ (filtration₁' ⊤).toSSet
     sorry
-  · apply (innerHornInclusions.saturation).of_isPushout (Subcomplex.Sq.isPushout τsq).flip
-    apply (MorphismProperty.arrow_mk_iso_iff _ (τ.innerHornImage_arrowIso 0 0 (Fin.zero_le 0))).2
+  · apply of_isPushout (Sq.isPushout τsq).flip
+    apply (arrow_mk_iso_iff _ (τ.innerHornImage_arrowIso (Fin.zero_le 0))).2
     exact .of _ <| .mk Fin.zero_lt_one Fin.one_lt_last
   · -- (filtration₂' ⊥).toSSet ⟶ (filtration₂' ⊤).toSSet
     sorry
-  · apply of_isIso
-  · apply of_isIso
 
 noncomputable
 def arrow_unionProd_iso : Arrow.mk (∂Δ[n].ι ◫ Λ[2, 1].ι) ≅ Arrow.mk (∂Δ[n].unionProd Λ[2, 1]).ι := by
@@ -143,18 +171,13 @@ def arrow_unionProd_iso : Arrow.mk (∂Δ[n].ι ◫ Λ[2, 1].ι) ≅ Arrow.mk (�
   all_goals aesop
 
 lemma innerAnodyne_eq_T : innerAnodyne.{u} = (saturation.{u} bdryHornPushouts) := by
-  rw [innerAnodyne_eq]
   apply le_antisymm
-  all_goals rw [← WeaklySaturated.le_iff]
-  · intro _ _ f hf
-    cases hf with
-    | @mk n i h0 hn =>
-      apply WeaklySaturatedClass.retract (hornRetract i h0 hn) -- reduces to showing horn inclusion is a retract of a boundary pushout maps
-      exact monomorphisms_le_S _ (monomorphisms.infer_property _)
+  all_goals rw [innerAnodyne_eq, ← WeaklySaturated.le_iff]
+  · intro _ _ f ⟨h0, hn⟩
+    exact .retract (hornRetract _ h0 hn) (monomorphisms_le_S _ (.infer_property _))
   · intro _ _ f ⟨n⟩
-    apply (MorphismProperty.arrow_mk_iso_iff _ arrow_unionProd_iso).2
     rw [← innerAnodyne_eq]
-    exact unionProd_ι_innerAnodyne
+    exact (arrow_mk_iso_iff _ arrow_unionProd_iso).2 unionProd_ι_innerAnodyne
 
 -- `007F` (a)
 lemma monoPushout_innerAnodyne {A B : SSet} (i : A ⟶ B) [Mono i] :
