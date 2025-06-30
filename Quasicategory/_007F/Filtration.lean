@@ -1,4 +1,5 @@
 import Quasicategory._007F.Basic
+import Quasicategory.Lex
 
 open CategoryTheory Simplicial MonoidalCategory SSet
 
