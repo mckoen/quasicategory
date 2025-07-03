@@ -179,42 +179,141 @@ namespace CategoryTheory.MorphismProperty
 
 variable {C : Type*} [Category C] (W : MorphismProperty C) [W.IsMultiplicative]
 
-lemma map_mem_of_fin {n : ℕ} (F : Fin (n + 1) ⥤ C)
+lemma map_mem_of_fin' {n : ℕ} (F : Fin (n + 1) ⥤ C)
     (hF : ∀ (i : Fin n), W (F.map (homOfLE (i.castSucc_le_succ))))
     {i j : Fin (n + 1)} (f : i ⟶ j) :
     W (F.map f) := by
-  let P (k : ℕ) := ∀ (i j : ℕ) (hj : j < n + 1) (hj' : i + k = j),
-    W (F.map (homOfLE ((by simpa only [← hj'] using Nat.le_add_right i k) :
-      ⟨i, lt_of_le_of_lt ((Nat.le_add_right i k).trans hj'.le) hj⟩ ≤ ⟨j, hj⟩)))
-  suffices ∀ k, P k by
-    obtain ⟨i, hi⟩ := i
-    obtain ⟨j, hj⟩ := j
-    have h : i ≤ j := leOfHom f
-    obtain ⟨k, hk⟩ := Nat.le.dest h
-    exact this k i j (by omega) hk
-  intro k
-  induction k with
+  obtain ⟨i, hi⟩ := i
+  obtain ⟨j, hj⟩ := j
+  have h : i ≤ j := leOfHom f
+  induction j with
   | zero =>
-      intro j j' h h'
-      obtain rfl : j = j' := by simpa using h'
+    have : i = 0 := Nat.eq_zero_of_le_zero h
+    subst this
+    have : f = 𝟙 _ := by aesop
+    subst this
+    simp only [homOfLE_refl, Functor.map_id]
+    apply id_mem
+  | succ j hj' =>
+    cases lt_or_eq_of_le h
+    · next h =>
+      have := @homOfLE_comp (Fin (n + 1)) _ ⟨i, hi⟩ ⟨j, by omega⟩ ⟨j + 1, hj⟩ (by simp; omega) (by simp)
+      change  W (F.map (homOfLE _))
+      rw [← this, F.map_comp]
+      apply comp_mem
+      · apply hj'
+        omega
+      · exact hF ⟨j, by omega⟩
+    · next h =>
+      subst h
+      have : f = 𝟙 _ := by aesop
+      subst this
       simp only [homOfLE_refl, Functor.map_id]
       apply id_mem
-  | succ k hk =>
-      intro i j hj hj'
-      rw [← homOfLE_comp (x := (⟨i, by omega⟩ : Fin (n + 1)))
-        (y := ⟨i + k, by omega⟩) (z := ⟨j, by omega⟩) (Nat.le_add_right i k)
-          (by simp only [Fin.le_def]; omega), F.map_comp]
+
+lemma map_mem_of_sigma {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ C)
+    (hF : ∀ (i : Σₗ (b : Fin (n + 1)), Fin b.succ), W (F.map (homOfLE (Sigma.Lex.le_succ i))))
+    {i j : Σₗ (b : Fin (n + 1)), Fin b.succ} (f : i ⟶ j) :
+    W (F.map f) := by
+  have h : i ≤ j := leOfHom f
+  obtain ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ := i
+  obtain ⟨⟨b', hb'⟩, ⟨a', ha'⟩⟩ := j
+  change W (F.map (homOfLE _))
+  induction a' with
+  | zero =>
+    induction b' with
+    | zero =>
+      have b0 : b = 0 := sorry
+      have a0 : a = 0 := sorry
+      subst b0 a0
+      simp only [homOfLE_refl, Functor.map_id]
+      apply id_mem
+    | succ b' h' =>
+    have := Sigma.Lex.Fin.succ_eq_of_lt_last (n := n) ⟨b', by omega⟩ (by simpa [Fin.lt_iff_val_lt_val] using hb')
+    change _ = (⟨⟨b' + 1, hb'⟩, ⟨0, ha'⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) at this
+    rw [← this] at h
+    cases lt_or_eq_of_le h
+    · next h =>
+      have := @homOfLE_comp (Σₗ (b : Fin (n + 1)), Fin b.succ) _
+        ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ ⟨⟨b', by omega⟩, ⟨b', by simp⟩⟩ ⟨⟨b' + 1, hb'⟩, ⟨0, ha'⟩⟩
+      have := Order.le_of_lt_succ (α := (Σₗ (b : Fin (n + 1)), Fin b.succ)) h
+      sorry
+    · next h =>
+      -- easy
+      sorry
+  | succ a' h' =>
+    have := Sigma.Lex.Fin.succ_eq_of_snd_lt_fst ⟨b', hb'⟩ ⟨a', by omega⟩ (by simpa [Fin.lt_iff_val_lt_val] using ha')
+    change _ = (⟨⟨b', hb'⟩, ⟨a' + 1, ha'⟩⟩ : (b : Fin (n + 1)) × Fin b.succ) at this
+    rw [← this] at h
+    have goal : W (F.map (homOfLE h)) := by
+
+      sorry
+    convert goal
+    exact this.symm
+    exact this.symm
+  /-
+  induction b' with
+  | zero =>
+    have : a' = 0 := Nat.lt_one_iff.mp ha'
+    subst this
+    have b0 : b = 0 := sorry
+    have a0 : a = 0 := sorry
+    subst b0 a0
+    simp only [homOfLE_refl, Functor.map_id]
+    apply id_mem
+  | succ b' h' =>
+    simp at h'
+    induction a' with
+    | zero => sorry
+    | succ a' h'' => sorry
+  -/
+    /-
+    cases lt_or_eq_of_le (Nat.le_of_lt_succ ha')
+    · next ha' =>
+
+      sorry
+    · next ha' =>
+      subst ha'
+      sorry
+    -/
+
+  /-
+  have h : i ≤ j := leOfHom f
+  --obtain ⟨i, hi⟩ := i
+  --obtain ⟨j, hj⟩ := j
+  change W (F.map (homOfLE _))
+  cases Sigma.Lex.Fin.eq_zero_or_eq_succ j
+  · next zero =>
+    have : i = ⊥ := eq_bot_mono h zero
+    subst this zero
+    simp only [homOfLE_refl, Functor.map_id]
+    apply id_mem
+  · next hj =>
+    obtain ⟨j', hj⟩ := hj
+    subst hj
+    cases lt_or_eq_of_le h
+    · next h =>
+      have : i ≤ j' := Order.le_of_lt_succ h
+      have := @homOfLE_comp _ _ i j' (Sigma.Lex.succ j') (Order.le_of_lt_succ h) (Sigma.Lex.le_succ j')
+      rw [← this, F.map_comp]
       apply comp_mem
-      · exact hk i (i + k) (by omega) rfl
-      · rw [← add_assoc] at hj'
-        subst hj'
-        exact hF ⟨i + k, by omega⟩
+      ·
+        sorry
+      · apply hF
+    · next h =>
+      subst h
+      simp only [homOfLE_refl, Functor.map_id]
+      apply id_mem
+  -/
 
 end CategoryTheory.MorphismProperty
 
 open Subcomplex in
-lemma filtration₁_innerAnodyne :
-    innerHornInclusions.saturation (homOfLE (filtration₁_monotone (n := n + 1) (OrderBot.bot_le ⊤))) := by
+lemma filtration₁_innerAnodyne {i j : Σₗ (b : Fin (n + 1)), Fin b.succ} (h : i ≤ j) :
+    innerHornInclusions.saturation (homOfLE (filtration₁_monotone (n := n + 1) h)) := by
+  refine innerHornInclusions.saturation.map_mem_of_sigma
+    (filtration₁_monotone.functor ⋙ Subcomplex.forget _) ?_ (homOfLE h)
+  dsimp
   sorry
 
 open Subcomplex in
@@ -222,6 +321,7 @@ lemma filtration₂_innerAnodyne :
     innerHornInclusions.saturation (homOfLE (filtration₂_monotone (n := n) (OrderBot.bot_le ⊤))) := by
   sorry
 
+/--/
 open Subcomplex in
 lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1]).ι := by
   rw [innerAnodyne_eq]
@@ -239,7 +339,7 @@ lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1])
       (isoOfEq filtration₂_last').hom ≫
       (topIso _).hom)
   refine comp_mem _ _ _ ?_ <|
-    comp_mem _ _ _ filtration₁_innerAnodyne <|
+    comp_mem _ _ _ (filtration₁_innerAnodyne bot_le) <|
     comp_mem _ _ _ ?_ <|
     comp_mem _ _ _ filtration₂_innerAnodyne <|
     comp_mem _ _ _ (of_isIso _ _) (of_isIso _ _)
@@ -279,3 +379,126 @@ lemma contains_innerAnodyne_iff_contains_pushout_maps
   constructor
   · simp [innerAnodyne_eq_T, ← WeaklySaturated.le_iff]
   · exact fun h _ _ _ ⟨m⟩ ↦ h _ (monoPushout_innerAnodyne ∂Δ[m].ι)
+
+
+/-
+lemma map_mem_of_fin {n : ℕ} (F : Fin (n + 1) ⥤ C)
+    (hF : ∀ (i : Fin n), W (F.map (homOfLE (i.castSucc_le_succ))))
+    {i j : Fin (n + 1)} (f : i ⟶ j) :
+    W (F.map f) := by
+  let P (k : ℕ) := ∀ (i j : ℕ) (hj : j < n + 1) (hj' : i + k = j),
+    W (F.map (homOfLE ((by simpa only [← hj'] using Nat.le_add_right i k) :
+      ⟨i, lt_of_le_of_lt ((Nat.le_add_right i k).trans hj'.le) hj⟩ ≤ ⟨j, hj⟩)))
+  suffices ∀ k, P k by
+    obtain ⟨i, hi⟩ := i
+    obtain ⟨j, hj⟩ := j
+    have h : i ≤ j := leOfHom f
+    obtain ⟨k, hk⟩ := Nat.le.dest h
+    exact this k i j hj hk
+  intro k
+  induction k with
+  | zero =>
+      intro j j' h h'
+      obtain rfl : j = j' := by simpa using h'
+      simp only [homOfLE_refl, Functor.map_id]
+      apply id_mem
+  | succ k hk =>
+      intro i j hj hj'
+      rw [← homOfLE_comp (x := (⟨i, by omega⟩ : Fin (n + 1)))
+        (y := ⟨i + k, by omega⟩) (z := ⟨j, by omega⟩) (Nat.le_add_right i k)
+          (by simp only [Fin.le_def]; omega), F.map_comp]
+      apply comp_mem
+      · exact hk i (i + k) (by omega) rfl
+      · rw [← add_assoc] at hj'
+        subst hj'
+        exact hF ⟨i + k, by omega⟩
+
+  let P (k : ℕ) := ∀ (i j : ℕ) (hj : j < n + 1) (hk₁ : i ≤ k) (hk₂ : k < j),
+    W (F.map (homOfLE (hk₁.trans hk₂.le :
+      ⟨i, lt_of_le_of_lt (hk₁.trans hk₂.le) hj⟩ ≤ ⟨j, hj⟩)))
+  suffices ∀ k, P k by
+    obtain ⟨i, hi⟩ := i
+    obtain ⟨j, hj⟩ := j
+    have h : i ≤ j := leOfHom f
+    cases lt_or_eq_of_le h
+    · next h =>
+      exact this i i j hj le_rfl h
+    · next h =>
+      subst h
+      have : f = 𝟙 _ := by aesop
+      subst this
+      simp only [Functor.map_id]
+      apply id_mem
+  intro k
+  induction k with
+  | zero =>
+      intro j j' hj'₁ hj hj'₂
+      have : j = 0 := Nat.eq_zero_of_le_zero hj
+      subst this
+      induction j' with
+      | zero =>
+          simp only [homOfLE_refl, Functor.map_id]
+          apply id_mem
+      | succ j' hj' =>
+          have := @homOfLE_comp (Fin (n + 1)) _ 0 ⟨j', by omega⟩ ⟨j' + 1, hj'₁⟩ (Fin.zero_le _) (by simp)
+          rw [← this, F.map_comp]
+          apply comp_mem
+          · apply hj'
+            exact Nat.zero_le j'
+          · exact hF ⟨j', by omega⟩
+  | succ k hk =>
+      intro j j' hj'₁ hj hj'₂
+      dsimp [P] at hk
+      cases lt_or_eq_of_le hj'₂
+      · next hj'₂ =>
+        cases lt_or_eq_of_le hj
+        · next hj =>
+          exact hk j j' hj'₁ (by omega) (by omega)
+        · next hj =>
+          subst hj
+          sorry
+      · next hj'₂ =>
+        subst hj'₂
+        cases lt_or_eq_of_le hj
+        · next hj =>
+          exact hk j (k + 1) hj'₁ (by omega) (Nat.le_add_right k 1)
+        · next hj =>
+          subst hj
+          simp only [homOfLE_refl, Functor.map_id]
+          apply id_mem
+-/
+
+
+  /-
+    obtain ⟨k, hk⟩ := Nat.le.dest h
+    refine this k i j (by omega) ?_ (by omega)
+    ·
+      sorry
+  sorry
+  intro k
+  induction k with
+  | zero =>
+      intro j j' h h'
+      obtain rfl : j = j' := by simpa using h'
+      simp only [homOfLE_refl, Functor.map_id]
+      apply id_mem
+  | succ k hk =>
+      intro i j hj hj'
+      rw [← homOfLE_comp (x := (⟨i, by omega⟩ : Fin (n + 1)))
+        (y := ⟨i + k, by omega⟩) (z := ⟨j, by omega⟩) (Nat.le_add_right i k)
+          (by simp only [Fin.le_def]; omega), F.map_comp]
+      apply comp_mem
+      · exact hk i (i + k) (by omega) rfl
+      · rw [← add_assoc] at hj'
+        subst hj'
+        exact hF ⟨i + k, by omega⟩
+  -/
+
+end CategoryTheory.MorphismProperty
+
+/-
+for all `k : Σₗ`
+
+for any `i j : Σₗ` with `j < ⊤` and `i ≤ k ≤ j`,
+
+-/

@@ -146,4 +146,30 @@ instance : OrderBot (Σₗ (b : Fin (n + 1)), Fin b.succ) :=
     bot_le _ := Fin.zero_le _ }
   Sigma.Lex.orderBot
 
+lemma Fin.eq_zero_or_eq_succ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
+    i = ⊥ ∨ ∃ j, i = succ j := by
+  obtain ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ := i
+  induction b with
+  | zero =>
+    left
+    have : a = 0 := Nat.lt_one_iff.mp ha
+    subst this
+    rfl
+  | succ b _ =>
+    right
+    induction a with
+    | zero =>
+      use ⟨⟨b, by omega⟩, ⟨b, by simp⟩⟩
+      symm
+      apply succ_eq_of_lt_last
+      simp [Fin.lt_iff_val_lt_val]
+      omega
+    | succ a _ =>
+      simp [Fin.lt_iff_val_lt_val] at ha
+      use ⟨⟨b + 1, hb⟩, ⟨a, by omega⟩⟩
+      symm
+      apply succ_eq_of_snd_lt_fst
+      simp
+      omega
+
 end Sigma.Lex
