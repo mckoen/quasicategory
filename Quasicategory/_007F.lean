@@ -211,14 +211,86 @@ lemma map_mem_of_fin' {n : ℕ} (F : Fin (n + 1) ⥤ C)
       simp only [homOfLE_refl, Functor.map_id]
       apply id_mem
 
+-- go from `⟨b, a⟩ --> ⟨b, a'⟩` for `a ≤ a'`
+lemma map_mem_of_sigma' {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ C)
+    (hF : ∀ (i : Σₗ (b : Fin (n + 1)), Fin b.succ), W (F.map (homOfLE (Sigma.Lex.le_succ i))))
+    {b : Fin (n + 1)} (a a' : Fin b.succ) (h : a ≤ a') :
+    W (F.map (homOfLE (show ⟨b, a⟩ ≤ ⟨b, a'⟩ by right; simpa))) := by
+  obtain ⟨b, hb⟩ := b
+  obtain ⟨a, ha⟩ := a
+  obtain ⟨a', ha'⟩ := a'
+  induction a' with
+  | zero =>
+    simp only [Fin.le_iff_val_le_val, le_zero_iff] at h
+    subst h
+    simp only [homOfLE_refl, Functor.map_id]
+    apply id_mem
+  | succ a' h' =>
+  cases lt_or_eq_of_le h
+  · next h'' =>
+    have one := h' (by omega) (by simp [Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val] at h'' ⊢; omega)
+    have two := hF ⟨⟨b, hb⟩, ⟨a', by omega⟩⟩
+    have eq := Sigma.Lex.Fin.succ_eq_of_snd_lt_fst ⟨b, hb⟩ ⟨a', by omega⟩ (by simpa [Fin.lt_iff_val_lt_val] using ha')
+    change _ = (⟨⟨b, hb⟩, ⟨a' + 1, ha'⟩⟩ : (Σₗ (b : Fin (n + 1)), Fin b.succ)) at eq
+    convert W.comp_mem _ _ one two
+    exact eq.symm
+    rw [← F.map_comp, homOfLE_comp]
+    congr!
+    exact eq.symm
+  · next h'' =>
+    simp at h''
+    subst h''
+    simp only [homOfLE_refl, Functor.map_id]
+    apply id_mem
+
+
 lemma map_mem_of_sigma {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ C)
     (hF : ∀ (i : Σₗ (b : Fin (n + 1)), Fin b.succ), W (F.map (homOfLE (Sigma.Lex.le_succ i))))
     {i j : Σₗ (b : Fin (n + 1)), Fin b.succ} (f : i ⟶ j) :
     W (F.map f) := by
   have h : i ≤ j := leOfHom f
+  --rw [Sigma.Lex.le_def] at h
+  induction i with
+  | h i =>
+  induction j with
+  | h j =>
   obtain ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ := i
   obtain ⟨⟨b', hb'⟩, ⟨a', ha'⟩⟩ := j
+  --change b < b' ∨ _ at h
   change W (F.map (homOfLE _))
+  cases (Sigma.Lex.le_def.1 h)
+  · next hbb' =>
+    -- do `⟨b, a⟩ ⟶ ⟨b', a'⟩`
+    change b < b' at hbb'
+    have W_ba_bb := W.map_mem_of_sigma' F hF ⟨a, ha⟩ ⟨b, Nat.lt_add_one b⟩ (Fin.succ_le_succ_iff.mp ha)
+    have bb_b'a : (toLex ⟨⟨b, hb⟩, ⟨b, by simp⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) ≤ (toLex ⟨⟨b', hb'⟩, ⟨a', ha'⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) := by
+      left
+      exact hbb'
+    suffices W (F.map (homOfLE bb_b'a)) by
+      have := (W.comp_mem _ _ W_ba_bb this)
+      rwa [← F.map_comp, homOfLE_comp] at this
+    have W_b'0_b'a' := W.map_mem_of_sigma' F hF ⟨0, Nat.zero_lt_succ _⟩ ⟨a', ha'⟩ (Fin.zero_le _)
+    have b'0_b'a' : (toLex ⟨⟨b', hb'⟩, ⟨0, by omega⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) ≤ toLex ⟨⟨b', hb'⟩, ⟨a', ha'⟩⟩ := by
+      right
+      simp
+    have bb_b'0 : (toLex ⟨⟨b, hb⟩, ⟨b, by simp⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) ≤ toLex ⟨⟨b', hb'⟩, ⟨0, by omega⟩⟩ := by
+      left
+      simpa
+    suffices W (F.map (homOfLE bb_b'0)) by
+      have := (W.comp_mem _ _ this W_b'0_b'a')
+      rwa [← F.map_comp, homOfLE_comp] at this
+
+    -- do `⟨b, b⟩ ≤ ⟨b', 0⟩`, `a` and `a'` don't matter
+    sorry
+
+  · next hbb' =>
+    obtain ⟨hb, haa'⟩ := hbb'
+    simp [Fin.ext_iff] at hb
+    subst hb
+    exact W.map_mem_of_sigma' F hF ⟨a, ha⟩ ⟨a', ha'⟩ haa'
+    -- go from `⟨b, a⟩ --> ⟨b, a'⟩` for `a ≤ a'`
+
+  /-
   induction a' with
   | zero =>
     induction b' with
@@ -229,28 +301,46 @@ lemma map_mem_of_sigma {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ 
       simp only [homOfLE_refl, Functor.map_id]
       apply id_mem
     | succ b' h' =>
-    have := Sigma.Lex.Fin.succ_eq_of_lt_last (n := n) ⟨b', by omega⟩ (by simpa [Fin.lt_iff_val_lt_val] using hb')
-    change _ = (⟨⟨b' + 1, hb'⟩, ⟨0, ha'⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) at this
-    rw [← this] at h
+    have eq := Sigma.Lex.Fin.succ_eq_of_lt_last (n := n) ⟨b', by omega⟩ (by simpa [Fin.lt_iff_val_lt_val] using hb')
+    change _ = (⟨⟨b' + 1, hb'⟩, ⟨0, ha'⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) at eq
+    rw [← eq] at h
     cases lt_or_eq_of_le h
     · next h =>
       have := @homOfLE_comp (Σₗ (b : Fin (n + 1)), Fin b.succ) _
-        ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ ⟨⟨b', by omega⟩, ⟨b', by simp⟩⟩ ⟨⟨b' + 1, hb'⟩, ⟨0, ha'⟩⟩
-      have := Order.le_of_lt_succ (α := (Σₗ (b : Fin (n + 1)), Fin b.succ)) h
-      sorry
+        ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ ⟨⟨b', by omega⟩, ⟨b', by simp⟩⟩ ⟨⟨b' + 1, hb'⟩, ⟨0, ha'⟩⟩ (Order.le_of_lt_succ h) (by rw [← eq]; exact Order.le_succ _)
+      rw [← this, F.map_comp]
+      apply comp_mem
+      · have := h' (by omega) (by simp) (homOfLE ?_) (?_)
+        sorry
+        ·
+          sorry
+        ·
+          sorry
+      ·
+
+        sorry
     · next h =>
-      -- easy
       sorry
+      -- easy
   | succ a' h' =>
     have := Sigma.Lex.Fin.succ_eq_of_snd_lt_fst ⟨b', hb'⟩ ⟨a', by omega⟩ (by simpa [Fin.lt_iff_val_lt_val] using ha')
     change _ = (⟨⟨b', hb'⟩, ⟨a' + 1, ha'⟩⟩ : (b : Fin (n + 1)) × Fin b.succ) at this
     rw [← this] at h
+    have := @homOfLE_comp (Σₗ (b : Fin (n + 1)), Fin b.succ) _
+      ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ ⟨⟨b', by omega⟩, ⟨b', by simp⟩⟩ ⟨⟨b', hb'⟩, ⟨a' + 1, ha'⟩⟩ (by sorry) (by sorry)
+    rw [← this, F.map_comp]
+    apply comp_mem
+    · have := h' (by omega)
+      sorry
+    · sorry
     have goal : W (F.map (homOfLE h)) := by
-
+      have := @homOfLE_comp (Σₗ (b : Fin (n + 1)), Fin b.succ) _
+        ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ ⟨⟨b', by omega⟩, ⟨b', by simp⟩⟩ ⟨⟨b', hb'⟩, ⟨a' + 1, ha'⟩⟩ (by sorry) (by sorry)
       sorry
     convert goal
     exact this.symm
     exact this.symm
+  -/
   /-
   induction b' with
   | zero =>

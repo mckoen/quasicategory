@@ -35,12 +35,18 @@ lemma Fin.succ_eq_of_eq_last (b : Fin (n + 1)) (h : b = Fin.last n) :
   subst h
   simp
 
-lemma Fin.lt_of_lt (b b' : Fin (n + 1)) {a : Fin b.succ} {a' : Fin b'.succ} :
+lemma Fin.lt_of_fst_lt (b b' : Fin (n + 1)) {a : Fin b.succ} {a' : Fin b'.succ} :
     b < b' → (⟨b, a⟩ :  Σₗ (b : Fin (n + 1)), Fin b.succ) < ⟨b', a'⟩ := by
   intro h
   rw [Sigma.lt_def]
   simp
   sorry
+
+@[simp]
+lemma Fin.lt_of_snd_lt {b : Fin (n + 1)} {a a' : Fin b.succ} :
+    a ≤ a' → (⟨b, a⟩ :  Σₗ (b : Fin (n + 1)), Fin b.succ) ≤ (⟨b, a'⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) := by
+  intro h
+  simpa
 
 theorem succ_eq_of_lt_fst (h : i.2.1 < i.1.1) :
     succ i = ⟨i.1, ⟨i.2.1.succ, by simpa using h⟩⟩ := by
