@@ -279,9 +279,39 @@ lemma map_mem_of_sigma {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ 
     suffices W (F.map (homOfLE bb_b'0)) by
       have := (W.comp_mem _ _ this W_b'0_b'a')
       rwa [← F.map_comp, homOfLE_comp] at this
-
     -- do `⟨b, b⟩ ≤ ⟨b', 0⟩`, `a` and `a'` don't matter
-    sorry
+    -- let `b' = b + k`,
+    -- then we go `⟨b,b⟩ -> ⟨b+1,0⟩ -> ... -> ⟨b+1,b+1⟩ -> ... ⟨b+k-1,b+k-1⟩ -> ⟨b+k,0⟩`
+    obtain ⟨k, hk⟩ := Nat.le.dest hbb'
+    subst hk
+    simp_all
+    induction k with
+    | zero =>
+      have : ¬⟨b, hb⟩ = Fin.last n := by
+        rw [Fin.ext_iff]
+        simp
+        omega
+      convert hF ⟨⟨b, hb⟩, ⟨b, by simp⟩⟩
+      all_goals
+        simp [toLex, this]
+        rfl
+    | succ k hk =>
+      simp at hk
+      next hbk =>
+      simp at ha'
+      have : a' ≤ b + k + 2 := by omega
+      cases (lt_or_eq_of_le this)
+      · next habk =>
+        have := hk (by omega) (by omega) (homOfLE (by left; simp; omega)) (by left; simp; omega)
+          (by left; simp; omega) (by omega) (by left; simp; omega) (by apply W.map_mem_of_sigma' F hF; simp)
+          (by right; simp)
+        -- have `⟨b, b⟩ ⟶ ⟨b + k + 1, 0⟩`, need `⟨b, b⟩ ⟶ ⟨b + k + 2, 0⟩`
+        -- doable
+        sorry
+      · next habk =>
+        subst habk
+        sorry
+
 
   · next hbb' =>
     obtain ⟨hb, haa'⟩ := hbb'
@@ -289,112 +319,6 @@ lemma map_mem_of_sigma {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ 
     subst hb
     exact W.map_mem_of_sigma' F hF ⟨a, ha⟩ ⟨a', ha'⟩ haa'
     -- go from `⟨b, a⟩ --> ⟨b, a'⟩` for `a ≤ a'`
-
-  /-
-  induction a' with
-  | zero =>
-    induction b' with
-    | zero =>
-      have b0 : b = 0 := sorry
-      have a0 : a = 0 := sorry
-      subst b0 a0
-      simp only [homOfLE_refl, Functor.map_id]
-      apply id_mem
-    | succ b' h' =>
-    have eq := Sigma.Lex.Fin.succ_eq_of_lt_last (n := n) ⟨b', by omega⟩ (by simpa [Fin.lt_iff_val_lt_val] using hb')
-    change _ = (⟨⟨b' + 1, hb'⟩, ⟨0, ha'⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) at eq
-    rw [← eq] at h
-    cases lt_or_eq_of_le h
-    · next h =>
-      have := @homOfLE_comp (Σₗ (b : Fin (n + 1)), Fin b.succ) _
-        ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ ⟨⟨b', by omega⟩, ⟨b', by simp⟩⟩ ⟨⟨b' + 1, hb'⟩, ⟨0, ha'⟩⟩ (Order.le_of_lt_succ h) (by rw [← eq]; exact Order.le_succ _)
-      rw [← this, F.map_comp]
-      apply comp_mem
-      · have := h' (by omega) (by simp) (homOfLE ?_) (?_)
-        sorry
-        ·
-          sorry
-        ·
-          sorry
-      ·
-
-        sorry
-    · next h =>
-      sorry
-      -- easy
-  | succ a' h' =>
-    have := Sigma.Lex.Fin.succ_eq_of_snd_lt_fst ⟨b', hb'⟩ ⟨a', by omega⟩ (by simpa [Fin.lt_iff_val_lt_val] using ha')
-    change _ = (⟨⟨b', hb'⟩, ⟨a' + 1, ha'⟩⟩ : (b : Fin (n + 1)) × Fin b.succ) at this
-    rw [← this] at h
-    have := @homOfLE_comp (Σₗ (b : Fin (n + 1)), Fin b.succ) _
-      ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ ⟨⟨b', by omega⟩, ⟨b', by simp⟩⟩ ⟨⟨b', hb'⟩, ⟨a' + 1, ha'⟩⟩ (by sorry) (by sorry)
-    rw [← this, F.map_comp]
-    apply comp_mem
-    · have := h' (by omega)
-      sorry
-    · sorry
-    have goal : W (F.map (homOfLE h)) := by
-      have := @homOfLE_comp (Σₗ (b : Fin (n + 1)), Fin b.succ) _
-        ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ ⟨⟨b', by omega⟩, ⟨b', by simp⟩⟩ ⟨⟨b', hb'⟩, ⟨a' + 1, ha'⟩⟩ (by sorry) (by sorry)
-      sorry
-    convert goal
-    exact this.symm
-    exact this.symm
-  -/
-  /-
-  induction b' with
-  | zero =>
-    have : a' = 0 := Nat.lt_one_iff.mp ha'
-    subst this
-    have b0 : b = 0 := sorry
-    have a0 : a = 0 := sorry
-    subst b0 a0
-    simp only [homOfLE_refl, Functor.map_id]
-    apply id_mem
-  | succ b' h' =>
-    simp at h'
-    induction a' with
-    | zero => sorry
-    | succ a' h'' => sorry
-  -/
-    /-
-    cases lt_or_eq_of_le (Nat.le_of_lt_succ ha')
-    · next ha' =>
-
-      sorry
-    · next ha' =>
-      subst ha'
-      sorry
-    -/
-
-  /-
-  have h : i ≤ j := leOfHom f
-  --obtain ⟨i, hi⟩ := i
-  --obtain ⟨j, hj⟩ := j
-  change W (F.map (homOfLE _))
-  cases Sigma.Lex.Fin.eq_zero_or_eq_succ j
-  · next zero =>
-    have : i = ⊥ := eq_bot_mono h zero
-    subst this zero
-    simp only [homOfLE_refl, Functor.map_id]
-    apply id_mem
-  · next hj =>
-    obtain ⟨j', hj⟩ := hj
-    subst hj
-    cases lt_or_eq_of_le h
-    · next h =>
-      have : i ≤ j' := Order.le_of_lt_succ h
-      have := @homOfLE_comp _ _ i j' (Sigma.Lex.succ j') (Order.le_of_lt_succ h) (Sigma.Lex.le_succ j')
-      rw [← this, F.map_comp]
-      apply comp_mem
-      ·
-        sorry
-      · apply hF
-    · next h =>
-      subst h
-      simp only [homOfLE_refl, Functor.map_id]
-      apply id_mem
-  -/
 
 end CategoryTheory.MorphismProperty
 
