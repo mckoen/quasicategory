@@ -243,82 +243,113 @@ lemma map_mem_of_sigma' {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤
     simp only [homOfLE_refl, Functor.map_id]
     apply id_mem
 
+lemma map_mem_of_fin {n : ℕ} (F : Fin (n + 1) ⥤ C)
+    (hF : ∀ (i : Fin n), W (F.map (homOfLE (i.castSucc_le_succ))))
+    {i j : Fin (n + 1)} (f : i ⟶ j) :
+    W (F.map f) := by
+  let P (k : ℕ) := ∀ (i j : ℕ) (hj : j < n + 1) (hj' : i + k = j),
+    W (F.map (homOfLE ((by simpa only [← hj'] using Nat.le_add_right i k) :
+      ⟨i, lt_of_le_of_lt ((Nat.le_add_right i k).trans hj'.le) hj⟩ ≤ ⟨j, hj⟩)))
+  suffices ∀ k, P k by
+    obtain ⟨i, hi⟩ := i
+    obtain ⟨j, hj⟩ := j
+    have h : i ≤ j := leOfHom f
+    obtain ⟨k, hk⟩ := Nat.le.dest h
+    exact this k i j hj hk
+  intro k
+  induction k with
+  | zero =>
+      intro j j' h h'
+      obtain rfl : j = j' := by simpa using h'
+      simp only [homOfLE_refl, Functor.map_id]
+      apply id_mem
+  | succ k hk =>
+      intro i j hj hj'
+      rw [← homOfLE_comp (x := (⟨i, by omega⟩ : Fin (n + 1)))
+        (y := ⟨i + k, by omega⟩) (z := ⟨j, by omega⟩) (Nat.le_add_right i k)
+          (by simp only [Fin.le_def]; omega), F.map_comp]
+      apply comp_mem
+      · exact hk i (i + k) (by omega) rfl
+      · rw [← add_assoc] at hj'
+        subst hj'
+        exact hF ⟨i + k, by omega⟩
 
 lemma map_mem_of_sigma {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ C)
     (hF : ∀ (i : Σₗ (b : Fin (n + 1)), Fin b.succ), W (F.map (homOfLE (Sigma.Lex.le_succ i))))
     {i j : Σₗ (b : Fin (n + 1)), Fin b.succ} (f : i ⟶ j) :
     W (F.map f) := by
   have h : i ≤ j := leOfHom f
-  --rw [Sigma.Lex.le_def] at h
-  induction i with
-  | h i =>
-  induction j with
-  | h j =>
   obtain ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ := i
   obtain ⟨⟨b', hb'⟩, ⟨a', ha'⟩⟩ := j
-  --change b < b' ∨ _ at h
-  change W (F.map (homOfLE _))
-  cases (Sigma.Lex.le_def.1 h)
-  · next hbb' =>
-    -- do `⟨b, a⟩ ⟶ ⟨b', a'⟩`
-    change b < b' at hbb'
-    have W_ba_bb := W.map_mem_of_sigma' F hF ⟨a, ha⟩ ⟨b, Nat.lt_add_one b⟩ (Fin.succ_le_succ_iff.mp ha)
-    have bb_b'a : (toLex ⟨⟨b, hb⟩, ⟨b, by simp⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) ≤ (toLex ⟨⟨b', hb'⟩, ⟨a', ha'⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) := by
-      left
-      exact hbb'
-    suffices W (F.map (homOfLE bb_b'a)) by
-      have := (W.comp_mem _ _ W_ba_bb this)
-      rwa [← F.map_comp, homOfLE_comp] at this
-    have W_b'0_b'a' := W.map_mem_of_sigma' F hF ⟨0, Nat.zero_lt_succ _⟩ ⟨a', ha'⟩ (Fin.zero_le _)
-    have b'0_b'a' : (toLex ⟨⟨b', hb'⟩, ⟨0, by omega⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) ≤ toLex ⟨⟨b', hb'⟩, ⟨a', ha'⟩⟩ := by
-      right
-      simp
-    have bb_b'0 : (toLex ⟨⟨b, hb⟩, ⟨b, by simp⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) ≤ toLex ⟨⟨b', hb'⟩, ⟨0, by omega⟩⟩ := by
-      left
-      simpa
-    suffices W (F.map (homOfLE bb_b'0)) by
-      have := (W.comp_mem _ _ this W_b'0_b'a')
-      rwa [← F.map_comp, homOfLE_comp] at this
-    -- do `⟨b, b⟩ ≤ ⟨b', 0⟩`, `a` and `a'` don't matter
-    -- let `b' = b + k`,
-    -- then we go `⟨b,b⟩ -> ⟨b+1,0⟩ -> ... -> ⟨b+1,b+1⟩ -> ... ⟨b+k-1,b+k-1⟩ -> ⟨b+k,0⟩`
-    obtain ⟨k, hk⟩ := Nat.le.dest hbb'
+  have hbb' : b ≤ b' := by
+    cases h
+    · next h => exact h.le
+    · next => exact le_rfl
+  obtain ⟨k, hk⟩ := Nat.le.dest hbb'
+  induction k with
+  | zero =>
     subst hk
-    simp_all
-    induction k with
-    | zero =>
-      have : ¬⟨b, hb⟩ = Fin.last n := by
-        rw [Fin.ext_iff]
+    change W (F.map (homOfLE _))
+    apply W.map_mem_of_sigma' F hF
+    simpa [Sigma.Lex.le_def] using h
+  | succ k hk =>
+    cases (lt_or_eq_of_le hbb')
+    · next hbb' =>
+      have ba_bb : (toLex ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) ≤ toLex ⟨⟨b, hb⟩, ⟨b, Nat.lt_add_one b⟩⟩ := by
+        simp at ha ⊢
+        right
         simp
         omega
-      convert hF ⟨⟨b, hb⟩, ⟨b, by simp⟩⟩
-      all_goals
-        simp [toLex, this]
-        rfl
-    | succ k hk =>
-      simp at hk
-      next hbk =>
-      simp at ha'
-      have : a' ≤ b + k + 2 := by omega
-      cases (lt_or_eq_of_le this)
-      · next habk =>
-        have := hk (by omega) (by omega) (homOfLE (by left; simp; omega)) (by left; simp; omega)
-          (by left; simp; omega) (by omega) (by left; simp; omega) (by apply W.map_mem_of_sigma' F hF; simp)
-          (by right; simp)
-        -- have `⟨b, b⟩ ⟶ ⟨b + k + 1, 0⟩`, need `⟨b, b⟩ ⟶ ⟨b + k + 2, 0⟩`
-        -- doable
-        sorry
-      · next habk =>
-        subst habk
-        sorry
-
-
-  · next hbb' =>
-    obtain ⟨hb, haa'⟩ := hbb'
-    simp [Fin.ext_iff] at hb
-    subst hb
-    exact W.map_mem_of_sigma' F hF ⟨a, ha⟩ ⟨a', ha'⟩ haa'
-    -- go from `⟨b, a⟩ --> ⟨b, a'⟩` for `a ≤ a'`
+      have b'0_b'a' : (toLex ⟨⟨b', hb'⟩, ⟨0, Nat.zero_lt_succ b'⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) ≤ toLex ⟨⟨b', hb'⟩, ⟨a', ha'⟩⟩ := by
+        right
+        simp
+      have bb_b'0 : (toLex ⟨⟨b, hb⟩, ⟨b, Nat.lt_add_one b⟩⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) ≤ toLex ⟨⟨b', hb'⟩, ⟨0, Nat.zero_lt_succ b'⟩⟩ := by
+        left
+        simpa
+      suffices W (F.map (homOfLE bb_b'0)) by
+        have := (W.comp_mem (F.map <| homOfLE ba_bb) (F.map (homOfLE bb_b'0)) ?_ this)
+        rw [← F.map_comp, homOfLE_comp] at this
+        have := W.comp_mem _ (F.map <| homOfLE b'0_b'a') (this) ?_
+        rw [← F.map_comp, homOfLE_comp] at this
+        exact this
+        · apply W.map_mem_of_sigma' F hF
+          simp
+        · apply W.map_mem_of_sigma' F hF
+          simp at ha ⊢
+          omega
+      subst hk
+      let P (k : ℕ) := ∀ (b : ℕ) (hk : 0 < k) (hbk : b + k < n + 1),
+        W (F.map (homOfLE (show toLex ⟨⟨b, Nat.lt_of_add_right_lt hbk⟩, ⟨b, Nat.lt_add_one _⟩⟩ ≤ toLex ⟨⟨b + k, hbk⟩, ⟨0, Nat.zero_lt_succ _⟩⟩ by left; simpa)))
+      suffices ∀ (k : ℕ), P k by
+        exact this (k + 1) b (Nat.zero_lt_succ _) (by omega)
+      intro k b hk hbk
+      induction k with
+      | zero => omega
+      | succ k hk =>
+        induction k with
+        | zero =>
+          have goal := hF (toLex ⟨⟨b, Nat.lt_of_add_right_lt hbk⟩, ⟨b, Nat.lt_add_one _⟩⟩)
+          convert (config := .unfoldSameFun) goal
+          all_goals exact (Sigma.Lex.Fin.succ_eq_of_lt_last ⟨b, Nat.lt_of_add_right_lt hbk⟩ (by simp [Fin.lt_iff_val_lt_val]; omega)).symm
+        | succ k hk' =>
+          rename_i hk''
+          have goal := hk'' (by omega) (by omega)
+          have := @homOfLE_comp (Σₗ (b : Fin (n + 1)), Fin ↑b.succ) _ ⟨⟨b, Nat.lt_of_add_right_lt hbk⟩, ⟨b, Nat.lt_add_one _⟩⟩ ⟨⟨b + k + 1, by omega⟩, ⟨0, by simp⟩⟩ ⟨⟨b + (k + 1 + 1), hbk⟩, ⟨0, by simp⟩⟩ (by left; simp; omega) (by left; simp; omega)
+          rw [← this, F.map_comp]
+          apply comp_mem
+          · exact goal
+          · have := @homOfLE_comp (Σₗ (b : Fin (n + 1)), Fin ↑b.succ) _ ⟨⟨b + k + 1, by omega⟩, ⟨0, by simp⟩⟩ ⟨⟨b + k + 1, by omega⟩, ⟨b + k + 1, by simp⟩⟩ ⟨⟨b + (k + 1 + 1), hbk⟩, ⟨0, by simp⟩⟩ (by right; simp) (by left; simp; omega)
+            rw [← this, F.map_comp]
+            apply comp_mem
+            · apply W.map_mem_of_sigma' F hF
+              simp
+            · have goal := hF ⟨⟨b + k + 1, by omega⟩, ⟨b + k + 1, by simp⟩⟩
+              convert (config := .unfoldSameFun) goal
+              all_goals exact (Sigma.Lex.Fin.succ_eq_of_lt_last ⟨b + k + 1, by omega⟩ (by simp [Fin.lt_iff_val_lt_val]; omega)).symm
+    · next hbb' =>
+      subst hbb'
+      apply W.map_mem_of_sigma' F hF
+      omega
 
 end CategoryTheory.MorphismProperty
 
@@ -331,11 +362,14 @@ lemma filtration₁_innerAnodyne {i j : Σₗ (b : Fin (n + 1)), Fin b.succ} (h 
   sorry
 
 open Subcomplex in
-lemma filtration₂_innerAnodyne :
-    innerHornInclusions.saturation (homOfLE (filtration₂_monotone (n := n) (OrderBot.bot_le ⊤))) := by
+lemma filtration₂_innerAnodyne {i j : Σₗ (b : Fin (n + 2)), Fin b.succ} (h : i ≤ j) :
+    innerHornInclusions.saturation (homOfLE (filtration₂_monotone (n := n) h)) := by
+  refine innerHornInclusions.saturation.map_mem_of_sigma
+    (filtration₂_monotone.functor ⋙ Subcomplex.forget _) ?_ (homOfLE h)
+  dsimp
+
   sorry
 
-/--/
 open Subcomplex in
 lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1]).ι := by
   rw [innerAnodyne_eq]
@@ -355,7 +389,7 @@ lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1])
   refine comp_mem _ _ _ ?_ <|
     comp_mem _ _ _ (filtration₁_innerAnodyne bot_le) <|
     comp_mem _ _ _ ?_ <|
-    comp_mem _ _ _ filtration₂_innerAnodyne <|
+    comp_mem _ _ _ (filtration₂_innerAnodyne bot_le) <|
     comp_mem _ _ _ (of_isIso _ _) (of_isIso _ _)
   · exact of_isPushout σsq.isPushout.flip
       ((arrow_mk_iso_iff _ (σ.innerHornImage_arrowIso (Fin.zero_le 0))).2
@@ -393,126 +427,3 @@ lemma contains_innerAnodyne_iff_contains_pushout_maps
   constructor
   · simp [innerAnodyne_eq_T, ← WeaklySaturated.le_iff]
   · exact fun h _ _ _ ⟨m⟩ ↦ h _ (monoPushout_innerAnodyne ∂Δ[m].ι)
-
-
-/-
-lemma map_mem_of_fin {n : ℕ} (F : Fin (n + 1) ⥤ C)
-    (hF : ∀ (i : Fin n), W (F.map (homOfLE (i.castSucc_le_succ))))
-    {i j : Fin (n + 1)} (f : i ⟶ j) :
-    W (F.map f) := by
-  let P (k : ℕ) := ∀ (i j : ℕ) (hj : j < n + 1) (hj' : i + k = j),
-    W (F.map (homOfLE ((by simpa only [← hj'] using Nat.le_add_right i k) :
-      ⟨i, lt_of_le_of_lt ((Nat.le_add_right i k).trans hj'.le) hj⟩ ≤ ⟨j, hj⟩)))
-  suffices ∀ k, P k by
-    obtain ⟨i, hi⟩ := i
-    obtain ⟨j, hj⟩ := j
-    have h : i ≤ j := leOfHom f
-    obtain ⟨k, hk⟩ := Nat.le.dest h
-    exact this k i j hj hk
-  intro k
-  induction k with
-  | zero =>
-      intro j j' h h'
-      obtain rfl : j = j' := by simpa using h'
-      simp only [homOfLE_refl, Functor.map_id]
-      apply id_mem
-  | succ k hk =>
-      intro i j hj hj'
-      rw [← homOfLE_comp (x := (⟨i, by omega⟩ : Fin (n + 1)))
-        (y := ⟨i + k, by omega⟩) (z := ⟨j, by omega⟩) (Nat.le_add_right i k)
-          (by simp only [Fin.le_def]; omega), F.map_comp]
-      apply comp_mem
-      · exact hk i (i + k) (by omega) rfl
-      · rw [← add_assoc] at hj'
-        subst hj'
-        exact hF ⟨i + k, by omega⟩
-
-  let P (k : ℕ) := ∀ (i j : ℕ) (hj : j < n + 1) (hk₁ : i ≤ k) (hk₂ : k < j),
-    W (F.map (homOfLE (hk₁.trans hk₂.le :
-      ⟨i, lt_of_le_of_lt (hk₁.trans hk₂.le) hj⟩ ≤ ⟨j, hj⟩)))
-  suffices ∀ k, P k by
-    obtain ⟨i, hi⟩ := i
-    obtain ⟨j, hj⟩ := j
-    have h : i ≤ j := leOfHom f
-    cases lt_or_eq_of_le h
-    · next h =>
-      exact this i i j hj le_rfl h
-    · next h =>
-      subst h
-      have : f = 𝟙 _ := by aesop
-      subst this
-      simp only [Functor.map_id]
-      apply id_mem
-  intro k
-  induction k with
-  | zero =>
-      intro j j' hj'₁ hj hj'₂
-      have : j = 0 := Nat.eq_zero_of_le_zero hj
-      subst this
-      induction j' with
-      | zero =>
-          simp only [homOfLE_refl, Functor.map_id]
-          apply id_mem
-      | succ j' hj' =>
-          have := @homOfLE_comp (Fin (n + 1)) _ 0 ⟨j', by omega⟩ ⟨j' + 1, hj'₁⟩ (Fin.zero_le _) (by simp)
-          rw [← this, F.map_comp]
-          apply comp_mem
-          · apply hj'
-            exact Nat.zero_le j'
-          · exact hF ⟨j', by omega⟩
-  | succ k hk =>
-      intro j j' hj'₁ hj hj'₂
-      dsimp [P] at hk
-      cases lt_or_eq_of_le hj'₂
-      · next hj'₂ =>
-        cases lt_or_eq_of_le hj
-        · next hj =>
-          exact hk j j' hj'₁ (by omega) (by omega)
-        · next hj =>
-          subst hj
-          sorry
-      · next hj'₂ =>
-        subst hj'₂
-        cases lt_or_eq_of_le hj
-        · next hj =>
-          exact hk j (k + 1) hj'₁ (by omega) (Nat.le_add_right k 1)
-        · next hj =>
-          subst hj
-          simp only [homOfLE_refl, Functor.map_id]
-          apply id_mem
--/
-
-
-  /-
-    obtain ⟨k, hk⟩ := Nat.le.dest h
-    refine this k i j (by omega) ?_ (by omega)
-    ·
-      sorry
-  sorry
-  intro k
-  induction k with
-  | zero =>
-      intro j j' h h'
-      obtain rfl : j = j' := by simpa using h'
-      simp only [homOfLE_refl, Functor.map_id]
-      apply id_mem
-  | succ k hk =>
-      intro i j hj hj'
-      rw [← homOfLE_comp (x := (⟨i, by omega⟩ : Fin (n + 1)))
-        (y := ⟨i + k, by omega⟩) (z := ⟨j, by omega⟩) (Nat.le_add_right i k)
-          (by simp only [Fin.le_def]; omega), F.map_comp]
-      apply comp_mem
-      · exact hk i (i + k) (by omega) rfl
-      · rw [← add_assoc] at hj'
-        subst hj'
-        exact hF ⟨i + k, by omega⟩
-  -/
-
-end CategoryTheory.MorphismProperty
-
-/-
-for all `k : Σₗ`
-
-for any `i j : Σₗ` with `j < ⊤` and `i ≤ k ≤ j`,
-
--/
