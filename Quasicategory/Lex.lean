@@ -35,13 +35,6 @@ lemma Fin.succ_eq_of_eq_last (b : Fin (n + 1)) (h : b = Fin.last n) :
   subst h
   simp
 
-lemma Fin.lt_of_fst_lt (b b' : Fin (n + 1)) {a : Fin b.succ} {a' : Fin b'.succ} :
-    b < b' → (⟨b, a⟩ :  Σₗ (b : Fin (n + 1)), Fin b.succ) < ⟨b', a'⟩ := by
-  intro h
-  rw [Sigma.lt_def]
-  simp
-  sorry
-
 @[simp]
 lemma Fin.lt_of_snd_lt {b : Fin (n + 1)} {a a' : Fin b.succ} :
     a ≤ a' → (⟨b, a⟩ :  Σₗ (b : Fin (n + 1)), Fin b.succ) ≤ (⟨b, a'⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ) := by
@@ -151,6 +144,23 @@ instance : OrderBot (Σₗ (b : Fin (n + 1)), Fin b.succ) :=
     bot := ⟨0, Nat.zero_lt_succ _⟩
     bot_le _ := Fin.zero_le _ }
   Sigma.Lex.orderBot
+
+noncomputable
+instance : OrderTop (Σₗ (b : Fin (n + 1)), Fin b.succ) :=
+  letI : OrderTop (Fin (⊤ : Fin (n + 1)).succ) := {
+    top := Fin.last _
+    le_top _ := Fin.le_last _ }
+  Sigma.Lex.orderTop
+
+
+lemma bot_eq_zero : (⊥ : Σₗ (b : Fin (n + 1)), Fin b.succ) = ⟨0, ⟨0, Nat.zero_lt_succ _⟩⟩ := by
+  rfl
+
+lemma top_eq_last : (⊤ : Σₗ (b : Fin (n + 1)), Fin b.succ) = ⟨Fin.last n, Fin.last n⟩ := by
+  rfl
+
+lemma Fin.succ_last_eq_last : succ ⟨Fin.last n, Fin.last n⟩ = ⟨Fin.last n, Fin.last n⟩ := by
+  simp
 
 lemma Fin.eq_zero_or_eq_succ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     i = ⊥ ∨ ∃ j, i = succ j := by
