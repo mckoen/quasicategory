@@ -836,6 +836,190 @@ def filtrationPushout_intermediate (a : Fin b) :
       exact fun _ ↦ τ.faceImage_succ_not_le_filtration₄ b a
     · exact le_inf (τ.innerHornImage_le _ _) (τ.innerHornImage_a_succ_le_filtration₄ _ _)
 
+/-
+def filtrationPushout_intermediate (a : Fin b) :
+    Sq
+      (σ.innerHornImage ⟨a.succ, by omega⟩ b)
+      (σ ⟨a.succ, by omega⟩ b)
+      (filtration₂ b a.castSucc)
+      (filtration₂ b a.succ)
+      where
+  max_eq := by rw [filtration₂_succ b a, sup_comm]
+  min_eq := by
+    apply le_antisymm
+    · rw [σ.subcomplex_le_innerHornImage_iff (by simp [Fin.le_iff_val_le_val]; omega) _ inf_le_left, le_inf_iff, not_and]
+      exact fun _ ↦ (σ.faceImage_succ_not_le_filtration₂ b a)
+    · exact le_inf (σ.innerHornImage_le _ _) (σ.innerHornImage_succ_le_filtration₂ _ _)
+-/
+
+open Sigma.Lex in
+def filtrationPushout_intermediate' (i : Σₗ (b : Fin (n + 2)), Fin b.succ) (h0 : ⊥ < i) (hn : i < ⊤) :
+    Sq
+      (τ.innerHornImage (⟨(succ i).2, by omega⟩ : Fin (n + 2)) ⟨(succ i).1, by simp⟩)
+      (ofSimplex (τ.simplex (succ i)).1)
+      (filtration₂' n i)
+      (filtration₂' n (succ i))
+      where
+  max_eq := by rw [filtration₂_succ', sup_comm]
+  min_eq := by
+    clear a b
+    apply le_antisymm
+    · rw [eq_τ]
+      rcases i with ⟨⟨b, hb⟩, ⟨a, ha⟩⟩
+      induction b with
+      | zero =>
+        dsimp
+        simp at ha
+        subst ha
+        change _ ≤ innerHornImage 0 1
+        rw [subcomplex_le_innerHornImage_iff (Fin.zero_le _) _ inf_le_left, le_inf_iff, not_and]
+        intro
+        change ¬(face {1}ᶜ).image (g 0 1) ≤ filtration₂' n ⊥
+        rw [filtration₂_zero', Sigma.Lex.bot_eq_zero, eq_τ]
+        convert τ.faceImage_one_not_le_filtration₃ (n := n + 2) 1
+        simp [filtration₁]
+      | succ b _ =>
+        induction a with
+        | zero =>
+          have h := (Sigma.Lex.Fin.succ_eq_of_snd_lt_fst ⟨b + 1, hb⟩ ⟨0, ha⟩ (by simp))
+          have h' : (succ ⟨⟨b + 1, hb⟩, ⟨0, ha⟩⟩).snd.1 = (⟨⟨b + 1, hb⟩, ⟨1, by simp⟩⟩ :  Σₗ (b : Fin (n + 1 + 1)), Fin ↑b.succ).snd := by
+            dsimp only [Fin.val_succ, Fin.succ_mk, Fin.zero_eta, Fin.val_zero,
+              lt_add_iff_pos_left, add_pos_iff, Nat.lt_one_iff, pos_of_gt, or_true,
+              Fin.succ_zero_eq_one, Fin.val_one, Fin.mk_one, dite_eq_ite, Nat.add_zero,
+              eq_mpr_eq_cast] at h ⊢
+            rw [h]
+            simp
+          simp_rw [h, h']
+          rw [subcomplex_le_innerHornImage_iff (by simp [Fin.le_iff_val_le_val]) _ inf_le_left, le_inf_iff, not_and]
+          intro
+          dsimp
+          have := faceImage_succ_not_le_filtration₄ ⟨b + 1, hb⟩ 0
+          dsimp at this
+          convert this
+          exact filtration₂_eq' _ _
+        | succ a _ =>
+          have hab : a ≤ b := by
+            simp at ha
+            omega
+          cases (lt_or_eq_of_le hab)
+          · next hab =>
+            have h := (Sigma.Lex.Fin.succ_eq_of_snd_lt_fst ⟨b + 1, hb⟩ ⟨a + 1, ha⟩ (by simpa))
+            have h' : (succ ⟨⟨b + 1, hb⟩, ⟨a + 1, ha⟩⟩).snd.1 = (⟨⟨b + 1, hb⟩, ⟨a + 2, by simpa⟩⟩ :  Σₗ (b : Fin (n + 1 + 1)), Fin ↑b.succ).snd := by
+              dsimp only [Fin.val_succ, Fin.succ_mk, Fin.zero_eta, Fin.val_zero,
+                lt_add_iff_pos_left, add_pos_iff, Nat.lt_one_iff, pos_of_gt, or_true,
+                Fin.succ_zero_eq_one, Fin.val_one, Fin.mk_one, dite_eq_ite, Nat.add_zero,
+                eq_mpr_eq_cast] at h ⊢
+              rw [h]
+            simp_rw [h, h']
+            rw [subcomplex_le_innerHornImage_iff (by simpa [Fin.le_iff_val_le_val]) _ inf_le_left, le_inf_iff, not_and]
+            intro
+            dsimp
+            have := faceImage_succ_not_le_filtration₄ ⟨b + 1, hb⟩ ⟨a + 1, by simpa⟩
+            dsimp at this
+            convert this
+            exact filtration₂_eq' _ _
+          · next hab =>
+            subst hab
+            have goal : a + 2 < n + 1 + 1 := by
+              rw [Sigma.Lex.lt_def] at hn
+              cases hn
+              · next hn =>
+                simp [Fin.lt_iff_val_lt_val, Sigma.Lex.top_eq_last] at hn
+                omega
+              · next hn =>
+                obtain ⟨hn, hn'⟩ := hn
+                simp [Fin.ext_iff, Fin.lt_iff_val_lt_val, Sigma.Lex.top_eq_last] at hn hn'
+                subst hn
+                simp_all
+            have h := Sigma.Lex.Fin.succ_eq_of_lt_last ⟨a + 1, hb⟩ (by simpa [Fin.lt_iff_val_lt_val] using goal)
+            have h' : (succ ⟨⟨a + 1, hb⟩, ⟨a + 1, ha⟩⟩).snd.1 = (⟨⟨a + 2, goal⟩, ⟨0, Nat.zero_lt_succ _⟩⟩ :  Σₗ (b : Fin (n + 1 + 1)), Fin b.succ).snd := by
+              dsimp only [Fin.val_succ, Fin.succ_mk, lt_self_iff_false, Fin.zero_eta,
+                Fin.val_zero] at h ⊢
+              rw [h]
+              rfl
+            simp_rw [h, h']
+            rw [subcomplex_le_innerHornImage_iff (by simp [Fin.le_iff_val_le_val]) _ inf_le_left, le_inf_iff, not_and]
+            intro
+            dsimp
+            rw [filtration₂_eq', filtration₄_last]
+            exact σ.faceImage_one_not_le_filtration₁ (n + 1) ⟨a + 1 + 1, goal⟩
+    · rw [σ.eq_σ]
+      apply le_inf (σ.innerHornImage_le _ _)
+      · rcases i with ⟨⟨b, hb⟩, ⟨a, ha⟩⟩
+        induction b with
+        | zero =>
+          dsimp only [Fin.val_succ, Fin.zero_eta, Fin.succ_zero_eq_one, Fin.val_one,
+            succ.eq_1, Fin.val_zero, not_lt_zero', ↓dreduceDIte, Fin.zero_eq_last_iff,
+            AddLeftCancelMonoid.add_eq_zero, one_ne_zero, and_false, Fin.val_last, Fin.mk_one,
+            Fin.succ_one_eq_two, Fin.val_two, Fin.isValue, Fin.castSucc_one, succ, ↓reduceDIte]
+          simp at ha
+          subst ha
+          convert innerHornImage_zero_le_filtration₁ (n + 1) 1
+          rw [filtration₁'_eq']
+          dsimp [filtration₂]
+          have := filtration₁_succ (0 : Fin (n + 2))
+          dsimp at this
+          rw [this]
+        | succ b _ =>
+          induction a with
+          | zero =>
+            have h := (Sigma.Lex.Fin.succ_eq_of_snd_lt_fst ⟨b + 1, hb⟩ ⟨0, ha⟩ (by simp))
+            have h' : (succ ⟨⟨b + 1, hb⟩, ⟨0, ha⟩⟩).snd.1 = (⟨⟨b + 1, hb⟩, ⟨1, by simp⟩⟩ :  Σₗ (b : Fin (n + 1 + 1)), Fin ↑b.succ).snd := by
+              dsimp only [Fin.val_succ, Fin.succ_mk, Fin.zero_eta, Fin.val_zero,
+                lt_add_iff_pos_left, add_pos_iff, Nat.lt_one_iff, pos_of_gt, or_true,
+                Fin.succ_zero_eq_one, Fin.val_one, Fin.mk_one, dite_eq_ite, Nat.add_zero,
+                eq_mpr_eq_cast] at h ⊢
+              rw [h]
+              simp
+            simp_rw [h, h']
+            rw [filtration₁'_eq']
+            dsimp only [Fin.val_succ, Fin.succ_mk, Fin.zero_eta, succ.eq_1, Fin.val_zero,
+              lt_add_iff_pos_left, add_pos_iff, Nat.lt_one_iff, pos_of_gt, or_true,
+              Fin.succ_zero_eq_one, Fin.val_one, Fin.mk_one, dite_eq_ite, Int.reduceNeg, id_eq,
+              Nat.cast_ofNat, Int.Nat.cast_ofNat_Int, Nat.reduceAdd, Nat.add_zero, eq_mpr_eq_cast, Fin.succ_one_eq_two]
+            exact σ.innerHornImage_succ_le_filtration₂ ⟨b + 1, hb⟩ ⟨0, Nat.zero_lt_succ _⟩
+          | succ a _ =>
+            have hab : a ≤ b := by
+              simp at ha
+              omega
+            cases (lt_or_eq_of_le hab)
+            · next hab =>
+              have h := (Sigma.Lex.Fin.succ_eq_of_snd_lt_fst ⟨b + 1, hb⟩ ⟨a + 1, ha⟩ (by simpa))
+              have h' : (succ ⟨⟨b + 1, hb⟩, ⟨a + 1, ha⟩⟩).snd.1 = (⟨⟨b + 1, hb⟩, ⟨a + 2, by simpa⟩⟩ :  Σₗ (b : Fin (n + 1 + 1)), Fin ↑b.succ).snd := by
+                dsimp only [Fin.val_succ, Fin.succ_mk, Fin.zero_eta, Fin.val_zero,
+                  lt_add_iff_pos_left, add_pos_iff, Nat.lt_one_iff, pos_of_gt, or_true,
+                  Fin.succ_zero_eq_one, Fin.val_one, Fin.mk_one, dite_eq_ite, Nat.add_zero,
+                  eq_mpr_eq_cast] at h ⊢
+                rw [h]
+              simp_rw [h, h']
+              rw [filtration₁'_eq']
+              convert σ.innerHornImage_succ_le_filtration₂ ⟨b + 1, hb⟩ ⟨a + 1, by simp; omega⟩
+            · next hab =>
+              subst hab
+              have goal : a + 2 < n + 1 + 1 := by
+                rw [Sigma.Lex.lt_def] at hn
+                cases hn
+                · next hn =>
+                  simp [Fin.lt_iff_val_lt_val, Sigma.Lex.top_eq_last] at hn
+                  omega
+                · next hn =>
+                  obtain ⟨hn, hn'⟩ := hn
+                  simp [Fin.ext_iff, Fin.lt_iff_val_lt_val, Sigma.Lex.top_eq_last] at hn hn'
+                  subst hn
+                  simp_all
+              have h := Sigma.Lex.Fin.succ_eq_of_lt_last ⟨a + 1, hb⟩ (by simpa [Fin.lt_iff_val_lt_val] using goal)
+              have h' : (succ ⟨⟨a + 1, hb⟩, ⟨a + 1, ha⟩⟩).snd.1 = (⟨⟨a + 2, goal⟩, ⟨0, Nat.zero_lt_succ _⟩⟩ :  Σₗ (b : Fin (n + 1 + 1)), Fin b.succ).snd := by
+                dsimp only [Fin.val_succ, Fin.succ_mk, lt_self_iff_false, Fin.zero_eta,
+                  Fin.val_zero] at h ⊢
+                rw [h]
+                rfl
+              simp_rw [h, h']
+              rw [filtration₁'_eq', filtration₂_last]
+              simp
+              exact innerHornImage_zero_le_filtration₁ _ ⟨a + 2, goal⟩
+
+/--/
+
 /--
 `0 ≤ b ≤ (n + 1)`
 `Y(b) ↪ Y(b, 0)`

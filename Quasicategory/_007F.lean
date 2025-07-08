@@ -27,7 +27,7 @@ def σ.filtrationPushout_zero' (n : ℕ) :
       (σ.innerHornImage 0 0)
       (σ 0 0)
       (∂Δ[n + 1].unionProd Λ[2, 1])
-      (filtration₁' ⊥) := by
+      (filtration₁' (n + 1) ⊥) := by
   convert filtrationPushout_zero n
   simp [filtration₁', filtration₁, σ.eq_σ]
   rfl
@@ -37,8 +37,8 @@ def τ.filtrationPushout_zero' (n : ℕ) :
     Sq
       (τ.innerHornImage 0 0)
       (τ 0 0)
-      (filtration₁' (n := n + 1) ⊤)
-      (filtration₂' ⊥) := by
+      (filtration₁' (n + 1) ⊤)
+      (filtration₂' n ⊥) := by
   convert filtrationPushout_zero (n + 1)
   · simp [filtration₁', filtration₁, σ.eq_σ]
     apply le_antisymm
@@ -139,41 +139,6 @@ def zero_unionProd_arrowIso :
   refine ?_ ≪≫ zero_unionProd_arrowIso' ≪≫ ?_
   · exact Arrow.isoMk (Subcomplex.unionProd.symmIso _ _) (β_ _ _) rfl
   · exact Arrow.isoMk (stdSimplex.rightUnitor _) (stdSimplex.rightUnitor _) rfl
-
-/-
-lemma filtration₁_to_succ_mem (i : Fin (n + 1)) :
-    anodyneExtensions (Subcomplex.homOfLE (monotone_filtration₁.{u} i.castSucc_le_succ)) := by
-  have := IsPushout.of_isColimit
-    (Subcomplex.isColimitPushoutCoconeOfPullback (ιSimplex i) (filtration₁.{u} i.castSucc)
-      (filtration₁.{u} i.succ) (horn.{u} (n + 1) i.succ) ⊤
-      (by simpa using (filtration₁_preimage_ιSimplex i).symm)
-      (by
-        simp only [Subcomplex.image_top,
-          filtration₁_succ, Subcomplex.ofSimplex_eq_range]))
-  exact MorphismProperty.of_isPushout (P := anodyneExtensions) this
-    (anodyneExtensions.{u}.comp_mem _ _
-      (horn_ι_mem n i.succ) (of_isIso ((Subcomplex.topIso _).inv)))
-
-lemma filtation₁_map_mem {i j : Fin (n + 2)} (h : i ≤ j) :
-    anodyneExtensions (Subcomplex.homOfLE (monotone_filtration₁.{u} h)) :=
-  anodyneExtensions.map_mem_of_fin
-    ((monotone_filtration₁.{u} (n := n)).functor ⋙ Subcomplex.forget _) filtration₁_to_succ_mem
-      (homOfLE h)
-
-variable (n) in
-lemma mem₁ :
-    anodyneExtensions (Subcomplex.unionProd.{u} (stdSimplex.face {(1 : Fin 2)})
-      (boundary n)).ι := by
-  change anodyneExtensions
-    ((Subcomplex.isoOfEq (filtration₁_zero.{u} n)).inv ≫
-          (Subcomplex.homOfLE (monotone_filtration₁.{u} (by simp))) ≫
-          (Subcomplex.isoOfEq (filtration₁_last.{u} n)).hom ≫
-          (Subcomplex.topIso _).hom)
-  refine anodyneExtensions.comp_mem _ _ ?_
-    (anodyneExtensions.comp_mem _ _ (filtation₁_map_mem (by simp))
-    (anodyneExtensions.comp_mem _ _ ?_ ?_))
-  all_goals apply of_isIso
--/
 
 namespace CategoryTheory.MorphismProperty
 
@@ -354,10 +319,42 @@ lemma map_mem_of_sigma {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ 
 end CategoryTheory.MorphismProperty
 
 open Subcomplex in
+lemma filtration₁_innerAnodyne_zero : innerHornInclusions.saturation
+    (Subcomplex.homOfLE (filtration₁_monotone (n + 1) (Sigma.Lex.le_succ ⟨0, ⟨0, Nat.zero_lt_succ _⟩⟩))) := by
+  induction n with
+  | zero =>
+    dsimp
+    apply id_mem
+  | succ n _ =>
+    refine (arrow_mk_iso_iff _ ?_).2 <| of_isPushout (Subcomplex.Sq.isPushout (σ.filtrationPushout_join (n + 1) 1)).flip
+      ((arrow_mk_iso_iff _ (σ.innerHornImage_arrowIso (Fin.zero_le _))).2 (.of _ (.mk Fin.zero_lt_one (Fin.castSucc_lt_last _))))
+    · refine Arrow.isoMk ?_ ?_ ?_
+      · apply isoOfEq
+        dsimp only [Arrow.mk]
+        rw [σ.filtration₁'_eq']
+        have := filtration₂_last (0 : Fin (n + 2))
+        dsimp only [Fin.val_zero] at this
+        rw [this]
+        congr
+      · dsimp only [Arrow.mk]
+        apply isoOfEq
+        have A := σ.filtration₁'_eq' (n := n + 1) 1
+        have B := Sigma.Lex.Fin.succ_bot_eq (n := n + 1)
+        rw [B, A]
+      · dsimp [Subcomplex.homOfLE]
+        rfl
+
+open Subcomplex in
+lemma filtration₁_innerAnodyne_last : innerHornInclusions.saturation
+    (Subcomplex.homOfLE (filtration₁_monotone (n + 1) (Sigma.Lex.le_succ ⟨Fin.last n, Fin.last n⟩))) := by
+  refine (arrow_mk_iso_iff _ ?_).2 <| id_mem innerHornInclusions.saturation (filtration₁' (n + 1) ⟨Fin.last n, Fin.last n⟩).toSSet
+  exact Arrow.isoMk (isoOfEq rfl) (isoOfEq (congrArg (filtration₁' (n + 1)) Sigma.Lex.Fin.succ_last_eq_last))
+
+open Subcomplex in
 lemma filtration₁_innerAnodyne {i j : Σₗ (b : Fin (n + 1)), Fin b.succ} (h : i ≤ j) :
-    innerHornInclusions.saturation (homOfLE (filtration₁_monotone (n := n + 1) h)) := by
+    innerHornInclusions.saturation (homOfLE (filtration₁_monotone (n + 1) h)) := by
   refine innerHornInclusions.saturation.map_mem_of_sigma
-    (filtration₁_monotone.functor ⋙ Subcomplex.forget _) ?_ (homOfLE h)
+    ((filtration₁_monotone (n + 1)).functor ⋙ Subcomplex.forget _) ?_ (homOfLE h)
   dsimp only [Fin.val_succ, Functor.comp_obj, Monotone.functor_obj, Subcomplex.forget_obj,
     Fin.succ_mk, Fin.zero_eta, homOfLE_leOfHom, Functor.comp_map, forget_map]
   intro i
@@ -368,29 +365,28 @@ lemma filtration₁_innerAnodyne {i j : Σₗ (b : Fin (n + 1)), Fin b.succ} (h 
     refine of_isPushout (Subcomplex.Sq.isPushout σsq).flip
       ((arrow_mk_iso_iff _ (σ.innerHornImage_arrowIso ?_)).2
         (.of _ (.mk (compare_gt_iff_gt.mp rfl) (?_))))
-    ·
-      sorry
-    ·
-      sorry
+    · obtain ⟨b, a⟩ := i
+      have := Order.le_of_lt_succ (Sigma.Lex.succ ⟨b, a⟩).2.2
+      simpa
+    · obtain ⟨b, a⟩ := i
+      rw [Fin.lt_iff_val_lt_val]
+      simp only [Fin.val_succ, Fin.succ_mk, Fin.zero_eta, Fin.castSucc_mk,
+        Fin.val_last, add_lt_add_iff_right]
+      omega
   · simp at hn
     rw [Sigma.Lex.top_eq_last] at hn
     subst hn
-    have := Sigma.Lex.Fin.succ_last_eq_last (n := n)
-    apply id_mem innerHornInclusions.saturation (filtration₁' ⟨Fin.last n, Fin.last n⟩).toSSet
-    simp only [Sigma.Lex.Fin.succ_last_eq_last]
-    sorry
-  --apply of_isPushout
+    exact filtration₁_innerAnodyne_last
   · simp at h0
     rw [Sigma.Lex.bot_eq_zero] at h0
     subst h0
-
-    sorry
+    exact filtration₁_innerAnodyne_zero
 
 open Subcomplex in
 lemma filtration₂_innerAnodyne {i j : Σₗ (b : Fin (n + 2)), Fin b.succ} (h : i ≤ j) :
     innerHornInclusions.saturation (homOfLE (filtration₂_monotone (n := n) h)) := by
   refine innerHornInclusions.saturation.map_mem_of_sigma
-    (filtration₂_monotone.functor ⋙ Subcomplex.forget _) ?_ (homOfLE h)
+    ((filtration₂_monotone n).functor ⋙ Subcomplex.forget _) ?_ (homOfLE h)
   dsimp
 
   sorry
@@ -398,30 +394,31 @@ lemma filtration₂_innerAnodyne {i j : Σₗ (b : Fin (n + 2)), Fin b.succ} (h 
 open Subcomplex in
 lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1]).ι := by
   rw [innerAnodyne_eq]
-  cases n
-  · rw [boundary_zero]
+  induction n with
+  | zero =>
+    rw [boundary_zero]
     exact (arrow_mk_iso_iff _ zero_unionProd_arrowIso).2 <| .of _ <| .mk Fin.zero_lt_one Fin.one_lt_last
-  next n =>
-  let σsq := (σ.filtrationPushout_zero' n)
-  let τsq := (τ.filtrationPushout_zero' n)
-  change innerHornInclusions.saturation
-      ((homOfLE σsq.le₃₄) ≫
-      (homOfLE (filtration₁_monotone bot_le)) ≫
-      (homOfLE τsq.le₃₄) ≫
-      (homOfLE (filtration₂_monotone bot_le)) ≫
-      (isoOfEq filtration₂_last').hom ≫
-      (topIso _).hom)
-  refine comp_mem _ _ _ ?_ <|
-    comp_mem _ _ _ (filtration₁_innerAnodyne bot_le) <|
-    comp_mem _ _ _ ?_ <|
-    comp_mem _ _ _ (filtration₂_innerAnodyne bot_le) <|
-    comp_mem _ _ _ (of_isIso _ _) (of_isIso _ _)
-  · exact of_isPushout σsq.isPushout.flip
-      ((arrow_mk_iso_iff _ (σ.innerHornImage_arrowIso (Fin.zero_le 0))).2
-        (.of _ (.mk Fin.zero_lt_one Fin.one_lt_last)))
-  · exact of_isPushout τsq.isPushout.flip
-      ((arrow_mk_iso_iff _ (τ.innerHornImage_arrowIso (Fin.zero_le 0))).2
-        (.of _ (.mk Fin.zero_lt_one Fin.one_lt_last)))
+  | succ n _ =>
+    let σsq := (σ.filtrationPushout_zero' n)
+    let τsq := (τ.filtrationPushout_zero' n)
+    change innerHornInclusions.saturation
+        ((homOfLE σsq.le₃₄) ≫
+        (homOfLE (filtration₁_monotone (n + 1) bot_le)) ≫
+        (homOfLE τsq.le₃₄) ≫
+        (homOfLE (filtration₂_monotone n bot_le)) ≫
+        (isoOfEq filtration₂_last').hom ≫
+        (topIso _).hom)
+    refine comp_mem _ _ _ ?_ <|
+      comp_mem _ _ _ (filtration₁_innerAnodyne bot_le) <|
+      comp_mem _ _ _ ?_ <|
+      comp_mem _ _ _ (filtration₂_innerAnodyne bot_le) <|
+      comp_mem _ _ _ (of_isIso _ _) (of_isIso _ _)
+    · exact of_isPushout σsq.isPushout.flip
+        ((arrow_mk_iso_iff _ (σ.innerHornImage_arrowIso (Fin.zero_le 0))).2
+          (.of _ (.mk Fin.zero_lt_one Fin.one_lt_last)))
+    · exact of_isPushout τsq.isPushout.flip
+        ((arrow_mk_iso_iff _ (τ.innerHornImage_arrowIso (Fin.zero_le 0))).2
+          (.of _ (.mk Fin.zero_lt_one Fin.one_lt_last)))
 
 noncomputable
 def arrow_unionProd_iso : Arrow.mk (∂Δ[n].ι ◫ Λ[2, 1].ι) ≅ Arrow.mk (∂Δ[n].unionProd Λ[2, 1]).ι := by

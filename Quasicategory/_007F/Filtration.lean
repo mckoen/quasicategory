@@ -162,18 +162,18 @@ open Subcomplex
 -- need n ≠ 0, so take n + 1
 
 noncomputable
-def filtration₁' (i : Σₗ (b : Fin n), Fin b.succ) :
+def filtration₁' (n : ℕ) (i : Σₗ (b : Fin n), Fin b.succ) :
     (Δ[n] ⊗ Δ[2]).Subcomplex :=
   ∂Δ[n].unionProd Λ[2, 1] ⊔
     (⨆ (j) (_ : j ≤ i), ofSimplex (σ.simplex j).1)
 
 lemma filtration₁_zero' :
-    filtration₁' ⊥ = ∂Δ[n + 1].unionProd Λ[2, 1] ⊔ ofSimplex (σ.simplex ⊥).1 := by
+    filtration₁' (n + 1) ⊥ = ∂Δ[n + 1].unionProd Λ[2, 1] ⊔ ofSimplex (σ.simplex ⊥).1 := by
   simp [filtration₁']
 
 lemma filtration₁_succ' (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
-    filtration₁' (Sigma.Lex.succ i) =
-      filtration₁' i ⊔ ofSimplex (σ.simplex (Sigma.Lex.succ i)).1 := by
+    filtration₁' (n + 1) (Sigma.Lex.succ i) =
+      filtration₁' (n + 1) i ⊔ ofSimplex (σ.simplex (Sigma.Lex.succ i)).1 := by
   simp only [filtration₁']
   apply le_antisymm
   · apply sup_le (le_sup_of_le_left le_sup_left)
@@ -196,16 +196,16 @@ lemma filtration₁_succ' (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
         (le_iSup₂_of_le (Sigma.Lex.succ i) (le_refl (Sigma.Lex.succ i)) fun i_1 ⦃a⦄ a ↦ a)
 
 noncomputable
-def filtration₂' (i : Σₗ (b : Fin (n + 2)), Fin b.succ) : (Δ[n + 1] ⊗ Δ[2]).Subcomplex :=
-  (filtration₁' ⊤) ⊔ (⨆ (j) (_ : j ≤ i), ofSimplex (τ.simplex j).1)
+def filtration₂' (n : ℕ) (i : Σₗ (b : Fin (n + 2)), Fin b.succ) : (Δ[n + 1] ⊗ Δ[2]).Subcomplex :=
+  (filtration₁' (n + 1) ⊤) ⊔ (⨆ (j) (_ : j ≤ i), ofSimplex (τ.simplex j).1)
 
 lemma filtration₂_zero' :
-    filtration₂' (n := n) ⊥ = filtration₁' ⊤ ⊔ ofSimplex (τ.simplex ⊥).1 := by
+    filtration₂' n ⊥ = filtration₁' (n + 1) ⊤ ⊔ ofSimplex (τ.simplex ⊥).1 := by
   simp [filtration₂', filtration₁']
 
 lemma filtration₂_succ' (i : Σₗ (b : Fin (n + 2)), Fin b.succ) :
-    filtration₂' (Sigma.Lex.succ i) =
-      filtration₂' i ⊔ ofSimplex (τ.simplex (Sigma.Lex.succ i)).1 := by
+    filtration₂' n (Sigma.Lex.succ i) =
+      filtration₂' n i ⊔ ofSimplex (τ.simplex (Sigma.Lex.succ i)).1 := by
   simp only [filtration₂']
   apply le_antisymm
   · apply sup_le (le_sup_of_le_left le_sup_left)
@@ -228,7 +228,7 @@ lemma filtration₂_succ' (i : Σₗ (b : Fin (n + 2)), Fin b.succ) :
         (le_iSup₂_of_le (Sigma.Lex.succ i) (le_refl (Sigma.Lex.succ i)) fun i_1 ⦃a⦄ a ↦ a)
 
 lemma filtration₂_last' :
-    filtration₂' (n := n) ⊤ = ⊤ := by
+    filtration₂' n ⊤ = ⊤ := by
   dsimp [filtration₂']
   rw [prodStdSimplex.subcomplex_eq_top_iff _ rfl]
   intro x hx
@@ -237,12 +237,104 @@ lemma filtration₂_last' :
   rw [← Subcomplex.ofSimplex_le_iff]
   exact le_sup_of_le_right (le_iSup₂_of_le i le_top le_rfl)
 
-lemma filtration₁_monotone : Monotone (filtration₁' (n := n)) := fun _ _ h ↦
+lemma filtration₁_monotone (n : ℕ) : Monotone (filtration₁' n) := fun _ _ h ↦
   sup_le le_sup_left
     (iSup₂_le fun i hi ↦
       le_sup_of_le_right (le_iSup₂_of_le i (hi.trans h) fun _ _ a ↦ a))
 
-lemma filtration₂_monotone : Monotone (filtration₂' (n := n)) := fun _ _ h ↦
+lemma filtration₂_monotone (n : ℕ) : Monotone (filtration₂' n) := fun _ _ h ↦
   sup_le le_sup_left
     (iSup₂_le fun i hi ↦
       le_sup_of_le_right (le_iSup₂_of_le i (hi.trans h) fun _ _ a ↦ a))
+
+lemma filtration₁'_eq' (b : Fin (n + 1)) (a : Fin b.succ) : filtration₁' (n + 1) ⟨b, a⟩ = filtration₂ b a := by
+  simp [filtration₁', filtration₂, filtration₁, σ.eq_σ]
+  apply le_antisymm
+  · apply sup_le (le_sup_of_le_left le_sup_left)
+    apply iSup₂_le
+    intro i' hi'
+    cases lt_or_eq_of_le hi'
+    · next hi' =>
+      rw [Sigma.Lex.lt_def] at hi'
+      simp at hi'
+      cases hi'
+      · next hi' =>
+        refine le_sup_of_le_left (le_sup_of_le_right ?_)
+        apply le_iSup₂_of_le ⟨i'.fst, hi'⟩ ⟨i'.snd, by simp⟩
+        exact le_rfl
+      · next hi' =>
+        obtain ⟨hi', ha⟩ := hi'
+        subst hi'
+        simp at ha
+        apply le_sup_of_le_right
+        apply le_iSup_of_le ⟨i'.snd, by omega⟩
+        exact le_rfl
+    · next hi' =>
+      subst hi'
+      dsimp
+      apply le_sup_of_le_right
+      apply le_iSup_of_le ⟨a, lt_add_one _⟩
+      exact le_rfl
+  · apply sup_le
+    · refine
+      sup_le le_sup_left
+        (iSup₂_le fun b' a' ↦
+          le_sup_of_le_right ?_)
+      apply le_iSup₂_of_le ⟨⟨b', by omega⟩, ⟨a', by simp⟩⟩
+      simp
+      left
+      simp [Fin.lt_iff_val_lt_val]
+    · apply le_sup_of_le_right
+      apply iSup_le
+      intro a'
+      apply le_iSup₂_of_le ⟨b, ⟨a', by omega⟩⟩
+      exact le_rfl
+      right
+      simp [Fin.le_iff_val_le_val]
+      omega
+
+lemma filtration₂_eq' (b : Fin (n + 2)) (a : Fin b.succ) : filtration₂' n ⟨b, a⟩ = filtration₄ b a := by
+  dsimp [filtration₂']
+  rw [Sigma.Lex.top_eq_last, filtration₁'_eq']
+  simp [filtration₄, τ.eq_τ, filtration₃]
+  change _ = ((filtration₁ (Fin.last n).succ) ⊔ _) ⊔ _
+  rw [← filtration₂_last]
+  change _ = ((filtration₂ (Fin.last n) (Fin.last n)) ⊔ _) ⊔ _
+  rw [sup_assoc]
+  congr
+  apply le_antisymm
+  · apply iSup₂_le
+    intro i hi
+    cases lt_or_eq_of_le hi
+    · next hi =>
+      rw [Sigma.Lex.lt_def] at hi
+      simp at hi
+      cases hi
+      · next hi =>
+        apply le_sup_of_le_left
+        apply le_iSup₂_of_le ⟨i.fst, hi⟩ ⟨i.snd, by simp⟩
+        exact le_rfl
+      · next hi =>
+        obtain ⟨hi, ha⟩ := hi
+        subst hi
+        simp at ha
+        apply le_sup_of_le_right
+        apply le_iSup_of_le ⟨i.snd, by omega⟩
+        exact le_rfl
+    · next hi =>
+      subst hi
+      exact le_sup_of_le_right (le_iSup_of_le ⟨a, lt_add_one _⟩ le_rfl)
+  · apply sup_le
+    · refine
+        (iSup₂_le fun b' a' ↦ ?_)
+      apply le_iSup₂_of_le ⟨⟨b', by omega⟩, ⟨a', by simp⟩⟩
+      simp
+      left
+      simp [Fin.lt_iff_val_lt_val]
+    · apply iSup_le
+      intro a'
+      apply le_iSup₂_of_le ⟨b, ⟨a', by omega⟩⟩
+      exact le_rfl
+      right
+      simp [Fin.le_iff_val_le_val]
+      omega

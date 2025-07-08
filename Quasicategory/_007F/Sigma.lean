@@ -380,60 +380,14 @@ def filtrationPushout_intermediate (a : Fin b) :
       exact fun _ ↦ (σ.faceImage_succ_not_le_filtration₂ b a)
     · exact le_inf (σ.innerHornImage_le _ _) (σ.innerHornImage_succ_le_filtration₂ _ _)
 
-lemma filtration₁'_eq' (b : Fin (n + 1)) (a : Fin b.succ) : filtration₁' ⟨b, a⟩ = filtration₂ b a := by
-  simp [filtration₁', filtration₂, filtration₁, σ.eq_σ]
-  apply le_antisymm
-  · apply sup_le (le_sup_of_le_left le_sup_left)
-    apply iSup₂_le
-    intro i' hi'
-    cases lt_or_eq_of_le hi'
-    · next hi' =>
-      rw [Sigma.Lex.lt_def] at hi'
-      simp at hi'
-      cases hi'
-      · next hi' =>
-        refine le_sup_of_le_left (le_sup_of_le_right ?_)
-        apply le_iSup₂_of_le ⟨i'.fst, hi'⟩ ⟨i'.snd, by simp⟩
-        exact le_rfl
-      · next hi' =>
-        obtain ⟨hi', ha⟩ := hi'
-        subst hi'
-        simp at ha
-        apply le_sup_of_le_right
-        apply le_iSup_of_le ⟨i'.snd, by omega⟩
-        exact le_rfl
-    · next hi' =>
-      subst hi'
-      dsimp
-      apply le_sup_of_le_right
-      apply le_iSup_of_le ⟨a, lt_add_one _⟩
-      exact le_rfl
-  · apply sup_le
-    · refine
-      sup_le le_sup_left
-        (iSup₂_le fun b' a' ↦
-          le_sup_of_le_right ?_)
-      apply le_iSup₂_of_le ⟨⟨b', by omega⟩, ⟨a', by simp⟩⟩
-      simp
-      left
-      simp [Fin.lt_iff_val_lt_val]
-    · apply le_sup_of_le_right
-      apply iSup_le
-      intro a'
-      apply le_iSup₂_of_le ⟨b, ⟨a', by omega⟩⟩
-      exact le_rfl
-      right
-      simp [Fin.le_iff_val_le_val]
-      omega
-
 set_option maxHeartbeats 800000 in
 open Sigma.Lex in
 def filtrationPushout_intermediate' (i : Σₗ (b : Fin (n + 1)), Fin b.succ) (h0 : ⊥ < i) (hn : i < ⊤) :
     Sq
       (σ.innerHornImage (⟨(succ i).2, by omega⟩ : Fin (n + 1)) ⟨(succ i).1, by simp⟩)
       (ofSimplex (σ.simplex (succ i)).1)
-      (filtration₁' i)
-      (filtration₁' (succ i))
+      (filtration₁' (n + 1) i)
+      (filtration₁' (n + 1) (succ i))
       where
   max_eq := by rw [filtration₁_succ', sup_comm]
   min_eq := by
@@ -462,7 +416,7 @@ def filtrationPushout_intermediate' (i : Σₗ (b : Fin (n + 1)), Fin b.succ) (h
           change _ ≤ innerHornImage 0 1
           rw [σ.subcomplex_le_innerHornImage_iff (Fin.zero_le _) _ inf_le_left, le_inf_iff, not_and]
           intro
-          change ¬(face {1}ᶜ).image (f 0 1) ≤ filtration₁' ⊥
+          change ¬(face {1}ᶜ).image (f 0 1) ≤ filtration₁' (n + 2) ⊥
           rw [filtration₁_zero', Sigma.Lex.bot_eq_zero, σ.eq_σ]
           convert σ.faceImage_one_not_le_filtration₁ (n + 1) 1
           simp [filtration₁]

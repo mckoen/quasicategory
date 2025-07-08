@@ -162,6 +162,20 @@ lemma top_eq_last : (⊤ : Σₗ (b : Fin (n + 1)), Fin b.succ) = ⟨Fin.last n,
 lemma Fin.succ_last_eq_last : succ ⟨Fin.last n, Fin.last n⟩ = ⟨Fin.last n, Fin.last n⟩ := by
   simp
 
+lemma Fin.succ_bot_eq : succ ⟨(0 : Fin (n + 1)), ⟨0, Nat.zero_lt_succ _⟩⟩ = ⟨1, ⟨0, Nat.zero_lt_succ _⟩⟩ := by
+  simp
+  split
+  · next h =>
+    subst h
+    simp
+  · next h =>
+    congr!
+    all_goals
+      simp [Nat.mod_eq_of_lt (show 1 < n + 1 by omega)]
+
+lemma Fin.succ_bot_eq_zero : succ ⟨(0 : Fin 1), ⟨0, Nat.zero_lt_succ _⟩⟩ = ⟨0, ⟨0, Nat.zero_lt_succ _⟩⟩ := by
+  rfl
+
 lemma Fin.eq_zero_or_eq_succ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     i = ⊥ ∨ ∃ j, i = succ j := by
   obtain ⟨⟨b, hb⟩, ⟨a, ha⟩⟩ := i
