@@ -300,7 +300,7 @@ def σ.nonDegenerateEquiv :
   refine Equiv.ofBijective (σ.nonDegenerateEquiv.toFun) ?_
   constructor
   · exact fun _ _ h ↦ σ.objMk₂_injective (congr_arg (Prod.snd ∘ Subtype.val) h)
-  · sorry
+  ·
 -/
 
 /-- There is a bijection (via `τ`) between pairs `0 ≤ a ≤ b ≤ n` and nondegenerate

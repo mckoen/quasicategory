@@ -23,10 +23,6 @@ lemma monotone_coproducts {W₁ W₂ : MorphismProperty C} (h : W₁ ≤ W₂) :
   obtain ⟨J, hf⟩ := hf
   exact ⟨J, colimitsOfShape_monotone h _ _ hf⟩
 
---lemma transfiniteCompositionsOfShape_aleph0 (W : MorphismProperty C) :
---    W.transfiniteCompositionsOfShape Cardinal.aleph0.{w}.ord.toType =
---      W.transfiniteCompositionsOfShape ℕ := sorry
-
 @[simp]
 lemma min_iff (W₁ W₂ : MorphismProperty C) {X Y : C} (f : X ⟶ Y) :
     (W₁ ⊓ W₂) f ↔ W₁ f ∧ W₂ f := Iff.rfl

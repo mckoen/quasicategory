@@ -117,13 +117,11 @@ def bijection_on_vertices : MorphismProperty SSet.{0} := fun A B _ ↦
 
 -- `01C3` aux
 instance bijection_on_vertices.WeaklySaturated : WeaklySaturated bijection_on_vertices := by
-  sorry
 
 -- `01C3` aux
 lemma inner_horn_bij_on_vertices
     ⦃n : ℕ⦄ ⦃i : Fin (n+3)⦄ (_h0 : 0 < i) (_hn : i < Fin.last (n+2)) :
     bijection_on_vertices (hornInclusion.{0} (n+2) i) := by
-  sorry
 
 -- `01C3` inner anodyne morphisms are bijective on vertices
 def innerAnodyneVerticesEquiv {X Y : SSet} (p : X ⟶ Y) (hp : innerAnodyne p) :

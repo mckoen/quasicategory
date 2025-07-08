@@ -331,18 +331,45 @@ lemma filtration₁_innerAnodyne_zero : innerHornInclusions.saturation
     · refine Arrow.isoMk ?_ ?_ ?_
       · apply isoOfEq
         dsimp only [Arrow.mk]
-        rw [σ.filtration₁'_eq']
+        rw [filtration₁'_eq']
         have := filtration₂_last (0 : Fin (n + 2))
         dsimp only [Fin.val_zero] at this
         rw [this]
         congr
       · dsimp only [Arrow.mk]
         apply isoOfEq
-        have A := σ.filtration₁'_eq' (n := n + 1) 1
+        have A := filtration₁'_eq' (n := n + 1) 1
         have B := Sigma.Lex.Fin.succ_bot_eq (n := n + 1)
         rw [B, A]
       · dsimp [Subcomplex.homOfLE]
         rfl
+
+open Subcomplex in
+lemma filtration₂_innerAnodyne_zero : innerHornInclusions.saturation
+    (Subcomplex.homOfLE (filtration₂_monotone n (Sigma.Lex.le_succ ⟨0, ⟨0, Nat.zero_lt_succ _⟩⟩))) := by
+  refine (arrow_mk_iso_iff _ ?_).2 <| of_isPushout (Subcomplex.Sq.isPushout (τ.filtrationPushout_join (1 : Fin (n + 2)))).flip
+    ((arrow_mk_iso_iff _ (τ.innerHornImage_arrowIso (Fin.zero_le _))).2 (.of _ (.mk Fin.zero_lt_one (Fin.castSucc_lt_last _))))
+  refine Arrow.isoMk ?_ ?_ ?_
+  · apply isoOfEq
+    dsimp only [Arrow.mk]
+    rw [filtration₂_eq']
+    have := filtration₄_last (0 : Fin (n + 2))
+    dsimp only [Fin.val_zero] at this
+    rw [this]
+    congr
+  · dsimp only [Arrow.mk]
+    apply isoOfEq
+    have A := filtration₂_eq' (n := n) 1 ⟨0, Nat.zero_lt_succ _⟩
+    have B := Sigma.Lex.Fin.succ_bot_eq (n := n + 1)
+    rw [B, A]
+  · dsimp [Subcomplex.homOfLE]
+    rfl
+
+open Subcomplex in
+lemma filtration₂_innerAnodyne_last : innerHornInclusions.saturation
+    (Subcomplex.homOfLE (filtration₂_monotone n (Sigma.Lex.le_succ ⟨Fin.last (n + 1), Fin.last (n + 1)⟩))) := by
+  refine (arrow_mk_iso_iff _ ?_).2 <| id_mem innerHornInclusions.saturation (filtration₂' n ⟨Fin.last (n + 1), Fin.last (n + 1)⟩).toSSet
+  exact Arrow.isoMk (isoOfEq rfl) (isoOfEq (congrArg (filtration₂' n) Sigma.Lex.Fin.succ_last_eq_last))
 
 open Subcomplex in
 lemma filtration₁_innerAnodyne_last : innerHornInclusions.saturation
@@ -387,9 +414,32 @@ lemma filtration₂_innerAnodyne {i j : Σₗ (b : Fin (n + 2)), Fin b.succ} (h 
     innerHornInclusions.saturation (homOfLE (filtration₂_monotone (n := n) h)) := by
   refine innerHornInclusions.saturation.map_mem_of_sigma
     ((filtration₂_monotone n).functor ⋙ Subcomplex.forget _) ?_ (homOfLE h)
-  dsimp
-
-  sorry
+  dsimp only [Fin.val_succ, Functor.comp_obj, Monotone.functor_obj, Subcomplex.forget_obj,
+    Fin.succ_mk, Fin.zero_eta, homOfLE_leOfHom, Functor.comp_map, forget_map]
+  intro i
+  by_cases h0 : ⊥ < i
+  by_cases hn : i < ⊤
+  · have τsq := τ.filtrationPushout_intermediate' i h0 hn
+    rw [τ.eq_τ] at τsq
+    refine of_isPushout (Subcomplex.Sq.isPushout τsq).flip
+      ((arrow_mk_iso_iff _ (τ.innerHornImage_arrowIso ?_)).2
+        (.of _ (.mk (compare_gt_iff_gt.mp rfl) (?_))))
+    · obtain ⟨b, a⟩ := i
+      have := Order.le_of_lt_succ (Sigma.Lex.succ ⟨b, a⟩).2.2
+      simpa
+    · obtain ⟨b, a⟩ := i
+      rw [Fin.lt_iff_val_lt_val]
+      simp only [Fin.val_succ, Fin.succ_mk, Fin.zero_eta, Fin.castSucc_mk,
+        Fin.val_last, add_lt_add_iff_right]
+      omega
+  · simp at hn
+    rw [Sigma.Lex.top_eq_last] at hn
+    subst hn
+    exact filtration₂_innerAnodyne_last
+  · simp at h0
+    rw [Sigma.Lex.bot_eq_zero] at h0
+    subst h0
+    exact filtration₂_innerAnodyne_zero
 
 open Subcomplex in
 lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1]).ι := by

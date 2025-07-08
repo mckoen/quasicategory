@@ -105,33 +105,26 @@ lemma induced_tkf_aux (B X Y : SSet) (p : X ⟶ Y)
 /- if p : X ⟶ Y is a trivial Kan fib, then Fun(B,X) ⟶ Fun(B,Y) is -/
 instance induced_tkf (B X Y : SSet) (p : X ⟶ Y) (hp: trivialKanFibration p) :
     trivialKanFibration ((internalHom.obj (.op B)).map p) := by
-  intro _ _ i hi
-  induction hi with | mk n =>
+  intro _ _ i ⟨n⟩
   rw [trivialKanFibration_eq_rlp_monomorphisms] at hp
   have := hp _ (boundaryInclusion_whisker_mono B n)
   apply induced_tkf_aux
 
--- uses `0071` and `0079`
 /- the map Fun(Δ[2], Fun(S, D)) ⟶ Fun(Λ[2,1], Fun(S, D)) is a trivial Kan fib -/
--- apply `ihom_equiv` and `0079`
 open MonoidalClosed in
-def fun_quasicat_aux (S D : SSet) [Quasicategory D] :
+def aux (S D : SSet) [Quasicategory D] :
     trivialKanFibration ((internalHom.map Λ[2, 1].ι.op).app ((internalHom.obj (.op S)).obj D)) := by
-  intro _ _ i hi
-  induction hi with | mk n =>
-  -- since Fun[Δ[n], D] ⟶ Fun[Λ[2,1], D] is a TKF by `0079`,
-  -- get Fun(S, Fun(Δ[n], D)) ⟶ Fun(S, Fun(Λ[2,1], D)) is a TKF by `0071`
+  intro _ _ i ⟨n⟩
   have := (horn_tkf_iff_quasicat D).1 (by infer_instance)
   have := (induced_tkf S _ _ ((internalHom.map Λ[2, 1].ι.op).app D)) this _ (.mk n)
   dsimp at this
   have H : Arrow.mk ((ihom S).map ((MonoidalClosed.pre Λ[2, 1].ι).app D)) ≅
       Arrow.mk ((internalHom.map Λ[2, 1].ι.op).app ((internalHom.obj (.op S)).obj D)) :=
     CategoryTheory.Comma.isoMk (ihom_iso' _ _ _) (ihom_iso' _ _ _)
-  exact HasLiftingProperty.of_arrow_iso_right ((boundary n).ι) H
+  exact HasLiftingProperty.of_arrow_iso_right ∂Δ[n].ι H
 
--- `0066`
-/- if D is a quasicat, then Fun(S, D) is -/
-instance internalHom_isQuasicategory (S D : SSet) [Quasicategory D] : Quasicategory ((internalHom.obj (.op S)).obj D) :=
-  (horn_tkf_iff_quasicat ((internalHom.obj (.op S)).obj D)).2 (fun_quasicat_aux S D)
+instance internalHom_isQuasicategory (S D : SSet) [Quasicategory D] :
+    Quasicategory ((internalHom.obj (.op S)).obj D) :=
+  (horn_tkf_iff_quasicat _).2 (aux S D)
 
 end SSet
