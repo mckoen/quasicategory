@@ -30,7 +30,7 @@ def to_S
 lemma newSquare
     (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
     CommSq (to_S α β sq) (∂Δ[m].ι ◫ Λ[2, 1].ι) S.proj (Δ[2] ⊗ Δ[m]).proj :=
-  CommSq.mk (Limits.IsTerminal.hom_ext isTerminal
+  CommSq.mk (isTerminalZero.hom_ext
     ((to_S α β sq) ≫ S.proj) ((∂Δ[m].ι ◫ Λ[2, 1].ι) ≫ (Δ[2] ⊗ Δ[m]).proj))
 
 lemma sqLift_of_newSqLift
@@ -67,7 +67,7 @@ lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)
     (sq : CommSq f (∂Δ[m].ι ◫ Λ[2, 1].ι) S.proj g) :
     (newSq f).HasLift → sq.HasLift := by
   intro ⟨lift, fac_left, fac_right⟩
-  refine ⟨MonoidalClosed.uncurry lift, ?_, Limits.IsTerminal.hom_ext isTerminal _ _⟩
+  refine ⟨MonoidalClosed.uncurry lift, ?_, isTerminalZero.hom_ext _ _⟩
   apply Limits.pushout.hom_ext
   · apply_fun curry
     simpa [curry_natural_left]
@@ -79,7 +79,7 @@ lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)
 -- `0079`
 /- S is a quasicat iff Fun(Δ[2], S) ⟶ Fun((Λ[2, 1] : SSet), S) is a trivial Kan fib -/
 instance horn_tkf_iff_quasicat (S : SSet) : Quasicategory S ↔
-    trivialKanFibration ((internalHom.map Λ[2, 1].ι.op).app S) := by
+    trivialFibration ((internalHom.map Λ[2, 1].ι.op).app S) := by
   rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_rlp_proj, morphism_rlp_iff,
     ← contains_innerAnodyne_iff_contains_pushout_maps]
   constructor
@@ -103,17 +103,17 @@ lemma induced_tkf_aux (B X Y : SSet) (p : X ⟶ Y)
 
 -- `0071` (special case of `0070`)
 /- if p : X ⟶ Y is a trivial Kan fib, then Fun(B,X) ⟶ Fun(B,Y) is -/
-instance induced_tkf (B X Y : SSet) (p : X ⟶ Y) (hp: trivialKanFibration p) :
-    trivialKanFibration ((internalHom.obj (.op B)).map p) := by
+instance induced_tkf (B X Y : SSet) (p : X ⟶ Y) (hp: trivialFibration p) :
+    trivialFibration ((internalHom.obj (.op B)).map p) := by
   intro _ _ i ⟨n⟩
-  rw [trivialKanFibration_eq_rlp_monomorphisms] at hp
+  rw [trivialFibration_eq_rlp_monomorphisms] at hp
   have := hp _ (boundaryInclusion_whisker_mono B n)
   apply induced_tkf_aux
 
 /- the map Fun(Δ[2], Fun(S, D)) ⟶ Fun(Λ[2,1], Fun(S, D)) is a trivial Kan fib -/
 open MonoidalClosed in
 def aux (S D : SSet) [Quasicategory D] :
-    trivialKanFibration ((internalHom.map Λ[2, 1].ι.op).app ((internalHom.obj (.op S)).obj D)) := by
+    trivialFibration ((internalHom.map Λ[2, 1].ι.op).app ((internalHom.obj (.op S)).obj D)) := by
   intro _ _ i ⟨n⟩
   have := (horn_tkf_iff_quasicat D).1 (by infer_instance)
   have := (induced_tkf S _ _ ((internalHom.map Λ[2, 1].ι.op).app D)) this _ (.mk n)

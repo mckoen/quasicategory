@@ -61,8 +61,8 @@ lemma mono_eq_bdryInclusions : monomorphisms SSet.{u} = saturation.{u} bdryInclu
     exact monomorphisms.infer_property _
 
 /-- `006Y` trivial Kan fibration iff rlp wrt all monomorphisms -/
-lemma trivialKanFibration_eq_rlp_monomorphisms :
-    trivialKanFibration = (monomorphisms SSet).rlp:= by
+lemma trivialFibration_eq_rlp_monomorphisms :
+    trivialFibration = (monomorphisms SSet).rlp:= by
   apply le_antisymm
   · intro _ _ _ h
     rw [morphism_rlp_iff, mono_eq_bdryInclusions, ← WeaklySaturated.le_iff]
@@ -74,30 +74,30 @@ lemma trivialKanFibration_eq_rlp_monomorphisms :
 
 /-- `006Z`(a), trivial Kan fibrations admit sections -/
 noncomputable
-def trivialKanFibration_section {X Y : SSet} (p : X ⟶ Y)
-    (hp : trivialKanFibration p) : Y ⟶ X := by
-  rw [trivialKanFibration_eq_rlp_monomorphisms] at hp
+def trivialFibration_section {X Y : SSet} (p : X ⟶ Y)
+    (hp : trivialFibration p) : Y ⟶ X := by
+  rw [trivialFibration_eq_rlp_monomorphisms] at hp
   have : (emptyIsInitial.to X) ≫ p = (emptyIsInitial.to Y) ≫ (𝟙 Y) :=
     Limits.IsInitial.hom_ext emptyIsInitial _ _
   exact ((hp _ (initial_mono Y emptyIsInitial)).sq_hasLift (CommSq.mk (this))).exists_lift.some.l
 
 /-- the above map is a section -/
-lemma trivialKanFibration_section_comp {X Y : SSet} (p : X ⟶ Y) (hp : trivialKanFibration p) :
-    trivialKanFibration_section p hp ≫ p = 𝟙 Y := by
-  rw [trivialKanFibration_eq_rlp_monomorphisms] at hp
+lemma trivialFibration_section_comp {X Y : SSet} (p : X ⟶ Y) (hp : trivialFibration p) :
+    trivialFibration_section p hp ≫ p = 𝟙 Y := by
+  rw [trivialFibration_eq_rlp_monomorphisms] at hp
   have : (emptyIsInitial.to X) ≫ p = (emptyIsInitial.to Y) ≫ (𝟙 Y) :=
     Limits.IsInitial.hom_ext emptyIsInitial _ _
   exact ((hp _ (initial_mono Y emptyIsInitial)).sq_hasLift (CommSq.mk (this))).exists_lift.some.fac_right
 
 /-
 /-- `050J` (1) -/
-instance kanComplex_of_trivialKanFibration {X Y : SSet.{0}}
-    (p : X ⟶ Y) (hp : trivialKanFibration p) :
+instance kanComplex_of_trivialFibration {X Y : SSet.{0}}
+    (p : X ⟶ Y) (hp : trivialFibration p) :
     KanComplex X → KanComplex Y := by
   intro h
   constructor --no longer works because Kan complex definition is no longer simple to work with
   intro n i σ₀
-  rw [trivialKanFibration_eq_rlp_monomorphisms.{w}] at hp
+  rw [trivialFibration_eq_rlp_monomorphisms.{w}] at hp
   dsimp [rlp] at hp
   have : (emptyIsInitial.to X) ≫ p = (emptyIsInitial.to Λ[n, i]) ≫ σ₀ :=
     Limits.IsInitial.hom_ext emptyIsInitial _ _
@@ -108,13 +108,13 @@ instance kanComplex_of_trivialKanFibration {X Y : SSet.{0}}
 -/
 
 /-- `050J` (3) --/
-instance quasicategory_of_trivialKanFibration {X Y : SSet.{0}}
-    (p : X ⟶ Y) (hp : trivialKanFibration p) :
+instance quasicategory_of_trivialFibration {X Y : SSet.{0}}
+    (p : X ⟶ Y) (hp : trivialFibration p) :
     Quasicategory X → Quasicategory Y := by
   intro h
   constructor
   intro n i σ₀ h0 hn
-  rw [trivialKanFibration_eq_rlp_monomorphisms] at hp
+  rw [trivialFibration_eq_rlp_monomorphisms] at hp
   dsimp [rlp] at hp
   have : (emptyIsInitial.to X) ≫ p = (emptyIsInitial.to Λ[n + 2, i]) ≫ σ₀ :=
     Limits.IsInitial.hom_ext emptyIsInitial _ _

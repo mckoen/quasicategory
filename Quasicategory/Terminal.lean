@@ -2,21 +2,21 @@
 import Mathlib.AlgebraicTopology.SimplicialSet.Basic
 import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplex
 
-open CategoryTheory Limits
+open CategoryTheory Limits IsTerminal
 
 open Simplicial
 
 def SimplexCategory.isTerminalZero : IsTerminal ⦋0⦌ := by
-  refine IsTerminal.ofUniqueHom (fun _ ↦ SimplexCategory.const _ ⦋0⦌ 0) ?_
-  · apply SimplexCategory.eq_const_to_zero
+  refine ofUniqueHom (fun _ ↦ const _ ⦋0⦌ 0) ?_
+  · apply eq_const_to_zero
 
-def SSet.isTerminal : IsTerminal (Δ[0] : SSet.{u}) where
+namespace SSet
+
+def isTerminalZero : IsTerminal (Δ[0] : SSet.{u}) where
   lift S := { app := fun X _ => ULift.up <| SimplexCategory.isTerminalZero.from _ }
   uniq := by intros ; ext ; apply ULift.ext ; apply SimplexCategory.isTerminalZero.hom_ext
 
-abbrev SSet.proj (S : SSet) : S ⟶ Δ[0] := Limits.IsTerminal.from isTerminal S
-
-namespace SSet
+abbrev proj (S : SSet) : S ⟶ Δ[0] := isTerminalZero.from S
 
 def empty : SSet where
   obj _ := Empty
