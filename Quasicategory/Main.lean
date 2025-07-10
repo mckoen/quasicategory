@@ -123,8 +123,4 @@ def aux (S D : SSet) [Quasicategory D] :
     CategoryTheory.Comma.isoMk (ihom_iso' _ _ _) (ihom_iso' _ _ _)
   exact HasLiftingProperty.of_arrow_iso_right ∂Δ[n].ι H
 
-instance internalHom_isQuasicategory (S D : SSet) [Quasicategory D] :
-    Quasicategory ((internalHom.obj (.op S)).obj D) :=
-  (horn_tkf_iff_quasicat _).2 (aux S D)
-
 end SSet
