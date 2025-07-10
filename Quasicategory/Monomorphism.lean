@@ -4,6 +4,7 @@ import Mathlib.CategoryTheory.Adhesive
 import Mathlib.CategoryTheory.MorphismProperty.FunctorCategory
 import Mathlib.CategoryTheory.Types.Monomorphisms
 import Quasicategory.TopCatModelCategory.SSet.Skeleton
+import Mathlib.AlgebraicTopology.SimplicialSet.CategoryWithFibrations
 
 universe w v u
 
@@ -77,48 +78,59 @@ noncomputable
 def trivialFibration_section {X Y : SSet} (p : X ⟶ Y)
     (hp : trivialFibration p) : Y ⟶ X := by
   rw [trivialFibration_eq_rlp_monomorphisms] at hp
-  have : (emptyIsInitial.to X) ≫ p = (emptyIsInitial.to Y) ≫ (𝟙 Y) :=
-    Limits.IsInitial.hom_ext emptyIsInitial _ _
-  exact ((hp _ (initial_mono Y emptyIsInitial)).sq_hasLift (CommSq.mk (this))).exists_lift.some.l
+  have : (isInitialEmpty.to X) ≫ p = (isInitialEmpty.to Y) ≫ (𝟙 Y) :=
+    Limits.IsInitial.hom_ext isInitialEmpty _ _
+  exact ((hp _ (initial_mono Y isInitialEmpty)).sq_hasLift (CommSq.mk (this))).exists_lift.some.l
 
-/-- the above map is a section -/
-lemma trivialFibration_section_comp {X Y : SSet} (p : X ⟶ Y) (hp : trivialFibration p) :
-    trivialFibration_section p hp ≫ p = 𝟙 Y := by
-  rw [trivialFibration_eq_rlp_monomorphisms] at hp
-  have : (emptyIsInitial.to X) ≫ p = (emptyIsInitial.to Y) ≫ (𝟙 Y) :=
-    Limits.IsInitial.hom_ext emptyIsInitial _ _
-  exact ((hp _ (initial_mono Y emptyIsInitial)).sq_hasLift (CommSq.mk (this))).exists_lift.some.fac_right
+/-- `006Z`(a), trivial Kan fibrations are split epimorphisms -/
+noncomputable
+instance {X Y : SSet} (p : X ⟶ Y) (hp : trivialFibration p) : SplitEpi p where
+  section_ := trivialFibration_section p hp
+  id := by
+    rw [trivialFibration_eq_rlp_monomorphisms] at hp
+    exact ((hp _ (initial_mono Y isInitialEmpty)).sq_hasLift (CommSq.mk (isInitialEmpty.hom_ext _ _))).exists_lift.some.fac_right
 
-/-
+namespace modelCategoryQuillen
+
 /-- `050J` (1) -/
-instance kanComplex_of_trivialFibration {X Y : SSet.{0}}
+instance kanComplex_of_trivialFibration {X Y : SSet}
     (p : X ⟶ Y) (hp : trivialFibration p) :
     KanComplex X → KanComplex Y := by
-  intro h
-  constructor --no longer works because Kan complex definition is no longer simple to work with
-  intro n i σ₀
-  rw [trivialFibration_eq_rlp_monomorphisms.{w}] at hp
+  intro hX
+  dsimp [KanComplex]
+  rw [HomotopicalAlgebra.isFibrant_iff Y, modelCategoryQuillen.fibration_iff] --no longer works because Kan complex definition is no longer simple to work with
+  rw [trivialFibration_eq_rlp_monomorphisms] at hp
+  intro _ _ _ h
   dsimp [rlp] at hp
-  have : (emptyIsInitial.to X) ≫ p = (emptyIsInitial.to Λ[n, i]) ≫ σ₀ :=
-    Limits.IsInitial.hom_ext emptyIsInitial _ _
-  have τ₀ := ((hp _ (initial_mono Λ[n, i] emptyIsInitial)).sq_hasLift (CommSq.mk (this))).exists_lift.some
-  obtain ⟨τ, hτ⟩ := h.hornFilling τ₀.l
-  use τ ≫ p
-  rw [← Category.assoc, ← hτ, τ₀.fac_right]
--/
+  obtain ⟨_, ⟨h, hw⟩⟩ := h
+  simp at h
+  obtain ⟨n, _, h⟩ := h
+  have := h hw
+  rw [ofHoms_iff] at this
+  obtain ⟨i, hi⟩ := this
+  rw [Arrow.hasLiftingProperty_iff, hi, ← Arrow.hasLiftingProperty_iff]
+  constructor
+  intro σ₀ g sq
+  have : (isInitialEmpty.to X) ≫ p = (isInitialEmpty.to Λ[n + 1, i].toSSet) ≫ σ₀ := isInitialEmpty.hom_ext _ _
+  have τ₀ := ((hp _ (initial_mono Λ[n + 1, i] isInitialEmpty)).sq_hasLift (CommSq.mk this)).exists_lift.some
+  obtain ⟨τ, hτ⟩ := hX.hornFilling τ₀.l
+  constructor
+  constructor
+  exact ⟨τ ≫ p, by rw [← Category.assoc, ← hτ, τ₀.fac_right], Limits.terminal.hom_ext _ _⟩
+
+end modelCategoryQuillen
 
 /-- `050J` (3) --/
-instance quasicategory_of_trivialFibration {X Y : SSet.{0}}
+instance quasicategory_of_trivialFibration {X Y : SSet}
     (p : X ⟶ Y) (hp : trivialFibration p) :
     Quasicategory X → Quasicategory Y := by
   intro h
   constructor
   intro n i σ₀ h0 hn
   rw [trivialFibration_eq_rlp_monomorphisms] at hp
-  dsimp [rlp] at hp
-  have : (emptyIsInitial.to X) ≫ p = (emptyIsInitial.to Λ[n + 2, i]) ≫ σ₀ :=
-    Limits.IsInitial.hom_ext emptyIsInitial _ _
-  have τ₀ := ((hp _ (initial_mono Λ[n + 2, i] emptyIsInitial)).sq_hasLift (CommSq.mk (this))).exists_lift.some
+  have : (isInitialEmpty.to X) ≫ p = (isInitialEmpty.to Λ[n + 2, i]) ≫ σ₀ :=
+    isInitialEmpty.hom_ext _ _
+  have τ₀ := ((hp _ (initial_mono Λ[n + 2, i] isInitialEmpty)).sq_hasLift (CommSq.mk (this))).exists_lift.some
   obtain ⟨τ, hτ⟩ := h.hornFilling h0 hn τ₀.l
   use τ ≫ p
   rw [← Category.assoc, ← hτ, τ₀.fac_right]

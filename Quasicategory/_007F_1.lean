@@ -253,7 +253,7 @@ def r_aux : Fin 3 × Fin (n + 1) →o Fin (n + 1) where
 
 open stdSimplex SimplexCategory in
 def map_mk_from_prod {n m k : ℕ} (f : Fin (n + 1) × Fin (m + 1) →o Fin (k + 1)) : Δ[n] ⊗ Δ[m] ⟶ Δ[k] := by
-  refine ⟨fun x ⟨c, d⟩ ↦ ⟨mkHom ⟨fun a ↦ f ((stdSimplex.asOrderHom c) a, (stdSimplex.asOrderHom d) a), ?_⟩⟩, ?_⟩
+  refine ⟨fun x ⟨c, d⟩ ↦ ⟨SimplexCategory.mkHom ⟨fun a ↦ f ((stdSimplex.asOrderHom c) a, (stdSimplex.asOrderHom d) a), ?_⟩⟩, ?_⟩
   · intro j k hjk
     exact f.monotone ⟨(stdSimplex.asOrderHom c).monotone hjk, (stdSimplex.asOrderHom d).monotone hjk⟩
   · aesop

@@ -5,7 +5,7 @@ import Quasicategory.Main
 
 namespace SSet
 
-open CategoryTheory Simplicial MonoidalCategory MonoidalClosed
+open CategoryTheory MonoidalCategory MonoidalClosed
 
 def QCat := FullSubcategory Quasicategory
 
@@ -18,7 +18,7 @@ instance : MonoidalPredicate Quasicategory where
     hornFilling' _ _ σ₀ h0 hn := by
       obtain ⟨σ_X, _⟩ := hornFilling h0 hn (σ₀ ≫ fst ..)
       obtain ⟨σ_Y, _⟩ := hornFilling h0 hn (σ₀ ≫ snd ..)
-      use ChosenFiniteProducts.lift σ_X σ_Y
+      use lift σ_X σ_Y
       aesop_cat }
 
 instance ihom_isQuasicategory {X Y : SSet} [Quasicategory Y] :
