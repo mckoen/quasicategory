@@ -1,4 +1,7 @@
 import Quasicategory._007F
+import Quasicategory.Quasicategory
+import Quasicategory.InternalHom
+import Mathlib.CategoryTheory.LiftingProperties.ParametrizedAdjunction
 
 universe w
 
@@ -9,7 +12,8 @@ open CategoryTheory Simplicial MorphismProperty MonoidalCategory MonoidalClosed
 open PushoutProduct
 
 variable {S : SSet} {m : ℕ}
-  (α : ∂Δ[m].toSSet ⟶ (ihom Δ[2]).obj S) (β : Δ[m] ⟶ (ihom Λ[2, 1].toSSet).obj S)
+  (α : ∂Δ[m].toSSet ⟶ (ihom Δ[2]).obj S)
+  (β : Δ[m] ⟶ (ihom Λ[2, 1].toSSet).obj S)
 
 lemma commSq_uncurry (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
     CommSq (Λ[2, 1].ι ▷ ∂Δ[m]) (Λ[2, 1].toSSet ◁ ∂Δ[m].ι)
@@ -29,9 +33,9 @@ def to_S
 -- the new square in `0079`
 lemma newSquare
     (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
-    CommSq (to_S α β sq) (∂Δ[m].ι ◫ Λ[2, 1].ι) S.proj (Δ[2] ⊗ Δ[m]).proj :=
+    CommSq (to_S α β sq) (∂Δ[m].ι ◫ Λ[2, 1].ι) (isTerminalZero.from S) (isTerminalZero.from (Δ[2] ⊗ Δ[m])) :=
   CommSq.mk (isTerminalZero.hom_ext
-    ((to_S α β sq) ≫ S.proj) ((∂Δ[m].ι ◫ Λ[2, 1].ι) ≫ (Δ[2] ⊗ Δ[m]).proj))
+    ((to_S α β sq) ≫ (isTerminalZero.from S)) ((∂Δ[m].ι ◫ Λ[2, 1].ι) ≫ (isTerminalZero.from (Δ[2] ⊗ Δ[m]))))
 
 lemma sqLift_of_newSqLift
     (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
@@ -61,10 +65,10 @@ def newSq
   exact Limits.pushout.condition_assoc f
 
 -- iff the pushout diagram has an extension, then the square has a lift
-lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)
+lemma newSqLift_of_sqLift {S : SSet} {m : ℕ}
     (f : PushoutProduct.pt ∂Δ[m].ι Λ[2, 1].ι ⟶ S)
     (g : Δ[2] ⊗ Δ[m] ⟶ Δ[0])
-    (sq : CommSq f (∂Δ[m].ι ◫ Λ[2, 1].ι) S.proj g) :
+    (sq : CommSq f (∂Δ[m].ι ◫ Λ[2, 1].ι) (isTerminalZero.from S) g) :
     (newSq f).HasLift → sq.HasLift := by
   intro ⟨lift, fac_left, fac_right⟩
   refine ⟨MonoidalClosed.uncurry lift, ?_, isTerminalZero.hom_ext _ _⟩
@@ -77,50 +81,98 @@ lemma newSqLift_of_sqLift (S : SSet) (m : ℕ)
     rfl
 
 -- `0079`
-/- S is a quasicat iff Fun(Δ[2], S) ⟶ Fun((Λ[2, 1] : SSet), S) is a trivial Kan fib -/
-instance horn_tkf_iff_quasicat (S : SSet) : Quasicategory S ↔
-    trivialFibration ((internalHom.map Λ[2, 1].ι.op).app S) := by
-  rw [← quasicat_iff_extension_wrt_innerAnodyne, extension_iff_rlp_proj, morphism_rlp_iff,
-    ← contains_innerAnodyne_iff_contains_pushout_maps]
+/-- `S` is a quasi-category iff `ihom(Δ[2], S) ⟶ ihom(Λ[2, 1], S)` is a trivial fibration. -/
+instance quasicategory_iff_internalHom_horn_trivialFibration (S : SSet) :
+    Quasicategory S ↔
+      trivialFibration ((internalHom.map Λ[2, 1].ι.op).app S) := by
+  rw [quasicategory_iff_from_innerAnodyne_rlp, morphism_rlp_iff,
+    ← contains_innerAnodyne_iff_contains_pushout_maps, le_llp_iff_le_rlp, morphism_le_iff]
   constructor
   · intro h _ _ _ ⟨m⟩
     constructor
     intro α β sq
-    exact sqLift_of_newSqLift α β sq ((h _ (.mk m) _ ⟨⟩).sq_hasLift (newSquare _ _ sq))
-  · intro h _ _ _ ⟨m⟩ _ _ _ ⟨⟩
+    exact sqLift_of_newSqLift α β sq ((h _ (.mk m)).sq_hasLift (newSquare _ _ sq))
+  · intro h _ _ _ ⟨m⟩
     constructor
     intro f g sq
-    exact (newSqLift_of_sqLift S m f g sq) ((h _ (.mk m)).sq_hasLift (newSq f))
+    exact newSqLift_of_sqLift f g sq ((h _ (.mk m)).sq_hasLift (newSq f))
 
 /- changing the square to apply the lifting property of p
    on the monomorphism `(B ◁ boundaryInclusion n)` -/
 lemma induced_tkf_aux (B X Y : SSet) (p : X ⟶ Y)
     (n : ℕ) [h : HasLiftingProperty (B ◁ ∂Δ[n].ι) p] :
-    HasLiftingProperty ∂Δ[n].ι ((internalHom.obj (.op B)).map p) where
+    HasLiftingProperty ∂Δ[n].ι ((ihom B).map p) where
   sq_hasLift sq :=
     (CommSq.left_adjoint_hasLift_iff sq (FunctorToTypes.adj B)).1
       (h.sq_hasLift (sq.left_adjoint (Closed.adj)))
 
 -- `0071` (special case of `0070`)
-/- if p : X ⟶ Y is a trivial Kan fib, then Fun(B,X) ⟶ Fun(B,Y) is -/
+/- if `p : X ⟶ Y` is a trivial fibration, then `ihom(B, X) ⟶ ihom(B, Y)` is -/
 instance induced_tkf (B X Y : SSet) (p : X ⟶ Y) (hp: trivialFibration p) :
-    trivialFibration ((internalHom.obj (.op B)).map p) := by
+    trivialFibration ((ihom B).map p) := by
   intro _ _ i ⟨n⟩
   rw [trivialFibration_eq_rlp_monomorphisms] at hp
   have := hp _ (boundaryInclusion_whisker_mono B n)
   apply induced_tkf_aux
 
-/- the map Fun(Δ[2], Fun(S, D)) ⟶ Fun(Λ[2,1], Fun(S, D)) is a trivial Kan fib -/
 open MonoidalClosed in
+/-- the map `ihom(Δ[2], ihom(S, D)) ⟶ ihom(Λ[2, 1], ihom(S, D))` is a trivial fibration. -/
 def aux (S D : SSet) [Quasicategory D] :
-    trivialFibration ((internalHom.map Λ[2, 1].ι.op).app ((internalHom.obj (.op S)).obj D)) := by
+    trivialFibration ((internalHom.map Λ[2, 1].ι.op).app ((ihom S).obj D)) := by
   intro _ _ i ⟨n⟩
-  have := (horn_tkf_iff_quasicat D).1 (by infer_instance)
+  have := (quasicategory_iff_internalHom_horn_trivialFibration D).1 (by infer_instance)
   have := (induced_tkf S _ _ ((internalHom.map Λ[2, 1].ι.op).app D)) this _ (.mk n)
   dsimp at this
   have H : Arrow.mk ((ihom S).map ((MonoidalClosed.pre Λ[2, 1].ι).app D)) ≅
       Arrow.mk ((internalHom.map Λ[2, 1].ι.op).app ((internalHom.obj (.op S)).obj D)) :=
     CategoryTheory.Comma.isoMk (ihom_iso' _ _ _) (ihom_iso' _ _ _)
   exact HasLiftingProperty.of_arrow_iso_right ∂Δ[n].ι H
+
+noncomputable
+def bdryHornPushoutProduct (m : ℕ) : Functor.PushoutObjObj (curriedTensor SSet) Λ[2, 1].ι ∂Δ[m].ι :=
+  Functor.PushoutObjObj.ofHasPushout _ _ _
+
+noncomputable
+def hornFromPullbackPower (S : SSet) : Functor.PullbackObjObj internalHom Λ[2, 1].ι (isTerminalZero.from S) :=
+  Functor.PullbackObjObj.ofHasPullback _ _ _
+
+/-
+#check ParametrizedAdjunction.liftStructEquiv internalHomAdjunction₂ (bdryHornPushoutProduct m) (hornFromPullbackPower S)
+
+#check ParametrizedAdjunction.hasLiftingProperty_iff internalHomAdjunction₂ (bdryHornPushoutProduct m) (hornFromPullbackPower S)
+
+/-
+def : Limits.pullback ((ihom Λ[2, 1].toSSet).map (isTerminalZero.from S)) ((pre Λ[2, 1].ι).app Δ[0]) ≅
+  (ihom Λ[2, 1].toSSet).obj S
+-/
+
+noncomputable
+def hornFromPullbackPower_π_arrowIso :
+    Arrow.mk (S.hornFromPullbackPower.π) ≅ Arrow.mk ((internalHom.map Λ[2, 1].ι.op).app S) := by
+  apply Arrow.isoMk
+  · sorry
+  · exact Iso.refl _
+  · simp [hornFromPullbackPower]
+    have := isProductOfIsTerminalIsPullback
+    sorry
+
+-- `0079`
+/-- `S` is a quasi-category iff `ihom(Δ[2], S) ⟶ ihom(Λ[2, 1], S)` is a trivial fibration. -/
+instance quasicategory_iff_internalHom_horn_trivialFibration' (S : SSet) :
+    Quasicategory S ↔
+      trivialFibration ((internalHom.map Λ[2, 1].ι.op).app S) := by
+  rw [quasicategory_iff_from_innerAnodyne_rlp, morphism_rlp_iff,
+    ← contains_innerAnodyne_iff_contains_pushout_maps, le_llp_iff_le_rlp, morphism_le_iff]
+  constructor
+  · intro h _ _ _ ⟨m⟩
+    have := ParametrizedAdjunction.hasLiftingProperty_iff internalHomAdjunction₂ (bdryHornPushoutProduct m) (hornFromPullbackPower S)
+    dsimp [rlp] at h
+    sorry
+  · intro h _ _ _ ⟨m⟩
+
+    sorry
+/-
+-/
+-/
 
 end SSet

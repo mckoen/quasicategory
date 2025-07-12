@@ -59,10 +59,11 @@ def σ.objMk₂ (i : Σₗ (b : Fin n), Fin b.succ) : Δ[2] _⦋n + 1⦌  :=
             apply this.not_le
             exact Fin.castSucc_le_succ j
           next h_2 =>
-            simp_all only [not_le, Fin.isValue]
-            split
-            next h_3 => simp_all only [Fin.isValue, le_refl]
-            next h_3 => simp_all only [not_le, Fin.isValue, Fin.reduceLE]
+            aesop
+            --simp_all only [not_le, Fin.isValue]
+            --split
+            --next h_3 => simp_all only [Fin.isValue, le_refl]
+            --next h_3 => simp_all only [not_le, Fin.isValue, Fin.reduceLE]
         · next h =>
           rename_i q
           have : ¬j.succ ≤ i.1.succ := by

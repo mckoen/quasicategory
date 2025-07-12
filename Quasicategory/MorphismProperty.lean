@@ -1,5 +1,6 @@
 import Mathlib.CategoryTheory.SmallObject.TransfiniteCompositionLifting
 import Mathlib.SetTheory.Cardinal.Order
+import Mathlib.CategoryTheory.SmallObject.Basic
 
 universe w v u
 
@@ -11,18 +12,51 @@ namespace MorphismProperty
 
 variable (T : MorphismProperty C)
 
-inductive Morphism {A B : C} (p : A ⟶ B) : {X Y : C} → (X ⟶ Y) → Prop
+inductive Morphism {X Y : C} (p : X ⟶ Y) : {A B : C} → (A ⟶ B) → Prop
   | mk : (Morphism p) p
 
+section Morphism
+
+variable {X Y : C} (p : X ⟶ Y)
+
 /-- the class of a single morphism `p`. -/
-def isMorphism {X Y : C} (p : X ⟶ Y) : MorphismProperty C := fun _ _ i ↦ (Morphism p) i
+def morphism : MorphismProperty C := fun _ _ i ↦ (Morphism p) i
 
 /-- a morphism `p` has rlp wrt a class `T` of morphisms iff every morphism in `T` has llp wrt `p`. -/
-lemma morphism_rlp_iff {X Y : C} (p : X ⟶ Y) : T.rlp p ↔ T ≤ (isMorphism p).llp :=
+lemma morphism_rlp_iff : T.rlp p ↔ T ≤ (morphism p).llp :=
   ⟨fun hp _ _ _ hi _ _ _ ⟨⟩ ↦ hp _ hi, fun h _ _ i hi ↦ h i hi _ .mk⟩
 
-lemma morphism_llp_iff {X Y : C} (p : X ⟶ Y) : T.llp p ↔ T ≤ (isMorphism p).rlp :=
+lemma morphism_llp_iff : T.llp p ↔ T ≤ (morphism p).rlp :=
   ⟨fun hp _ _ _ hi _ _ _ ⟨⟩ ↦ hp _ hi, fun h _ _ i hi ↦ h i hi _ .mk⟩
+
+lemma morphism_le_iff : morphism p ≤ T ↔ T p :=
+  ⟨fun h ↦ h _ .mk, fun h _ _ _ ⟨⟩ ↦ h⟩
+
+end Morphism
+
+section LiftingProperty
+
+open Limits
+
+variable {X Y : C} {p : X ⟶ Y}
+
+variable [HasInitial C] [InitialMonoClass C]
+
+@[simp]
+noncomputable
+def _root_.CategoryTheory.HasLiftingProperty.section_of_initial_to_left
+    (h : HasLiftingProperty (initial.to Y) p) : Y ⟶ X :=
+  (h.sq_hasLift (CommSq.mk (initial.hom_ext (initial.to X ≫ p) (initial.to Y ≫ 𝟙 Y)))).exists_lift.some.l
+
+noncomputable
+instance splitEpi_of_monomorphisms_rlp
+    (hp : (monomorphisms C).rlp p) : SplitEpi p where
+  section_ := (hp _ (initial.mono_from _ _)).section_of_initial_to_left
+  id := CategoryTheory.CommSq.LiftStruct.fac_right _
+
+end LiftingProperty
+
+section WeaklySaturated
 
 class WeaklySaturated : Prop where
   IsStableUnderCobaseChange : T.IsStableUnderCobaseChange
@@ -92,6 +126,17 @@ lemma WeaklySaturated.le_iff (S : MorphismProperty C) [WeaklySaturated.{w} S] : 
     | transfinite J f hF h' h'' =>
       exact (WeaklySaturated.IsStableUnderTransfiniteComposition.isStableUnderTransfiniteCompositionOfShape J).le _ ⟨hF, h''⟩
   · exact T.le_saturation.trans
+
+lemma llp_rlp_eq_saturation {T : MorphismProperty C} [HasSmallObjectArgument.{w} T] :
+    T.rlp.llp = saturation.{w} T := by
+  apply le_antisymm
+  · rw [llp_rlp_of_hasSmallObjectArgument, retracts_le_iff,
+      transfiniteCompositions_le_iff, pushouts_le_iff, coproducts_le_iff]
+    exact le_saturation _
+  · rw [← WeaklySaturated.le_iff]
+    exact T.le_llp_rlp
+
+end WeaklySaturated
 
 end MorphismProperty
 

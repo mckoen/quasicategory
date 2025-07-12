@@ -1,41 +1,79 @@
-import Mathlib.AlgebraicTopology.Quasicategory.Basic
-import Mathlib.CategoryTheory.Closed.Enrichment
-import Mathlib.CategoryTheory.Monoidal.Subcategory
-import Quasicategory.Main
+import Quasicategory.Basic
+import Quasicategory.Monomorphism
+import Mathlib.AlgebraicTopology.SimplicialSet.CategoryWithFibrations
+
+open CategoryTheory Simplicial MorphismProperty
 
 namespace SSet
 
-open CategoryTheory MonoidalCategory MonoidalClosed
+--- `01BB` S is a quasicategory iff S ⟶ Δ[0] is an inner fibration -/
+lemma quasicategory_iff_from_innerFibration {S : SSet} :
+    Quasicategory S ↔ innerFibration (isTerminalZero.from S) := by
+  constructor
+  · intro h _ _ p ⟨h0, hn⟩
+    constructor
+    intro f _ _
+    obtain ⟨l, hl⟩ := h.hornFilling h0 hn f
+    exact ⟨l, hl.symm, isTerminalZero.hom_ext _ _⟩
+  · intro h
+    constructor
+    intro n i σ₀ h0 hn
+    have := CommSq.mk (isTerminalZero.hom_ext
+      (σ₀ ≫ isTerminalZero.from _) (Λ[n + 2, i].ι ≫ isTerminalZero.from _))
+    have lift := ((h _ (.mk h0 hn)).sq_hasLift this).exists_lift.some
+    exact ⟨lift.l, lift.fac_left.symm⟩
 
-def QCat := FullSubcategory Quasicategory
+-- `007E`
+-- quasicategory iff extension property wrt every inner anodyne morphism
+lemma quasicategory_iff_from_innerAnodyne_rlp {S : SSet} :
+    Quasicategory S ↔ innerAnodyne.rlp (isTerminalZero.from S) := by
+  rw [quasicategory_iff_from_innerFibration, rlp_llp_rlp]
 
-instance : Category QCat := FullSubcategory.category Quasicategory
+-- `01BJ` if Y is a quasicategory and X ⟶ Y is an inner fibration, then X is a quasicategory
+lemma quasicategory_of_innerFibration {X Y : SSet} (p : X ⟶ Y) (hp : innerFibration p) :
+    Quasicategory Y → Quasicategory X := fun h ↦ by
+  rw [quasicategory_iff_from_innerFibration] at h ⊢
+  apply comp_mem _ p (isTerminalZero.from Y) hp h
 
-open Quasicategory ChosenFiniteProducts in
-instance : MonoidalPredicate Quasicategory where
-  prop_id := { hornFilling' _ _ _ _ _ := ⟨toUnit _, by aesop_cat⟩ }
-  prop_tensor _ _ := {
-    hornFilling' _ _ σ₀ h0 hn := by
-      obtain ⟨σ_X, _⟩ := hornFilling h0 hn (σ₀ ≫ fst ..)
-      obtain ⟨σ_Y, _⟩ := hornFilling h0 hn (σ₀ ≫ snd ..)
-      use lift σ_X σ_Y
-      aesop_cat }
+/-- `050J` (3) --/
+instance quasicategory_of_trivialFibration {X Y : SSet}
+    (p : X ⟶ Y) (hp : trivialFibration p) :
+    Quasicategory X → Quasicategory Y := by
+  intro h
+  constructor
+  intro n i σ₀ h0 hn
+  rw [trivialFibration_eq_rlp_monomorphisms] at hp
+  have : (isInitialEmpty.to X) ≫ p = (isInitialEmpty.to Λ[n + 2, i]) ≫ σ₀ := isInitialEmpty.hom_ext _ _
+  have τ₀ := ((hp _ (initial_mono Λ[n + 2, i] isInitialEmpty)).sq_hasLift (CommSq.mk (this))).exists_lift.some
+  obtain ⟨τ, hτ⟩ := h.hornFilling h0 hn τ₀.l
+  use τ ≫ p
+  rw [← Category.assoc, ← hτ, τ₀.fac_right]
 
-instance ihom_isQuasicategory {X Y : SSet} [Quasicategory Y] :
-    Quasicategory ((ihom X).obj Y) :=
-  (horn_tkf_iff_quasicat _).2 (aux X Y)
+namespace modelCategoryQuillen
 
-instance : ClosedPredicate Quasicategory where
-  prop_ihom _ _ := ihom_isQuasicategory
+/-- `050J` (1) -/
+instance kanComplex_of_trivialFibration {X Y : SSet}
+    (p : X ⟶ Y) (hp : trivialFibration p) :
+    KanComplex X → KanComplex Y := by
+  intro hX
+  dsimp [KanComplex]
+  rw [HomotopicalAlgebra.isFibrant_iff Y, modelCategoryQuillen.fibration_iff] --no longer works because Kan complex definition is no longer simple to work with
+  rw [trivialFibration_eq_rlp_monomorphisms] at hp
+  intro _ _ _ h
+  obtain ⟨_, ⟨h, hw⟩⟩ := h
+  simp at h
+  obtain ⟨n, _, h⟩ := h
+  have := h hw
+  rw [ofHoms_iff] at this
+  obtain ⟨i, hi⟩ := this
+  rw [Arrow.hasLiftingProperty_iff, hi, ← Arrow.hasLiftingProperty_iff]
+  constructor
+  intro σ₀ g sq
+  have : (isInitialEmpty.to X) ≫ p = (isInitialEmpty.to Λ[n + 1, i].toSSet) ≫ σ₀ := isInitialEmpty.hom_ext _ _
+  have τ₀ := ((hp _ (initial_mono Λ[n + 1, i] isInitialEmpty)).sq_hasLift (CommSq.mk this)).exists_lift.some
+  obtain ⟨τ, hτ⟩ := hX.hornFilling τ₀.l
+  constructor
+  constructor
+  exact ⟨τ ≫ p, by rw [← Category.assoc, ← hτ, τ₀.fac_right], Limits.terminal.hom_ext _ _⟩
 
-noncomputable section
-
-instance : MonoidalCategory QCat := fullMonoidalSubcategory Quasicategory
-
-instance : MonoidalClosed QCat := fullMonoidalClosedSubcategory Quasicategory
-
-instance : EnrichedOrdinaryCategory QCat QCat := enrichedOrdinaryCategorySelf QCat
-
-instance : EnrichedCategory QCat QCat := EnrichedOrdinaryCategory.toEnrichedCategory
-
-end
+end modelCategoryQuillen

@@ -7,46 +7,6 @@ open CategoryTheory Simplicial MonoidalCategory MonoidalClosed
 
 namespace SSet
 
-instance : MonoidalClosed SSet := by infer_instance
-
-open FunctorToTypes
-
-/-- If an initial object `I` exists in a CCC, then `A ⨯ I ≅ I`. -/
-@[simps]
-noncomputable
-def zeroMul {I : SSet} (t : Limits.IsInitial I) : A ⊗ I ≅ I where
-  hom := prod.snd
-  inv := t.to _
-  hom_inv_id := by
-    have : (prod.snd : A ⊗ I ⟶ I) = MonoidalClosed.uncurry (t.to _) := by
-      rw [← curry_eq_iff]
-      apply t.hom_ext
-    rw [this, ← uncurry_natural_right, ← eq_curry_iff]
-    apply t.hom_ext
-  inv_hom_id := t.hom_ext _ _
-
-instance prod.mono_lift_of_mono_left {W X Y : SSet} (f : W ⟶ X) (g : W ⟶ Y)
-    [Mono f] : Mono (prod.lift f g) :=
-  mono_of_mono_fac <| prod.lift_fst _ _
-
-instance prod.mono_lift_of_mono_right {W X Y : SSet} (f : W ⟶ X) (g : W ⟶ Y)
-    [Mono g] : Mono (prod.lift f g) :=
-  mono_of_mono_fac <| prod.lift_snd _ _
-
-theorem strict_initial {A I : SSet} (t : Limits.IsInitial I) (f : A ⟶ I) : IsIso f := by
-  haveI : Mono (prod.lift (𝟙 A) f ≫ (zeroMul t).hom) := mono_comp _ _
-  rw [zeroMul_hom, prod.lift_snd] at this
-  haveI : IsSplitEpi f := IsSplitEpi.mk' ⟨t.to _, t.hom_ext _ _⟩
-  apply isIso_of_mono_of_isSplitEpi
-
-theorem initial_mono {I : SSet} (B : SSet) (t : Limits.IsInitial I) : Mono (t.to B) :=
-  ⟨fun g h _ => by
-    haveI := strict_initial t g
-    haveI := strict_initial t h
-    exact eq_of_inv_eq_inv (t.hom_ext _ _)⟩
-
-noncomputable section
-
 @[ext]
 lemma ihom_ext (Y Z : SSet) (n : SimplexCategoryᵒᵖ)
     (a b : (((ihom Y).obj Z)).obj n) : a.app = b.app → a = b := fun h ↦ by
@@ -59,6 +19,7 @@ lemma ihom_ihom_ext (X Y Z : SSet) (n : SimplexCategoryᵒᵖ)
   apply Functor.functorHom_ext
   intro m f; exact congr_fun (congr_fun h m) f
 
+noncomputable
 def ihom_iso_hom (X Y Z : SSet) : (ihom X).obj ((ihom Y).obj Z) ⟶ (ihom (X ⊗ Y)).obj Z where
   app := fun n x ↦ by
     refine ⟨fun m f ⟨Xm, Ym⟩ ↦ (x.app m f Xm).app m (𝟙 m) Ym, ?_⟩
@@ -87,6 +48,7 @@ def ihom_iso_inv (X Y Z : SSet) : (ihom (X ⊗ Y)).obj Z ⟶ (ihom X).obj ((ihom
       simp [ihom, Closed.rightAdj, FunctorToTypes.rightAdj, Functor.functorHom, Functor.homObjFunctor]
 
 /- [X, [Y, Z]] ≅ [X ⊗ Y, Z] -/
+noncomputable
 def ihom_iso (X Y Z : SSet) : (ihom X).obj ((ihom Y).obj Z) ≅ (ihom (X ⊗ Y)).obj Z where
   hom := ihom_iso_hom X Y Z
   inv := ihom_iso_inv X Y Z
@@ -122,6 +84,7 @@ lemma ihom_braid_inv_eq {X Y Z : SSet} {n m : SimplexCategoryᵒᵖ} {f : n ⟶ 
   simp [Functor.functorHom]
 
 /- [X ⊗ Y, Z] ≅ [Y ⊗ X, Z] -/
+noncomputable
 def ihom_braid_iso (X Y Z : SSet) : (ihom (X ⊗ Y)).obj Z ≅ (ihom (Y ⊗ X)).obj Z where
   hom := (MonoidalClosed.pre (β_ X Y).inv).app Z
   inv := (MonoidalClosed.pre (β_ X Y).hom).app Z
@@ -141,9 +104,8 @@ def ihom_braid_iso (X Y Z : SSet) : (ihom (X ⊗ Y)).obj Z ≅ (ihom (Y ⊗ X)).
     rfl
 
 /- [X, [Y, Z]] ≅ [X ⊗ Y, Z] ≅ [Y ⊗ X, Z] ≅ [Y, [X, Z]] -/
+noncomputable
 def ihom_iso' (X Y Z : SSet) : (ihom X).obj ((ihom Y).obj Z) ≅ (ihom Y).obj ((ihom X).obj Z) :=
   (ihom_iso X Y Z) ≪≫ (ihom_braid_iso X Y Z) ≪≫ (ihom_iso Y X Z).symm
-
-end
 
 end SSet

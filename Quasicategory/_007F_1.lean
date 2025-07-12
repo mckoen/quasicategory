@@ -188,7 +188,7 @@ instance S.WeaklySaturated : WeaklySaturated.{w} S.{w} where
 lemma bdryInclusions_le_S : bdryInclusions ≤ S := fun _ _ _ ⟨_⟩ ↦ .of _ (.mk _)
 
 lemma monomorphisms_le_S : monomorphisms SSet.{u} ≤ S.{u} := by
-  rw [mono_eq_bdryInclusions, ← WeaklySaturated.le_iff]
+  rw [monomorphism_eq_saturation_bdryInclusions, ← WeaklySaturated.le_iff]
   exact bdryInclusions_le_S
 
 variable {n : ℕ} (i : Fin (n + 1))
