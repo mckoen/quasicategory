@@ -4,7 +4,7 @@ import Quasicategory.MorphismProperty
 import Quasicategory.Terminal
 import Quasicategory.TopCatModelCategory.SSet.SmallObject
 
-universe w v u
+universe u
 
 namespace SSet
 
@@ -67,5 +67,6 @@ instance isCardinalForSmallObjectArgument_innerHornInclusions :
 instance : HasSmallObjectArgument.{u} innerHornInclusions.{u} where
   exists_cardinal := ⟨Cardinal.aleph0.{u}, inferInstance, inferInstance, inferInstance⟩
 
-lemma innerAnodyne_eq : innerAnodyne.{u} = saturation.{u} innerHornInclusions :=
+lemma innerAnodyne_eq_saturation_innerHornInclusions :
+    innerAnodyne.{u} = saturation.{u} innerHornInclusions :=
   llp_rlp_eq_saturation

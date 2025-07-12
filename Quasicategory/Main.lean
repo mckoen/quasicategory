@@ -80,8 +80,7 @@ lemma newSqLift_of_sqLift {S : SSet} {m : ℕ}
     simp [← fac_right, curry_eq_iff]
     rfl
 
--- `0079`
-/-- `S` is a quasi-category iff `ihom(Δ[2], S) ⟶ ihom(Λ[2, 1], S)` is a trivial fibration. -/
+/-- `0079` `S` is a quasi-category iff `ihom(Δ[2], S) ⟶ ihom(Λ[2, 1], S)` is a trivial fibration. -/
 instance quasicategory_iff_internalHom_horn_trivialFibration (S : SSet) :
     Quasicategory S ↔
       trivialFibration ((internalHom.map Λ[2, 1].ι.op).app S) := by
@@ -97,35 +96,29 @@ instance quasicategory_iff_internalHom_horn_trivialFibration (S : SSet) :
     intro f g sq
     exact newSqLift_of_sqLift f g sq ((h _ (.mk m)).sq_hasLift (newSq f))
 
-/- changing the square to apply the lifting property of p
-   on the monomorphism `(B ◁ boundaryInclusion n)` -/
-lemma induced_tkf_aux (B X Y : SSet) (p : X ⟶ Y)
-    (n : ℕ) [h : HasLiftingProperty (B ◁ ∂Δ[n].ι) p] :
-    HasLiftingProperty ∂Δ[n].ι ((ihom B).map p) where
-  sq_hasLift sq :=
-    (CommSq.left_adjoint_hasLift_iff sq (FunctorToTypes.adj B)).1
-      (h.sq_hasLift (sq.left_adjoint (Closed.adj)))
-
--- `0071` (special case of `0070`)
-/- if `p : X ⟶ Y` is a trivial fibration, then `ihom(B, X) ⟶ ihom(B, Y)` is -/
-instance induced_tkf (B X Y : SSet) (p : X ⟶ Y) (hp: trivialFibration p) :
+/-- `0071` (special case of `0070`) if `p : X ⟶ Y` is a trivial fibration, then `ihom(B, X) ⟶ ihom(B, Y)` is -/
+instance trivialFibration_of_ihom_map_trivialFibration {X Y : SSet} (B : SSet) (p : X ⟶ Y) (hp: trivialFibration p) :
     trivialFibration ((ihom B).map p) := by
   intro _ _ i ⟨n⟩
   rw [trivialFibration_eq_rlp_monomorphisms] at hp
-  have := hp _ (boundaryInclusion_whisker_mono B n)
-  apply induced_tkf_aux
+  have := hp _ ((tensorLeft_PreservesMonomorphisms B).preserves ∂Δ[n].ι)
+  constructor
+  intro f g sq
+  exact (CommSq.left_adjoint_hasLift_iff sq (FunctorToTypes.adj B)).1
+      (this.sq_hasLift (sq.left_adjoint (Closed.adj)))
 
 open MonoidalClosed in
-/-- the map `ihom(Δ[2], ihom(S, D)) ⟶ ihom(Λ[2, 1], ihom(S, D))` is a trivial fibration. -/
+/-- if `D` is a quasi-category, then the restriction map
+  `ihom(Δ[2], ihom(S, D)) ⟶ ihom(Λ[2, 1], ihom(S, D))` is a trivial fibration. -/
 def aux (S D : SSet) [Quasicategory D] :
     trivialFibration ((internalHom.map Λ[2, 1].ι.op).app ((ihom S).obj D)) := by
   intro _ _ i ⟨n⟩
   have := (quasicategory_iff_internalHom_horn_trivialFibration D).1 (by infer_instance)
-  have := (induced_tkf S _ _ ((internalHom.map Λ[2, 1].ι.op).app D)) this _ (.mk n)
+  have := (trivialFibration_of_ihom_map_trivialFibration S ((internalHom.map Λ[2, 1].ι.op).app D)) this _ (.mk n)
   dsimp at this
-  have H : Arrow.mk ((ihom S).map ((MonoidalClosed.pre Λ[2, 1].ι).app D)) ≅
-      Arrow.mk ((internalHom.map Λ[2, 1].ι.op).app ((internalHom.obj (.op S)).obj D)) :=
-    CategoryTheory.Comma.isoMk (ihom_iso' _ _ _) (ihom_iso' _ _ _)
+  have H : Arrow.mk ((ihom S).map ((pre Λ[2, 1].ι).app D)) ≅
+      Arrow.mk ((internalHom.map Λ[2, 1].ι.op).app ((ihom S).obj D)) :=
+    CategoryTheory.Comma.isoMk (ihom_ihom_symm_iso _ _ _) (ihom_ihom_symm_iso _ _ _)
   exact HasLiftingProperty.of_arrow_iso_right ∂Δ[n].ι H
 
 noncomputable

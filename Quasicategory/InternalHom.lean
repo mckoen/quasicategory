@@ -19,21 +19,23 @@ lemma ihom_ihom_ext (X Y Z : SSet) (n : SimplexCategoryᵒᵖ)
   apply Functor.functorHom_ext
   intro m f; exact congr_fun (congr_fun h m) f
 
+@[simps]
 noncomputable
-def ihom_iso_hom (X Y Z : SSet) : (ihom X).obj ((ihom Y).obj Z) ⟶ (ihom (X ⊗ Y)).obj Z where
-  app := fun n x ↦ by
+def ihom_ihom_iso_ihom_tensor_hom (X Y Z : SSet) : (ihom X).obj ((ihom Y).obj Z) ⟶ (ihom (X ⊗ Y)).obj Z where
+  app n x := by
     refine ⟨fun m f ⟨Xm, Ym⟩ ↦ (x.app m f Xm).app m (𝟙 m) Ym, ?_⟩
     · intro m l f g
       ext ⟨Xm, Ym⟩
+      have := (congr_fun (x.naturality f g) Xm)
+      simp at this
       change
         (x.app l (g ≫ f) (X.map f Xm)).app l (𝟙 l) (Y.map f Ym) =
           Z.map f ((x.app m g Xm).app m (𝟙 m) Ym)
-      have := (congr_fun (x.naturality f g) Xm)
-      simp at this
       rw [this]
       exact congr_fun ((x.app m g Xm).naturality f (𝟙 m)) Ym
 
-def ihom_iso_inv (X Y Z : SSet) : (ihom (X ⊗ Y)).obj Z ⟶ (ihom X).obj ((ihom Y).obj Z) where
+@[simps]
+def ihom_ihom_iso_ihom_tensor_inv (X Y Z : SSet) : (ihom (X ⊗ Y)).obj Z ⟶ (ihom X).obj ((ihom Y).obj Z) where
   app := fun n x ↦ by
     refine ⟨?_, ?_⟩
     · intro m f Xm
@@ -47,11 +49,11 @@ def ihom_iso_inv (X Y Z : SSet) : (ihom (X ⊗ Y)).obj Z ⟶ (ihom X).obj ((ihom
       ext
       simp [ihom, Closed.rightAdj, FunctorToTypes.rightAdj, Functor.functorHom, Functor.homObjFunctor]
 
-/- [X, [Y, Z]] ≅ [X ⊗ Y, Z] -/
+/-- `[X, [Y, Z]] ≅ [X ⊗ Y, Z]` -/
 noncomputable
-def ihom_iso (X Y Z : SSet) : (ihom X).obj ((ihom Y).obj Z) ≅ (ihom (X ⊗ Y)).obj Z where
-  hom := ihom_iso_hom X Y Z
-  inv := ihom_iso_inv X Y Z
+def ihom_ihom_iso_ihom_tensor (X Y Z : SSet) : (ihom X).obj ((ihom Y).obj Z) ≅ (ihom (X ⊗ Y)).obj Z where
+  hom := ihom_ihom_iso_ihom_tensor_hom X Y Z
+  inv := ihom_ihom_iso_ihom_tensor_inv X Y Z
   hom_inv_id := by
     ext n x m f Xm l g Yl
     change (x.app l (f ≫ g) (X.map g Xm)).app l (𝟙 l) Yl = (x.app m f Xm).app l g Yl
@@ -60,52 +62,33 @@ def ihom_iso (X Y Z : SSet) : (ihom X).obj ((ihom Y).obj Z) ≅ (ihom (X ⊗ Y))
       Functor.homObjFunctor] at this
     rw [this]
     aesop
-  inv_hom_id := by
-    ext n x m f ⟨Xm, Ym⟩
-    change ((X.ihom_iso_hom Y Z).app n ((X.ihom_iso_inv Y Z).app n x)).app m f (Xm, Ym) =
-      x.app m f (Xm, Ym)
-    simp [ihom_iso_hom, ihom_iso_inv]
 
 @[simp]
-lemma ihom_braid_hom_eq {X Y Z : SSet} {n m : SimplexCategoryᵒᵖ} {f : n ⟶ m}
+lemma ihom_tensor_symm_iso_hom_eq {X Y Z : SSet} {n m : SimplexCategoryᵒᵖ} {f : n ⟶ m}
     (a : ((ihom (Y ⊗ X)).obj Z).obj n) :
-    (((MonoidalClosed.pre (β_ X Y).hom).app Z).app n a).app m f =
+    (((pre (β_ X Y).hom).app Z).app n a).app m f =
       (β_ X Y).hom.app m ≫ a.app m f := by
   ext ⟨Xm, Ym⟩
   change (((Y ⊗ X).functorHom Z).map f a).app m (𝟙 m) (Ym, Xm) = a.app m f (Ym, Xm)
   simp [Functor.functorHom]
 
 @[simp]
-lemma ihom_braid_inv_eq {X Y Z : SSet} {n m : SimplexCategoryᵒᵖ} {f : n ⟶ m}
+lemma ihom_tensor_symm_iso_inv_eq {X Y Z : SSet} {n m : SimplexCategoryᵒᵖ} {f : n ⟶ m}
     (a : ((ihom (X ⊗ Y)).obj Z).obj n) :
-    (((MonoidalClosed.pre (β_ X Y).inv).app Z).app n a).app m f = (β_ X Y).inv.app m ≫ a.app m f := by
+    (((pre (β_ X Y).inv).app Z).app n a).app m f = (β_ X Y).inv.app m ≫ a.app m f := by
   ext ⟨Ym, Xm⟩
   change (((X ⊗ Y).functorHom Z).map f a).app m (𝟙 m) (Xm, Ym) = a.app m f (Xm, Ym)
   simp [Functor.functorHom]
 
-/- [X ⊗ Y, Z] ≅ [Y ⊗ X, Z] -/
+/-- `[X ⊗ Y, Z] ≅ [Y ⊗ X, Z]` -/
 noncomputable
-def ihom_braid_iso (X Y Z : SSet) : (ihom (X ⊗ Y)).obj Z ≅ (ihom (Y ⊗ X)).obj Z where
-  hom := (MonoidalClosed.pre (β_ X Y).inv).app Z
-  inv := (MonoidalClosed.pre (β_ X Y).hom).app Z
-  hom_inv_id := by
-    ext n x m f ⟨Xm, Ym⟩
-    change ((
-      (MonoidalClosed.pre (β_ X Y).hom).app Z).app n
-      (((MonoidalClosed.pre (β_ X Y).inv).app Z).app n x)).app m f (Xm, Ym) = _
-    rw [ihom_braid_hom_eq, ihom_braid_inv_eq]
-    rfl
-  inv_hom_id := by
-    ext n x m f ⟨Ym, Xm⟩
-    change ((
-      (MonoidalClosed.pre (β_ X Y).inv).app Z).app n
-      (((MonoidalClosed.pre (β_ X Y).hom).app Z).app n x)).app m f (Ym, Xm) = _
-    rw [ihom_braid_inv_eq, ihom_braid_hom_eq]
-    rfl
+def ihom_tensor_symm_iso (X Y Z : SSet) : (ihom (X ⊗ Y)).obj Z ≅ (ihom (Y ⊗ X)).obj Z where
+  hom := (pre (β_ X Y).inv).app Z
+  inv := (pre (β_ X Y).hom).app Z
 
-/- [X, [Y, Z]] ≅ [X ⊗ Y, Z] ≅ [Y ⊗ X, Z] ≅ [Y, [X, Z]] -/
+/-- `[X, [Y, Z]] ≅ [X ⊗ Y, Z] ≅ [Y ⊗ X, Z] ≅ [Y, [X, Z]]` -/
 noncomputable
-def ihom_iso' (X Y Z : SSet) : (ihom X).obj ((ihom Y).obj Z) ≅ (ihom Y).obj ((ihom X).obj Z) :=
-  (ihom_iso X Y Z) ≪≫ (ihom_braid_iso X Y Z) ≪≫ (ihom_iso Y X Z).symm
+def ihom_ihom_symm_iso (X Y Z : SSet) : (ihom X).obj ((ihom Y).obj Z) ≅ (ihom Y).obj ((ihom X).obj Z) :=
+  (ihom_ihom_iso_ihom_tensor X Y Z) ≪≫ (ihom_tensor_symm_iso X Y Z) ≪≫ (ihom_ihom_iso_ihom_tensor Y X Z).symm
 
 end SSet

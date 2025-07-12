@@ -443,7 +443,7 @@ lemma filtration₂_innerAnodyne {i j : Σₗ (b : Fin (n + 2)), Fin b.succ} (h 
 
 open Subcomplex in
 lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1]).ι := by
-  rw [innerAnodyne_eq]
+  rw [innerAnodyne_eq_saturation_innerHornInclusions]
   induction n with
   | zero =>
     rw [boundary_zero]
@@ -479,11 +479,11 @@ def arrow_unionProd_iso : Arrow.mk (∂Δ[n].ι ◫ Λ[2, 1].ι) ≅ Arrow.mk (�
 
 lemma innerAnodyne_eq_T : innerAnodyne.{u} = (saturation.{u} bdryHornPushouts) := by
   apply le_antisymm
-  all_goals rw [innerAnodyne_eq, ← WeaklySaturated.le_iff]
+  all_goals rw [innerAnodyne_eq_saturation_innerHornInclusions, ← WeaklySaturated.le_iff]
   · intro _ _ f ⟨h0, hn⟩
     exact .retract (hornRetract _ h0 hn) (monomorphisms_le_S _ (.infer_property _))
   · intro _ _ f ⟨n⟩
-    rw [← innerAnodyne_eq]
+    rw [← innerAnodyne_eq_saturation_innerHornInclusions]
     exact (arrow_mk_iso_iff _ arrow_unionProd_iso).2 unionProd_ι_innerAnodyne
 
 -- `007F` (a)

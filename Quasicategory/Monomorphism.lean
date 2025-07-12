@@ -1,26 +1,22 @@
 import Quasicategory.Basic
 
-universe w v u
+universe w v v' u u'
 
 namespace SSet
 
 open CategoryTheory Simplicial MorphismProperty
 
 open MonoidalCategory in
-/-- B ⊗ ∂Δ[n] ⟶ B ⊗ Δ[n] is a monomorphism. Should be generalized. -/
-instance boundaryInclusion_whisker_mono (B : SSet) (n : ℕ) : Mono (B ◁ (boundary n).ι) := by
-  have : ∀ (k : SimplexCategoryᵒᵖ), Mono ((B ◁ (boundary n).ι).app k) := by
+instance tensorLeft_PreservesMonomorphisms (B : SSet) :
+    Functor.PreservesMonomorphisms (tensorLeft B) where
+  preserves _ hf := by
+    rw [NatTrans.mono_iff_mono_app] at hf ⊢
     intro k
-    rw [mono_iff_injective]
+    replace hf := hf k
+    rw [mono_iff_injective] at hf ⊢
     rintro ⟨b, x⟩ ⟨b', x'⟩ h
-    apply Prod.ext_iff.1 at h
-    apply Prod.ext
-    · exact h.1
-    · simp only [boundary, whiskerLeft_app_apply] at h ⊢
-      apply (Set.injective_codRestrict Subtype.property).mp
-      exact fun ⦃a₁ a₂⦄ a ↦ a
-      exact h.2
-  apply NatTrans.mono_of_mono_app
+    rw [Prod.ext_iff] at h
+    exact Prod.ext h.1 (hf h.2)
 
 instance IsStableUnderCobaseChange.monomorphisms : IsStableUnderCobaseChange (monomorphisms SSet) where
   of_isPushout {_ _ _ _ f _ _ _} P hf :=
@@ -41,7 +37,7 @@ instance monomorphisms.WeaklySaturated : WeaklySaturated.{u} (monomorphisms SSet
     by infer_instance,
     IsStableUnderTransfiniteComposition.monomorphisms⟩
 
--- from Joel
+/-- `modelCategoryQuillen.transfiniteCompositionOfMono` -/
 noncomputable def transfiniteCompositionOfMono_bdryInclusions {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] :
     (coproducts.{u} bdryInclusions).pushouts.TransfiniteCompositionOfShape ℕ i where
   toTransfiniteCompositionOfShape :=
@@ -53,7 +49,7 @@ noncomputable def transfiniteCompositionOfMono_bdryInclusions {X Y : SSet.{u}} (
     rintro _ _ _ ⟨⟩
     exact .mk d
 
--- from Joel
+/-- `modelCategoryQuillen.transfiniteCompositions_pushouts_coproducts` -/
 lemma transfiniteCompositions_pushouts_coproducts_bdryInclusions :
     transfiniteCompositions.{u} (coproducts.{u} bdryInclusions).pushouts = monomorphisms SSet.{u} := by
   apply le_antisymm
@@ -83,7 +79,7 @@ lemma trivialFibration_eq_rlp_monomorphisms :
     exact le_llp_rlp bdryInclusions
   · exact antitone_rlp brdyInclusions_le_monomorphisms
 
-/-- `006Z`(a), trivial fibrations are split epimorphisms -/
+/-- `006Z` (a), trivial fibrations are split epimorphisms -/
 noncomputable
 instance splitEpi_of_trivialFibration {X Y : SSet} {p : X ⟶ Y} (hp : trivialFibration p) : SplitEpi p := by
   rw [trivialFibration_eq_rlp_monomorphisms] at hp
@@ -91,7 +87,7 @@ instance splitEpi_of_trivialFibration {X Y : SSet} {p : X ⟶ Y} (hp : trivialFi
 
 /-- inner anodyne morphisms are monomorphisms -/
 lemma innerAnodyne_le_monomorphisms : innerAnodyne ≤ monomorphisms SSet := by
-  rw [innerAnodyne_eq, ← WeaklySaturated.le_iff]
+  rw [innerAnodyne_eq_saturation_innerHornInclusions, ← WeaklySaturated.le_iff]
   exact fun _ _ _ ⟨_, _⟩ ↦ monomorphisms.infer_property _
 
 end SSet

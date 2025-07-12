@@ -6,7 +6,7 @@ open CategoryTheory Simplicial MorphismProperty
 
 namespace SSet
 
---- `01BB` S is a quasicategory iff S ⟶ Δ[0] is an inner fibration -/
+/-- `01BB` S is a quasicategory iff S ⟶ Δ[0] is an inner fibration -/
 lemma quasicategory_iff_from_innerFibration {S : SSet} :
     Quasicategory S ↔ innerFibration (isTerminalZero.from S) := by
   constructor
@@ -23,21 +23,19 @@ lemma quasicategory_iff_from_innerFibration {S : SSet} :
     have lift := ((h _ (.mk h0 hn)).sq_hasLift this).exists_lift.some
     exact ⟨lift.l, lift.fac_left.symm⟩
 
--- `007E`
--- quasicategory iff extension property wrt every inner anodyne morphism
+/-- `007E` quasicategory iff extension property wrt every inner anodyne morphism -/
 lemma quasicategory_iff_from_innerAnodyne_rlp {S : SSet} :
     Quasicategory S ↔ innerAnodyne.rlp (isTerminalZero.from S) := by
   rw [quasicategory_iff_from_innerFibration, rlp_llp_rlp]
 
--- `01BJ` if Y is a quasicategory and X ⟶ Y is an inner fibration, then X is a quasicategory
+/-- `01BJ` if Y is a quasicategory and X ⟶ Y is an inner fibration, then X is a quasicategory -/
 lemma quasicategory_of_innerFibration {X Y : SSet} (p : X ⟶ Y) (hp : innerFibration p) :
     Quasicategory Y → Quasicategory X := fun h ↦ by
   rw [quasicategory_iff_from_innerFibration] at h ⊢
   apply comp_mem _ p (isTerminalZero.from Y) hp h
 
 /-- `050J` (3) --/
-instance quasicategory_of_trivialFibration {X Y : SSet}
-    (p : X ⟶ Y) (hp : trivialFibration p) :
+instance quasicategory_of_trivialFibration {X Y : SSet} (p : X ⟶ Y) (hp : trivialFibration p) :
     Quasicategory X → Quasicategory Y := by
   intro h
   constructor
