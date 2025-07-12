@@ -159,9 +159,6 @@ lemma bot_eq_zero : (⊥ : Σₗ (b : Fin (n + 1)), Fin b.succ) = ⟨0, ⟨0, Na
 lemma top_eq_last : (⊤ : Σₗ (b : Fin (n + 1)), Fin b.succ) = ⟨Fin.last n, Fin.last n⟩ := by
   rfl
 
-lemma Fin.succ_last_eq_last : succ ⟨Fin.last n, Fin.last n⟩ = ⟨Fin.last n, Fin.last n⟩ := by
-  simp
-
 lemma Fin.succ_bot_eq : succ ⟨(0 : Fin (n + 1)), ⟨0, Nat.zero_lt_succ _⟩⟩ = ⟨1, ⟨0, Nat.zero_lt_succ _⟩⟩ := by
   simp
   split
@@ -201,5 +198,71 @@ lemma Fin.eq_zero_or_eq_succ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
       apply succ_eq_of_snd_lt_fst
       simp
       omega
+
+lemma Fin.cases_lt_top :
+    i = ⟨Fin.last n, Fin.last n⟩ ∨
+      (∃ (b : Fin n) (a : Fin b), i = ⟨b.castSucc, a.castSucc⟩) ∨
+        (∃ (b : Fin n), i = ⟨b.castSucc, ⟨b.castSucc, by dsimp; omega⟩⟩) ∨
+          (∃ (a : Fin n), i = ⟨Fin.last n, a.castSucc⟩) := by
+  have := (OrderTop.le_top i)
+  rw [top_eq_last] at this
+  cases lt_or_eq_of_le this
+  swap
+  · left
+    assumption
+  next hi =>
+  obtain ⟨b, a⟩ := i
+  rw [Sigma.Lex.lt_def] at hi
+  simp at hi
+  cases hi
+  · next h =>
+    simp at h
+    cases lt_or_eq_of_le a.is_le
+    · next ha =>
+      right
+      left
+      use ⟨b, h⟩
+      use ⟨a, ha⟩
+      rfl
+    · next ha =>
+      right
+      right
+      left
+      use ⟨b, h⟩
+      congr
+      rw [Fin.ext_iff, ha]
+      rfl
+  · next h =>
+    obtain ⟨hb, h⟩ := h
+    subst hb
+    simp at h
+    right
+    right
+    right
+    use ⟨a, h⟩
+    rfl
+
+@[simp]
+lemma Fin.succ_last_eq_last : succ ⟨Fin.last n, Fin.last n⟩ = ⟨Fin.last n, Fin.last n⟩ := by
+  simp
+
+@[simp]
+lemma Fin.succ_eq₁ (b : Fin n) (a : Fin b) : succ ⟨b.castSucc, a.castSucc⟩ = ⟨b.castSucc, a.succ⟩ := by
+  simp [succ]
+  rfl
+
+@[simp]
+lemma Fin.succ_eq₂ (b : Fin n) : succ ⟨b.castSucc, ⟨b.castSucc, by dsimp; omega⟩⟩ = ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩ := by
+  simp [succ]
+  split
+  · next h =>
+    simp [Fin.ext_iff] at h
+    omega
+  . rfl
+
+@[simp]
+lemma Fin.succ_eq₃ (a : Fin n) : succ ⟨Fin.last n, a.castSucc⟩ = ⟨Fin.last n, a.succ⟩ := by
+  simp [succ]
+  rfl
 
 end Sigma.Lex

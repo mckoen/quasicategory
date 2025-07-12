@@ -9,7 +9,7 @@ namespace SSet
 
 open CategoryTheory Simplicial MorphismProperty MonoidalCategory MonoidalClosed
 
-open PushoutProduct
+open PushoutProduct Limits
 
 variable {S : SSet} {m : ℕ}
   (α : ∂Δ[m].toSSet ⟶ (ihom Δ[2]).obj S)
@@ -28,7 +28,7 @@ noncomputable
 def to_S
     (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
     (PushoutProduct.pt ∂Δ[m].ι Λ[2, 1].ι) ⟶ S :=
-  PushoutProduct.desc _ _ (MonoidalClosed.uncurry α) (MonoidalClosed.uncurry β) (commSq_uncurry α β sq).w
+  pushout.desc (MonoidalClosed.uncurry α) (MonoidalClosed.uncurry β) (commSq_uncurry α β sq).w
 
 -- the new square in `0079`
 lemma newSquare
@@ -44,21 +44,21 @@ lemma sqLift_of_newSqLift
   refine ⟨curry lift, ?_, ?_⟩
   · apply_fun uncurry
     rw [uncurry_natural_left, uncurry_curry]
-    apply_fun (fun f ↦ (PushoutProduct.inl ∂Δ[m].ι Λ[2, 1].ι) ≫ f) at fac_left
+    apply_fun (fun f ↦ (pushout.inl _ _) ≫ f) at fac_left
     simp [to_S] at fac_left
     assumption
   · apply_fun uncurry
     rw [uncurry_natural_left]
-    apply_fun (fun f ↦ (PushoutProduct.inr ∂Δ[m].ι Λ[2, 1].ι) ≫ f) at fac_left
+    apply_fun (fun f ↦ (pushout.inr _ _) ≫ f) at fac_left
     simp [to_S] at fac_left
     simp [← fac_left, whisker_exchange_assoc]
 
 -- given a map from the pushout to S, we can recover a commutative square as in `0079`
 def newSq
     (f : (PushoutProduct.pt ∂Δ[m].ι Λ[2, 1].ι) ⟶ S) :
-  CommSq (MonoidalClosed.curry ((PushoutProduct.inl ∂Δ[m].ι Λ[2, 1].ι) ≫ f))
+  CommSq (MonoidalClosed.curry ((pushout.inl _ _) ≫ f))
     ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S)
-    (MonoidalClosed.curry ((PushoutProduct.inr ∂Δ[m].ι Λ[2, 1].ι) ≫ f)) := by
+    (MonoidalClosed.curry ((pushout.inr _ _) ≫ f)) := by
   constructor
   apply_fun uncurry
   simp [uncurry_natural_left, internalHom_map, uncurry_pre, uncurry_natural_left, whisker_exchange_assoc]
@@ -76,7 +76,7 @@ lemma newSqLift_of_sqLift {S : SSet} {m : ℕ}
   · apply_fun curry
     simpa [curry_natural_left]
   · apply_fun curry
-    dsimp [PushoutProduct.inr] at fac_right
+    dsimp at fac_right
     simp [← fac_right, curry_eq_iff]
     rfl
 

@@ -73,25 +73,25 @@ lemma pushoutCommSq_IsColimit'_fac_left :
   apply pushout.hom_ext
   · simp
   · apply (whiskerPushout h' _).hom_ext
-    · change ((Λ[2, 1] : SSet) ◁ f ≫ PushoutProduct.inr f Λ[2, 1].ι) ≫
+    · change ((Λ[2, 1] : SSet) ◁ f ≫ pushout.inr _ _) ≫
         (f ◫ Λ[2, 1].ι) ≫ pushoutCommSq_IsColimit'_desc h' C =
-        (Λ[2, 1] : SSet) ◁ f ≫ PushoutProduct.inr f Λ[2, 1].ι ≫ C.inl
+        (Λ[2, 1] : SSet) ◁ f ≫ pushout.inr _ _ ≫ C.inl
       rw [← Category.assoc, ← pushout.condition, Category.assoc, Category.assoc,
-        ← Category.assoc (PushoutProduct.inl f Λ[2, 1].ι)]
-      dsimp only [PushoutProduct.inl, pushoutProduct, pushoutCommSq_IsColimit'_desc]
+        ← Category.assoc (pushout.inl _ _)]
+      dsimp only [pushoutProduct, pushoutCommSq_IsColimit'_desc]
       rw [pushout.inl_desc]
       simp only [Fin.isValue, PushoutProduct.pt, PushoutCocone.ι_app_left, pushoutProduct,
-        PushoutCocone.ι_app_right, IsPushout.inl_desc, PushoutProduct.inr, IsPushout.cocone_inr]
+        PushoutCocone.ι_app_right, IsPushout.inl_desc, IsPushout.cocone_inr]
       exact pushout.condition_assoc C.inl
-    · change ((Λ[2, 1] : SSet) ◁ t ≫ PushoutProduct.inr f Λ[2, 1].ι) ≫
+    · change ((Λ[2, 1] : SSet) ◁ t ≫ pushout.inr _ _) ≫
         (f ◫ Λ[2, 1].ι) ≫ pushoutCommSq_IsColimit'_desc h' C =
-        (Λ[2, 1] : SSet) ◁ t ≫ PushoutProduct.inr f Λ[2, 1].ι ≫ C.inl
-      rw [Category.assoc, ← Category.assoc (PushoutProduct.inr f Λ[2, 1].ι)]
-      dsimp only [PushoutProduct.inl, pushoutProduct, pushoutCommSq_IsColimit'_desc]
+        (Λ[2, 1] : SSet) ◁ t ≫ pushout.inr _ _ ≫ C.inl
+      rw [Category.assoc, ← Category.assoc (pushout.inr _ _)]
+      dsimp only [pushoutProduct, pushoutCommSq_IsColimit'_desc]
       rw [pushout.inr_desc, ← Category.assoc, @whisker_exchange, Category.assoc,
         IsPushout.inr_desc, ← Category.assoc]
-      have := PushoutProduct.inr g Λ[2, 1].ι ≫= C.condition
-      dsimp only [PushoutProduct.inr, pushoutProductSq_left] at this ⊢
+      have := pushout.inr (Λ[2, 1].ι ▷ X) (Λ[2, 1].toSSet ◁ g) ≫= C.condition
+      dsimp only [pushoutProductSq_left] at this ⊢
       rw [pushout.inr_desc_assoc] at this
       rw [← this]
       aesop
@@ -104,7 +104,7 @@ lemma pushoutCommSq_IsColimit'_uniq (m : Δ[2] ⊗ B ⟶ C.pt)
     (fac_left : (f ◫ Λ[2, 1].ι) ≫ m = C.inl)
     (fac_right : Δ[2] ◁ t ≫ m = C.inr) : m = pushoutCommSq_IsColimit'_desc h' C := by
   apply (whiskerPushout h' _).hom_ext
-  · have := PushoutProduct.inl f Λ[2, 1].ι ≫= fac_left
+  · have := pushout.inl (Λ[2, 1].ι ▷ A) (Λ[2, 1].toSSet ◁ f) ≫= fac_left
     simp at this
     dsimp only [pushoutCommSq_IsColimit'_desc]
     rw [this]

@@ -34,13 +34,13 @@ def F'_isoBot {J : Type w} [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFound
     {X Y : SSet} {f : X ⟶ Y} (hf : S.TransfiniteCompositionOfShape J f) :
       (F' hf.F (Limits.Cocone.mk _ hf.incl)).obj ⊥ ≅ (PushoutProduct.pt f Λ[2, 1].ι) where
   hom := by
-    apply Limits.pushout.desc ((Δ[2] ◁ hf.isoBot.hom) ≫ (inl _ _)) (inr _ _)
+    apply pushout.desc ((Δ[2] ◁ hf.isoBot.hom) ≫ (pushout.inl _ _)) (pushout.inr _ _)
     simp [← whisker_exchange_assoc, pushout.condition]
     have := congr_arg (MonoidalCategory.whiskerLeft Λ[2, 1].toSSet) hf.fac
     simp_rw [← this]
     rw [← MonoidalCategory.whiskerLeft_comp_assoc, Iso.hom_inv_id_assoc]
   inv := by
-    apply Limits.pushout.desc (((Δ[2] ◁ hf.isoBot.inv) ≫ (inl _ _))) (inr _ _)
+    apply pushout.desc (((Δ[2] ◁ hf.isoBot.inv) ≫ (pushout.inl _ _))) (pushout.inr _ _)
     dsimp
     rw [← whisker_exchange_assoc, pushout.condition, ← MonoidalCategory.whiskerLeft_comp_assoc]
     have := hf.fac.symm

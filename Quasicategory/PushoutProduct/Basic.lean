@@ -31,20 +31,6 @@ scoped infixr:80 " ◫ " => PushoutProduct.pushoutProduct
 
 @[simp]
 noncomputable
-abbrev desc {W : C} (h : Y ⊗ A ⟶ W) (k : X ⊗ B ⟶ W) (w : g ▷ A ≫ h = X ◁ f ≫ k) :
-    pt f g ⟶ W :=
-  pushout.desc h k w
-
-@[simp]
-noncomputable
-abbrev inl : Y ⊗ A ⟶ pt f g := pushout.inl _ _
-
-@[simp]
-noncomputable
-abbrev inr : X ⊗ B ⟶ pt f g := pushout.inr _ _
-
-@[simp]
-noncomputable
 def id_pushoutProduct_iso (W : C) : pt (𝟙 W) g ≅ Y ⊗ W :=
   IsPushout.isoIsPushout _ _ (IsPushout.of_hasPushout _ _) (by convert IsPushout.id_vert (g ▷ W); exact MonoidalCategory.whiskerLeft_id X W)
 
@@ -149,12 +135,12 @@ def natTransLeftFunctor_comp {G' : D ⥤ C} (h' : G ⟶ G') :
 @[simps!]
 noncomputable
 def inlDescFunctor : (F ⋙ tensorLeft Y) ⟶ (natTransLeftFunctor h g) where
-  app A := inl (h.app A) g
+  app A := pushout.inl _ _
 
 @[simps!]
 noncomputable
 def inrDescFunctor : (G ⋙ tensorLeft X) ⟶ (natTransLeftFunctor h g) where
-  app A := inr (h.app A) g
+  app A := pushout.inr _ _
 
 @[simps!]
 noncomputable
@@ -167,6 +153,7 @@ def descFunctor : (natTransLeftFunctor h g) ⟶ (G ⋙ tensorLeft Y) where
 
 end NatTrans
 
+/-
 section Composition
 
 variable {A B B' X Y : C} (f : A ⟶ B) (f' : B ⟶ B') (g : X ⟶ Y)
@@ -174,30 +161,28 @@ variable {A B B' X Y : C} (f : A ⟶ B) (f' : B ⟶ B') (g : X ⟶ Y)
 @[simp]
 noncomputable
 def desc_comp : pt f g ⟶ pt (f ≫ f') g :=
-  desc f g _ _
-    (by rw [pushout.condition, MonoidalCategory.whiskerLeft_comp_assoc])
+  pushout.desc _ _ (by rw [pushout.condition, MonoidalCategory.whiskerLeft_comp_assoc])
 
 @[simp]
 noncomputable
 def comp_desc : pt (f ≫ f') g ⟶ pt f' g :=
-  desc (f ≫ f') g _ _
-  (by rw [MonoidalCategory.whiskerLeft_comp_assoc, ← pushout.condition, ← whisker_exchange_assoc])
+  pushout.desc _ _ (by rw [MonoidalCategory.whiskerLeft_comp_assoc, ← pushout.condition, ← whisker_exchange_assoc])
 
 -- pt (f ≫ f') g ⟶ pt f' g ⟶ pt (f ≫ f') g
 lemma desc_comp_desc_eq :
-    (desc_comp f f' g) ≫ (comp_desc f f' g) = (f ◫ g) ≫ (inl f' g) := by
+    (desc_comp f f' g) ≫ (comp_desc f f' g) = (f ◫ g) ≫ (pushout.inl _ _) := by
   apply pushout.hom_ext
   · simp
   · simp [pushout.condition]
 
 noncomputable
-def compPushoutCocone := Limits.PushoutCocone.mk (comp_desc f f' g) (inl f' g) (desc_comp_desc_eq f f' g)
+def compPushoutCocone := Limits.PushoutCocone.mk (comp_desc f f' g) (pushout.inl _ _) (desc_comp_desc_eq f f' g)
 
 noncomputable
 def compPushoutCoconeIsColimit : Limits.IsColimit (compPushoutCocone f f' g) := by
   refine Limits.PushoutCocone.IsColimit.mk _ ?_ ?_ ?_ ?_
   · intro s
-    refine (desc f' g) s.inr (inr (f ≫ f') g ≫ s.inl) ?_
+    refine (pushout.desc (g ▷ _) (_ ◁ f') (by sorry)) s.inr (inr (f ≫ f') g ≫ s.inl) ?_
     · have := ((inr f g) ≫= s.condition).symm
       dsimp only [desc_comp] at this
       rw [pushout.inr_desc_assoc] at this
@@ -228,6 +213,7 @@ lemma pushoutProductCompEq : (comp_desc f f' g) ≫ (f' ◫ g) = (f ≫ f') ◫ 
   pushout.hom_ext (by aesop) (by aesop)
 
 end Composition
+-/
 
 end CategoryTheory.PushoutProduct
 
