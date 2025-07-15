@@ -71,6 +71,12 @@ noncomputable abbrev τ.ιSimplex (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     Δ[n + 2] ⟶ Δ[n] ⊗ Δ[2] :=
   yonedaEquiv.symm (τ.simplex i)
 
+noncomputable
+def σ_ (i : Σₗ (b : Fin n), Fin b.succ) := Subcomplex.ofSimplex (σ.simplex i).1
+
+noncomputable
+def τ_ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) := Subcomplex.ofSimplex (τ.simplex i).1
+
 lemma σ.eq_f (i : Σₗ (b : Fin n), Fin b.succ) :
     σ.ιSimplex i = f ⟨i.2, by omega⟩ i.1 := by
   simp [ιSimplex, f, simplex, nonDegenerateEquiv.toFun, σ']

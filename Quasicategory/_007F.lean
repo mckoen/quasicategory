@@ -88,6 +88,13 @@ def σ.innerHornImage_arrowIso {a b : Fin n} (hab : a ≤ b) :
   letI : Mono (f a b) := f_mono hab
   image_arrow_iso_of_mono _ _
 
+open Subcomplex in
+noncomputable
+def σ.innerHornImage_arrowIso' (b : Fin n) (a : Fin b.succ) :
+    (Arrow.mk (Subcomplex.homOfLE (image_le_range Λ[n + 1, ⟨a.succ, by omega⟩] (ιSimplex ⟨b, a⟩)))) ≅ (Arrow.mk Λ[n + 1, ⟨a.succ, by omega⟩].ι) := by
+  letI : Mono (ιSimplex ⟨b, a⟩) := by infer_instance
+  exact image_arrow_iso_of_mono _ _
+
 noncomputable
 def τ.innerHornImage_arrowIso {a b : Fin (n + 1)} (hab : a ≤ b) :
     (Arrow.mk (Subcomplex.homOfLE (τ.innerHornImage_le a b))) ≅ (Arrow.mk Λ[n + 2, a.succ.castSucc].ι) :=
@@ -382,19 +389,17 @@ lemma filtration₁_innerAnodyne {i j : Σₗ (b : Fin (n + 1)), Fin b.succ} (h 
     innerHornInclusions.saturation (homOfLE (filtration₁_monotone (n + 1) h)) := by
   refine innerHornInclusions.saturation.map_mem_of_sigma
     ((filtration₁_monotone (n + 1)).functor ⋙ Subcomplex.forget _) ?_ (homOfLE h)
-  dsimp only [Fin.val_succ, Functor.comp_obj, Monotone.functor_obj, Subcomplex.forget_obj,
+  dsimp only [Fin.val_succ, Functor.comp_obj, Monotone.functor_obj, forget_obj,
     Fin.succ_mk, Fin.zero_eta, homOfLE_leOfHom, Functor.comp_map, forget_map]
   intro i
   by_cases h0 : ⊥ < i
   by_cases hn : i < ⊤
-  · have σsq := σ.filtrationPushout_intermediate' i h0 hn
-    rw [σ.eq_σ] at σsq
+  · have σsq := σ.filtrationPushout_intermediate'' i h0 hn
+    rw [σ_, ofSimplex_eq_range, σ.ιSimplex] at σsq
     refine of_isPushout (Subcomplex.Sq.isPushout σsq).flip
-      ((arrow_mk_iso_iff _ (σ.innerHornImage_arrowIso ?_)).2
-        (.of _ (.mk (compare_gt_iff_gt.mp rfl) (?_))))
-    · obtain ⟨b, a⟩ := i
-      have := Order.le_of_lt_succ (Sigma.Lex.succ ⟨b, a⟩).2.2
-      simpa
+      ((arrow_mk_iso_iff _ (σ.innerHornImage_arrowIso' (Sigma.Lex.succ i).1 ((Sigma.Lex.succ i)).2)).2
+        (WeaklySaturatedClass.of _ (InnerHornInclusion.mk (?_) (?_))))
+    · exact Nat.lt_of_sub_eq_succ rfl
     · obtain ⟨b, a⟩ := i
       rw [Fin.lt_iff_val_lt_val]
       simp only [Fin.val_succ, Fin.succ_mk, Fin.zero_eta, Fin.castSucc_mk,

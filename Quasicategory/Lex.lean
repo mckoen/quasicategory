@@ -6,7 +6,6 @@ variable {n : ℕ}
 
 namespace Sigma.Lex
 
-@[simp]
 def succ : (Σₗ (b : Fin (n + 1)), Fin b.succ) → (Σₗ (b : Fin (n + 1)), Fin b.succ) :=
   fun ⟨b, a⟩ ↦
     if h₁ : a.1 < b then ⟨b, ⟨a.succ, by simpa using h₁⟩⟩ -- if a < b, then ⟨b, a + 1⟩
@@ -16,8 +15,14 @@ def succ : (Σₗ (b : Fin (n + 1)), Fin b.succ) → (Σₗ (b : Fin (n + 1)), F
 variable (i : Σₗ (b : Fin (n + 1)), Fin b.succ)
 
 @[simp]
+lemma Fin.fst_eq {b : Fin (n + 1)} {a : Fin b.succ} : (⟨b, a⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ).1 = b := rfl
+
+@[simp]
+lemma Fin.snd_eq {b : Fin (n + 1)} {a : Fin b.succ} : (⟨b, a⟩ : Σₗ (b : Fin (n + 1)), Fin b.succ).2 = a := rfl
+
+@[simp]
 lemma Fin.succ_eq_of_snd_lt_fst (b : Fin (n + 1)) (a : Fin b.succ) (h : a.1 < b) : succ ⟨b, a⟩ = ⟨b, ⟨a.succ, Nat.succ_lt_succ h⟩⟩ := by
-  simp [h]
+  simp [succ, h]
 
 @[simp]
 lemma Fin.succ_eq_of_snd_lt_fst' (b : Fin (n + 1)) (a : Fin b) : succ ⟨b, a.castSucc⟩ = ⟨b, a.succ⟩ := by
@@ -27,13 +32,13 @@ lemma Fin.succ_eq_of_snd_lt_fst' (b : Fin (n + 1)) (a : Fin b) : succ ⟨b, a.ca
 @[simp]
 lemma Fin.succ_eq_of_lt_last (b : Fin (n + 1)) (h : b < Fin.last n) :
     succ ⟨b, ⟨b, Nat.lt_add_one _⟩⟩ = ⟨⟨b.succ, Nat.succ_lt_succ h⟩, ⟨0, Nat.zero_lt_succ _⟩⟩ := by
-  simp [Fin.ne_of_lt h]
+  simp [succ, Fin.ne_of_lt h]
 
 @[simp]
 lemma Fin.succ_eq_of_eq_last (b : Fin (n + 1)) (h : b = Fin.last n) :
     succ ⟨b, ⟨b, Nat.lt_add_one _⟩⟩ = ⟨Fin.last n, Fin.last n⟩ := by
   subst h
-  simp
+  simp [succ]
 
 @[simp]
 lemma Fin.lt_of_snd_lt {b : Fin (n + 1)} {a a' : Fin b.succ} :
@@ -48,7 +53,7 @@ theorem succ_eq_of_lt_fst (h : i.2.1 < i.1.1) :
 
 theorem le_succ : i ≤ succ i := by
     obtain ⟨b, a⟩ := i
-    simp
+    simp [succ]
     split
     · simp [le_def, Fin.le_iff_val_le_val]
     · split
@@ -64,7 +69,7 @@ variable {i : Σₗ (b : Fin (n + 1)), Fin b.succ}
 
 theorem max_of_succ_le : succ i ≤ i → IsMax i := by
     obtain ⟨b, a⟩ := i
-    simp
+    simp [succ]
     split
     · next h =>
       intro h'
@@ -94,7 +99,7 @@ theorem succ_le_of_lt {j : Σₗ (b : Fin (n + 1)), Fin b.succ} : i < j → Sigm
     obtain ⟨b, a⟩ := i
     obtain ⟨b', a'⟩ := j
     intro h
-    dsimp
+    dsimp [succ]
     split
     · next h' =>
       rw [le_def]
@@ -160,7 +165,7 @@ lemma top_eq_last : (⊤ : Σₗ (b : Fin (n + 1)), Fin b.succ) = ⟨Fin.last n,
   rfl
 
 lemma Fin.succ_bot_eq : succ ⟨(0 : Fin (n + 1)), ⟨0, Nat.zero_lt_succ _⟩⟩ = ⟨1, ⟨0, Nat.zero_lt_succ _⟩⟩ := by
-  simp
+  simp [succ]
   split
   · next h =>
     subst h
@@ -199,11 +204,10 @@ lemma Fin.eq_zero_or_eq_succ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
       simp
       omega
 
-lemma Fin.cases_lt_top :
+lemma Fin.cases (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     i = ⟨Fin.last n, Fin.last n⟩ ∨
-      (∃ (b : Fin n) (a : Fin b), i = ⟨b.castSucc, a.castSucc⟩) ∨
-        (∃ (b : Fin n), i = ⟨b.castSucc, ⟨b.castSucc, by dsimp; omega⟩⟩) ∨
-          (∃ (a : Fin n), i = ⟨Fin.last n, a.castSucc⟩) := by
+      (∃ (b : Fin (n + 1)) (a : Fin b), i = ⟨b, a.castSucc⟩) ∨
+        (∃ (b : Fin n), i = ⟨b.castSucc, ⟨b.castSucc, by dsimp; omega⟩⟩) := by
   have := (OrderTop.le_top i)
   rw [top_eq_last] at this
   cases lt_or_eq_of_le this
@@ -221,13 +225,12 @@ lemma Fin.cases_lt_top :
     · next ha =>
       right
       left
-      use ⟨b, h⟩
+      use ⟨b, by omega⟩
       use ⟨a, ha⟩
       rfl
     · next ha =>
       right
       right
-      left
       use ⟨b, h⟩
       congr
       rw [Fin.ext_iff, ha]
@@ -237,17 +240,19 @@ lemma Fin.cases_lt_top :
     subst hb
     simp at h
     right
-    right
-    right
-    use ⟨a, h⟩
-    rfl
+    left
+    use Fin.last n
+    obtain ⟨a', ha'⟩ := Fin.eq_castSucc_of_ne_last (Fin.ne_last_of_lt h)
+    use a'
+    rw [ha']
 
-@[simp]
 lemma Fin.succ_last_eq_last : succ ⟨Fin.last n, Fin.last n⟩ = ⟨Fin.last n, Fin.last n⟩ := by
-  simp
+  simp [succ]
 
-@[simp]
-lemma Fin.succ_eq₁ (b : Fin n) (a : Fin b) : succ ⟨b.castSucc, a.castSucc⟩ = ⟨b.castSucc, a.succ⟩ := by
+lemma Fin.succ_zero (b : Fin (n + 1)) : succ ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩ = ⟨b.succ, ⟨1, Nat.one_lt_succ_succ _⟩⟩ := by
+  simp [succ]
+
+lemma Fin.succ_eq₁ (b : Fin (n + 1)) (a : Fin b) : succ ⟨b, a.castSucc⟩ = ⟨b, a.succ⟩ := by
   simp [succ]
   rfl
 
@@ -261,8 +266,11 @@ lemma Fin.succ_eq₂ (b : Fin n) : succ ⟨b.castSucc, ⟨b.castSucc, by dsimp; 
   . rfl
 
 @[simp]
-lemma Fin.succ_eq₃ (a : Fin n) : succ ⟨Fin.last n, a.castSucc⟩ = ⟨Fin.last n, a.succ⟩ := by
-  simp [succ]
-  rfl
+lemma Fin.succ_fst_eq {b b' : Fin (n + 1)} {a : Fin b.succ} {a' : Fin b'.succ}
+  (h : succ ⟨b, a⟩ = ⟨b', a'⟩) : (succ ⟨b, a⟩).1.1 = b'.1 := by rw [h]
+
+@[simp]
+lemma Fin.succ_snd_eq {b b' : Fin (n + 1)} {a : Fin b.succ} {a' : Fin b'.succ}
+  (h : succ ⟨b, a⟩ = ⟨b', a'⟩) : (succ ⟨b, a⟩).2.1 = a'.1 := by rw [h]
 
 end Sigma.Lex
