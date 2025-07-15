@@ -855,8 +855,10 @@ def filtrationPushout_intermediate' (i : Σₗ (b : Fin (n + 2)), Fin b.succ) (h
         dsimp
         simp at ha
         subst ha
+        rw [Sigma.Lex.Fin.succ_bot_eq]
+        dsimp
         change _ ≤ innerHornImage 0 1
-        rw [subcomplex_le_innerHornImage_iff (Fin.zero_le _) _ inf_le_left, le_inf_iff, not_and]
+        rw [subcomplex_le_innerHornImage_iff (Fin.zero_le 1) _ inf_le_left, le_inf_iff, not_and]
         intro
         change ¬(face {1}ᶜ).image (g 0 1) ≤ filtration₂' n ⊥
         rw [filtration₂_zero', Sigma.Lex.bot_eq_zero, eq_τ, Sigma.Lex.top_eq_last, filtration₁'_eq']

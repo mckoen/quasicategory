@@ -476,7 +476,7 @@ def filtrationPushout_intermediate'' (i : Σₗ (b : Fin (n + 1)), Fin b.succ) (
         exact temp₃ b
 
 open Sigma.Lex in
-def filtrationPushout_zero' :
+def filtrationPushout_zero'' :
     Sq
       (Λ[n + 2, 1].image (ιSimplex (succ ⊥)))
       (σ_ ⊥)
