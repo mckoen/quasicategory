@@ -73,7 +73,7 @@ def image_arrow_iso_of_mono {X Y : SSet} (f : X ⟶ Y) [Mono f] (A : Subcomplex 
 
 noncomputable
 def σ.innerHornImage_arrowIso {a b : Fin n} (hab : a ≤ b) :
-    (Arrow.mk (Subcomplex.homOfLE (σ.innerHornImage_le a b))) ≅ (Arrow.mk Λ[n + 1, a.succ.castSucc].ι) :=
+    (Arrow.mk (Subcomplex.homOfLE (Subcomplex.image_le_range (Λ[n + 1, a.succ.castSucc]) (f a b)))) ≅ (Arrow.mk Λ[n + 1, a.succ.castSucc].ι) :=
   letI : Mono (f a b) := f_mono hab
   image_arrow_iso_of_mono _ _
 
@@ -387,7 +387,7 @@ lemma filtration₁_innerAnodyne {i j : Σₗ (b : Fin (n + 1)), Fin b.succ} (h 
     apply id_mem
   | succ n _ =>
     by_cases hn : i < ⊤
-    · have σsq := σ.filtrationPushout_intermediate n i hn
+    · have σsq := σ.filtrationPushout_intermediate _ i hn
       rw [σ_, ofSimplex_eq_range, σ.ιSimplex] at σsq
       refine of_isPushout (Subcomplex.Sq.isPushout σsq).flip
         ((arrow_mk_iso_iff _ (σ.innerHornImage_arrowIso' (Sigma.Lex.succ i).1 ((Sigma.Lex.succ i)).2)).2
