@@ -358,59 +358,19 @@ lemma faceImage_one_not_le_filtration₁ (n : ℕ) (b : Fin (n + 1)) :
 
 end
 
-def filtrationPushout_join (n : ℕ) (b : Fin (n + 1)) :
-    Sq
-      (σ.innerHornImage 0 b)
-      (σ 0 b)
-      (filtration₁ b.castSucc)
-      (filtration₂ b ⟨0, Nat.zero_lt_succ _⟩)
-      where
-  max_eq := by
-    cases b using Fin.cases with
-    | zero => simp [filtration₁, filtration₂, sup_comm]
-    | succ =>
-      rw [filtration₂_zero (Nat.zero_ne_add_one _).symm, ← Fin.succ_castSucc, filtration₁_succ, sup_comm]
-      rfl
-  min_eq := by
-    apply le_antisymm
-    · rw [σ.subcomplex_le_innerHornImage_iff (by simp [Fin.le_iff_val_le_val]) _ inf_le_left, le_inf_iff, not_and]
-      exact fun _ ↦ σ.faceImage_one_not_le_filtration₁ n b
-    · apply le_inf (σ.innerHornImage_le 0 _) (σ.innerHornImage_zero_le_filtration₁ n b)
-
-/-
-`Λ[n+2,1]` ---> `X(0)`
-    |             |
-    |             |
-    v             V
-  `σ00` ------> `X(1)`
--/
-def filtrationPushout_zero (n : ℕ) :
-    Sq
-      (σ.innerHornImage 0 0)
-      (σ 0 0)
-      (∂Δ[n + 1].unionProd Λ[2, 1])
-      (filtration₁ (1 : Fin (n + 2))) := by
-  have h := filtration₁_succ (0 : Fin (n + 1))
-  have h' := filtration₂_zero (Nat.zero_ne_add_one n).symm 0
-  dsimp at h h'
-  rw [← filtration₁_zero, h]
-  simp
-  rw [← h']
-  exact filtrationPushout_join n 0
-
 open Sigma.Lex in
 lemma subcomplex_le_innerHornImage_iff' (i : Σₗ (b : Fin n), Fin b.succ) (j : Fin (n + 2))
     {A : (Δ[n] ⊗ Δ[2]).Subcomplex} (hA : A ≤ σ_ i) :
-    A ≤ (Λ[n + 1, j].image (ιSimplex i)) ↔ ¬ faceImage ⟨j, by omega⟩ (ιSimplex i) ≤ A := by
+    A ≤ (Λ[n + 1, j].image (ιSimplex i)) ↔ ¬ faceImage j (ιSimplex i) ≤ A := by
   dsimp [σ_] at hA
   rw [ofSimplex_eq_range] at hA
   exact subcomplex_le_horn_image_iff (ιSimplex i) A hA j
 
 open Sigma.Lex in
-lemma temp₂ (b : Fin (n + 2)) (a : Fin b) :
+lemma temp₂ (b : Fin (n + 1)) (a : Fin b) :
     σ_ ⟨b, a.succ⟩ ⊓
-      filtration₁' (n + 2) ⟨b, a.castSucc⟩ =
-        Λ[n + 3, ⟨a + 2, by omega⟩].image (ιSimplex ⟨b, a.succ⟩) := by
+      filtration₁' (n + 1) ⟨b, a.castSucc⟩ =
+        Λ[n + 2, ⟨a + 2, by omega⟩].image (ιSimplex ⟨b, a.succ⟩) := by
   apply le_antisymm
   · rw [subcomplex_le_innerHornImage_iff' _ _ inf_le_left, le_inf_iff, not_and]
     intro
@@ -426,10 +386,10 @@ lemma temp₂ (b : Fin (n + 2)) (a : Fin b) :
       · exact filtration₁'_eq' _ _
 
 open Sigma.Lex in
-lemma temp₃ (b : Fin (n + 1)) :
+lemma temp₃ (b : Fin n) :
     σ_ ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩ ⊓
-      filtration₁' (n + 2) ⟨b.castSucc, ⟨b, by simp⟩⟩ =
-        Λ[n + 3, 1].image (ιSimplex ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩) := by
+      filtration₁' (n + 1) ⟨b.castSucc, ⟨b, Nat.lt_add_one _⟩⟩ =
+        Λ[n + 2, 1].image (ιSimplex ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩) := by
   apply le_antisymm
   · rw [subcomplex_le_innerHornImage_iff' _ _ inf_le_left, le_inf_iff, not_and]
     intro
@@ -445,7 +405,7 @@ lemma temp₃ (b : Fin (n + 1)) :
       exact filtration₂_last b.castSucc
 
 open Sigma.Lex in
-def filtrationPushout_intermediate'' (i : Σₗ (b : Fin (n + 1)), Fin b.succ) (h0 : ⊥ < i) (hn : i < ⊤) :
+def filtrationPushout_intermediate (n : ℕ) (i : Σₗ (b : Fin (n + 1)), Fin b.succ) (hn : i < ⊤) :
     Sq
       (Λ[n + 2, ⟨(succ i).2.succ, by omega⟩].image (ιSimplex (succ i)))
       (σ_ (succ i))
@@ -454,49 +414,31 @@ def filtrationPushout_intermediate'' (i : Σₗ (b : Fin (n + 1)), Fin b.succ) (
       where
   max_eq := by rw [σ_, filtration₁_succ', sup_comm]
   min_eq := by
-    induction n with
-    | zero =>
-      exfalso
-      apply h0.ne_bot
-      rw [bot_eq_zero]
-      rcases i with ⟨b, a⟩
-      have := Fin.eq_zero b
-      subst this
-      have := Fin.eq_zero a
-      subst this
-      rfl
-    | succ n _ =>
-      obtain rfl | ⟨b, a, rfl⟩ | ⟨b, rfl⟩ := Sigma.Lex.Fin.cases i
-      · exfalso
-        rwa [top_eq_last, lt_self_iff_false] at hn
-      · rw [Fin.succ_eq₁]
-        exact temp₂ b a
-      · rw [Fin.succ_eq₂]
-        simp
-        exact temp₃ b
+    obtain rfl | ⟨b, a, rfl⟩ | ⟨b, rfl⟩ := Sigma.Lex.Fin.cases i
+    · exfalso
+      rwa [top_eq_last, lt_self_iff_false] at hn
+    · rw [Fin.succ_eq₁]
+      exact temp₂ b a
+    · rw [Fin.succ_eq₂]
+      exact temp₃ b
 
 open Sigma.Lex in
-def filtrationPushout_zero'' :
+def filtrationPushout_zero (n : ℕ) :
     Sq
-      (Λ[n + 2, 1].image (ιSimplex (succ ⊥)))
+      (Λ[n + 2, 1].image (ιSimplex ⊥))
       (σ_ ⊥)
       (∂Δ[n + 1].unionProd Λ[2, 1])
       (filtration₁' (n + 1) ⊥) where
   max_eq := by simp [σ_, filtration₁', sup_comm]
   min_eq := by
+    rw [σ_, ofSimplex_eq_range]
     apply le_antisymm
-    · dsimp only [σ_]
-      rw [ofSimplex_eq_range, subcomplex_le_horn_image_iff, le_inf_iff, not_and]
-      · intro
-        rw [bot_eq_zero, Fin.succ_bot_eq, eq_f]
-        simp
-        intro h
-        apply faceImage_one_not_le_filtration₁ n 1
-        exact le_sup_of_le_left h
-      ·
-        simp [ιSimplex]
-
-        sorry
-    · sorry--apply le_inf (σ.innerHornImage_le 0 _) (σ.innerHornImage_zero_le_filtration₁ n b)
+    · rw [subcomplex_le_horn_image_iff, le_inf_iff, not_and]
+      · exact fun _ h ↦ faceImage_one_not_le_filtration₁ n 0 (le_sup_of_le_left h)
+      · exact inf_le_left
+    · apply le_inf
+      · exact image_le_range _ _
+      · convert (innerHornImage_zero_le_filtration₁ n 0)
+        rw [Fin.castSucc_zero, filtration₁_zero]
 
 end σ

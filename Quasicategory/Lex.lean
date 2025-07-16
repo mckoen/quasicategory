@@ -207,7 +207,7 @@ lemma Fin.eq_zero_or_eq_succ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
 lemma Fin.cases (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     i = ⟨Fin.last n, Fin.last n⟩ ∨
       (∃ (b : Fin (n + 1)) (a : Fin b), i = ⟨b, a.castSucc⟩) ∨
-        (∃ (b : Fin n), i = ⟨b.castSucc, ⟨b.castSucc, by dsimp; omega⟩⟩) := by
+        (∃ (b : Fin n), i = ⟨b.castSucc, ⟨b, by dsimp; omega⟩⟩) := by
   have := (OrderTop.le_top i)
   rw [top_eq_last] at this
   cases lt_or_eq_of_le this
@@ -234,7 +234,6 @@ lemma Fin.cases (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
       use ⟨b, h⟩
       congr
       rw [Fin.ext_iff, ha]
-      rfl
   · next h =>
     obtain ⟨hb, h⟩ := h
     subst hb
@@ -249,7 +248,7 @@ lemma Fin.cases (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
 lemma Fin.succ_last_eq_last : succ ⟨Fin.last n, Fin.last n⟩ = ⟨Fin.last n, Fin.last n⟩ := by
   simp [succ]
 
-lemma Fin.succ_zero (b : Fin (n + 1)) : succ ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩ = ⟨b.succ, ⟨1, Nat.one_lt_succ_succ _⟩⟩ := by
+lemma Fin.succ_zero_snd (b : Fin (n + 1)) : succ ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩ = ⟨b.succ, ⟨1, Nat.one_lt_succ_succ _⟩⟩ := by
   simp [succ]
 
 lemma Fin.succ_eq₁ (b : Fin (n + 1)) (a : Fin b) : succ ⟨b, a.castSucc⟩ = ⟨b, a.succ⟩ := by
@@ -257,7 +256,7 @@ lemma Fin.succ_eq₁ (b : Fin (n + 1)) (a : Fin b) : succ ⟨b, a.castSucc⟩ = 
   rfl
 
 @[simp]
-lemma Fin.succ_eq₂ (b : Fin n) : succ ⟨b.castSucc, ⟨b.castSucc, by dsimp; omega⟩⟩ = ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩ := by
+lemma Fin.succ_eq₂ (b : Fin n) : succ ⟨b.castSucc, ⟨b, by dsimp; omega⟩⟩ = ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩ := by
   simp [succ]
   split
   · next h =>
