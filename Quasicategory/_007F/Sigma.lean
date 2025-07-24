@@ -69,7 +69,7 @@ lemma face_ne_snd_succ_image_le_boundary_prod_top (a : Fin b.succ) (j : Fin (n +
       aesop
 
 /-- the `0`-th face of `σ b 0` is contained in `Δ[n] ⊗ Λ[2, 1]`. -/
-lemma face_snd_zero_image_le_top_prod_horn :
+lemma face_zero_image_le_top_prod_horn :
     (face {0}ᶜ).image (ιSimplex ⟨b, ⟨0, Nat.zero_lt_succ _⟩⟩) ≤ prod ⊤ Λ[2, 1] := by
   simp [face_singleton_compl]
   refine ⟨Set.mem_univ _, ?_⟩
@@ -144,7 +144,7 @@ lemma innerHornImage_join_le_filtration₁ :
   by_cases h : j = 0
   · subst h
     exact le_sup_of_le_left
-      ((face_snd_zero_image_le_top_prod_horn.{u} b.succ).trans (top_prod_le_unionProd _ _))
+      ((face_zero_image_le_top_prod_horn.{u} b.succ).trans (top_prod_le_unionProd _ _))
   · exact le_sup_of_le_left
       ((face_ne_snd_succ_image_le_boundary_prod_top _ _ j h hj).trans (prod_top_le_unionProd _ _))
 
@@ -166,7 +166,7 @@ lemma innerHornImage_bot_le_unionProd : innerHornImage ⊥ ≤ ∂Δ[n + 1].unio
   intro ⟨j, hj⟩
   obtain rfl | ⟨j, rfl⟩ := (Fin.eq_zero_or_eq_succ j)
   · exact le_sup_of_le_left
-      (face_snd_zero_image_le_top_prod_horn.{u} 0)
+      (face_zero_image_le_top_prod_horn.{u} 0)
   · exact le_sup_of_le_right
       (face_ne_snd_succ_image_le_boundary_prod_top _ _ j.succ (Fin.succ_ne_zero _) hj)
 

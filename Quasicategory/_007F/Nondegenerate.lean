@@ -1,6 +1,8 @@
 import Mathlib.Data.Sigma.Order
 import Quasicategory.TopCatModelCategory.SSet.NonDegenerateProdSimplex
 
+universe u
+
 open CategoryTheory MonoidalCategory SSet Simplicial SimplexCategory prodStdSimplex
 
 variable {n : ℕ}
@@ -8,7 +10,7 @@ variable {n : ℕ}
 /-- defined for `0 ≤ a ≤ b ≤ n`. Can define it for `b = n + 1`,
   but then it lands in `Λ[2, 2] _⦋n + 2⦌`. -/
 def τ.objMk₂ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : Δ[2] _⦋n + 2⦌  :=
-  stdSimplex.objMk {
+  stdSimplex.objMk.{u} {
     toFun k :=
       if k ≤ (⟨i.2, by omega⟩ : Fin (n + 3)) then 0
       else if k ≤ i.1.castSucc.succ then 1
@@ -30,7 +32,7 @@ def τ.objMk₂ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : Δ[2] _⦋n + 2⦌  
 /-- defined for `0 ≤ a ≤ b < n`. Can define it for `b = n`,
   but then it lands in `Λ[2, 2] _⦋n + 1⦌`. -/
 def σ.objMk₂ (i : Σₗ (b : Fin n), Fin b.succ) : Δ[2] _⦋n + 1⦌  :=
-  stdSimplex.objMk {
+  stdSimplex.objMk.{u} {
     toFun k :=
       if k ≤ (⟨i.2, by omega⟩ : Fin (n + 1)) then 0
       else if k ≤ i.1.succ then 1
