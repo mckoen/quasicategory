@@ -70,3 +70,7 @@ instance : HasSmallObjectArgument.{u} innerHornInclusions.{u} where
 lemma innerAnodyne_eq_saturation_innerHornInclusions :
     innerAnodyne.{u} = saturation.{u} innerHornInclusions :=
   llp_rlp_eq_saturation
+
+lemma innerFibration_eq_rlp_innerAnodyne :
+    innerFibration = innerAnodyne.rlp := by
+  rw [innerAnodyne_eq_saturation_innerHornInclusions, ← llp_rlp_eq_saturation, rlp_llp_rlp]

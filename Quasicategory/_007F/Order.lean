@@ -1,4 +1,4 @@
-import Quasicategory.TopCatModelCategory.SSet.Subcomplex
+import Mathlib.AlgebraicTopology.SimplicialSet.Subcomplex
 import Quasicategory.TopCatModelCategory.SSet.Horn
 
 open CategoryTheory SSet Subcomplex

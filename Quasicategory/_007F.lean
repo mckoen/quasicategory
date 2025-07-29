@@ -197,13 +197,11 @@ lemma map_mem_of_sigma {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ 
 
 end CategoryTheory.MorphismProperty
 
-open Subcomplex in
 lemma τ.filtration_last_innerAnodyne : innerHornInclusions.saturation
     (Subcomplex.homOfLE (filtration_monotone n (Sigma.Lex.le_succ ⟨Fin.last (n + 1), Fin.last (n + 1)⟩))) := by
   refine (arrow_mk_iso_iff _ ?_).2 <| id_mem innerHornInclusions.saturation (filtration n ⟨Fin.last (n + 1), Fin.last (n + 1)⟩).toSSet
   exact Arrow.isoMk (isoOfEq rfl) (isoOfEq (congrArg (filtration n) Sigma.Lex.Fin.succ_last_eq_last))
 
-open Subcomplex in
 lemma σ.filtration_last_innerAnodyne : innerHornInclusions.saturation
     (Subcomplex.homOfLE (filtration_monotone (n + 1) (Sigma.Lex.le_succ ⟨Fin.last n, Fin.last n⟩))) := by
   refine (arrow_mk_iso_iff _ ?_).2 <| id_mem innerHornInclusions.saturation (filtration (n + 1) ⟨Fin.last n, Fin.last n⟩).toSSet
@@ -314,9 +312,9 @@ def arrow_unionProd_iso : Arrow.mk (∂Δ[n].ι ◫ Λ[2, 1].ι) ≅ Arrow.mk (�
 lemma innerAnodyne_eq_T : innerAnodyne.{u} = (saturation.{u} bdryHornPushouts) := by
   apply le_antisymm
   all_goals rw [innerAnodyne_eq_saturation_innerHornInclusions, ← WeaklySaturated.le_iff]
-  · intro _ _ f ⟨h0, hn⟩
+  · intro _ _ _ ⟨h0, hn⟩
     exact .retract (hornRetract _ h0 hn) (monomorphisms_le_S _ (.infer_property _))
-  · intro _ _ f ⟨n⟩
+  · intro _ _ _ ⟨_⟩
     rw [← innerAnodyne_eq_saturation_innerHornInclusions]
     exact (arrow_mk_iso_iff _ arrow_unionProd_iso).2 unionProd_ι_innerAnodyne
 

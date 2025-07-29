@@ -51,6 +51,18 @@ noncomputable
 def mulZero {I A : SSet} (t : IsInitial I) : I ⊗ A ≅ I :=
   β_ _ _ ≪≫ zeroMul t
 
+@[simps]
+noncomputable
+def zeroPow {A T : SSet} (t : IsTerminal T) : (ihom A).obj T ≅ T where
+  hom := t.from _
+  inv := curry (t.from _)
+  hom_inv_id := uncurry_injective (t.hom_ext _ _)
+  inv_hom_id := t.hom_ext _ _
+
+noncomputable
+def isTerminalZeroPow {A T : SSet} (t : IsTerminal T) : IsTerminal ((ihom A).obj T) := by
+  apply IsTerminal.ofIso t (zeroPow t).symm
+
 noncomputable
 def powZero {I B : SSet} (t : IsInitial I) : (ihom I).obj B ≅ Δ[0] where
   hom := isTerminalZero.from _

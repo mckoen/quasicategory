@@ -7,80 +7,48 @@ universe w
 
 namespace SSet
 
-open CategoryTheory Simplicial MorphismProperty MonoidalCategory MonoidalClosed
-
-open PushoutProduct Limits
+open CategoryTheory Simplicial MorphismProperty MonoidalCategory MonoidalClosed Limits PushoutProduct
 
 variable {S : SSet} {m : ℕ}
-  (α : ∂Δ[m].toSSet ⟶ (ihom Δ[2]).obj S)
-  (β : Δ[m] ⟶ (ihom Λ[2, 1].toSSet).obj S)
 
-lemma commSq_uncurry (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
-    CommSq (Λ[2, 1].ι ▷ ∂Δ[m]) (Λ[2, 1].toSSet ◁ ∂Δ[m].ι)
-      (MonoidalClosed.uncurry α) (MonoidalClosed.uncurry β) := by
-  constructor
-  dsimp [MonoidalClosed.uncurry, Adjunction.homEquiv]
-  rw [← MonoidalCategory.whiskerLeft_comp_assoc, ← Category.assoc, ← whisker_exchange, ← sq.w]
-  rfl
-
--- induced morphism from pushout to `S` given by `S_cocone`
 noncomputable
-def to_S
-    (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
-    (PushoutProduct.pt ∂Δ[m].ι Λ[2, 1].ι) ⟶ S :=
-  pushout.desc (MonoidalClosed.uncurry α) (MonoidalClosed.uncurry β) (commSq_uncurry α β sq).w
+def bdryHornPushoutProduct (m : ℕ) : (curriedTensor SSet).PushoutObjObj Λ[2, 1].ι ∂Δ[m].ι :=
+  Functor.PushoutObjObj.ofHasPushout _ _ _
 
--- the new square in `0079`
-lemma newSquare
-    (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
-    CommSq (to_S α β sq) (∂Δ[m].ι ◫ Λ[2, 1].ι) (isTerminalZero.from S) (isTerminalZero.from (Δ[2] ⊗ Δ[m])) :=
-  CommSq.mk (isTerminalZero.hom_ext
-    ((to_S α β sq) ≫ (isTerminalZero.from S)) ((∂Δ[m].ι ◫ Λ[2, 1].ι) ≫ (isTerminalZero.from (Δ[2] ⊗ Δ[m]))))
+noncomputable
+def hornFromPullbackPower (S : SSet) : internalHom.PullbackObjObj Λ[2, 1].ι (isTerminalZero.from S) :=
+  Functor.PullbackObjObj.ofHasPullback internalHom Λ[2, 1].ι (isTerminalZero.from S)
 
-lemma sqLift_of_newSqLift
-    (sq : CommSq α ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S) β) :
-    (newSquare α β sq).HasLift → sq.HasLift := by
-  intro ⟨lift, fac_left, _⟩
-  refine ⟨curry lift, ?_, ?_⟩
-  · apply_fun uncurry
-    rw [uncurry_natural_left, uncurry_curry]
-    apply_fun (fun f ↦ (pushout.inl _ _) ≫ f) at fac_left
-    simp [to_S] at fac_left
-    assumption
-  · apply_fun uncurry
-    rw [uncurry_natural_left]
-    apply_fun (fun f ↦ (pushout.inr _ _) ≫ f) at fac_left
-    simp [to_S] at fac_left
-    simp [← fac_left, whisker_exchange_assoc]
+noncomputable
+def pullback_ihom_terminal_iso {S : SSet} :
+    pullback ((ihom Λ[2, 1].toSSet).map (isTerminalZero.from S)) ((pre Λ[2, 1].ι).app Δ[0]) ≅
+      (ihom Λ[2, 1].toSSet).obj S where
+  hom := pullback.fst _ _
+  inv := pullback.lift (𝟙 _) ((isTerminalZeroPow isTerminalZero).from _) rfl
 
--- given a map from the pushout to S, we can recover a commutative square as in `0079`
-def newSq
-    (f : (PushoutProduct.pt ∂Δ[m].ι Λ[2, 1].ι) ⟶ S) :
-  CommSq (MonoidalClosed.curry ((pushout.inl _ _) ≫ f))
-    ∂Δ[m].ι ((internalHom.map Λ[2, 1].ι.op).app S)
-    (MonoidalClosed.curry ((pushout.inr _ _) ≫ f)) := by
-  constructor
-  apply_fun uncurry
-  simp [uncurry_natural_left, internalHom_map, uncurry_pre, uncurry_natural_left, whisker_exchange_assoc]
-  exact Limits.pushout.condition_assoc f
+noncomputable
+def hornFromPullbackPower_π_arrowIso :
+    Arrow.mk (S.hornFromPullbackPower.π) ≅ Arrow.mk ((internalHom.map Λ[2, 1].ι.op).app S) := by
+  dsimp [hornFromPullbackPower]
+  refine Arrow.isoMk (Iso.refl _) pullback_ihom_terminal_iso ?_
+  simp [pullback_ihom_terminal_iso, Functor.PullbackObjObj.π]
 
--- iff the pushout diagram has an extension, then the square has a lift
-lemma newSqLift_of_sqLift {S : SSet} {m : ℕ}
-    (f : PushoutProduct.pt ∂Δ[m].ι Λ[2, 1].ι ⟶ S)
-    (g : Δ[2] ⊗ Δ[m] ⟶ Δ[0])
-    (sq : CommSq f (∂Δ[m].ι ◫ Λ[2, 1].ι) (isTerminalZero.from S) g) :
-    (newSq f).HasLift → sq.HasLift := by
-  intro ⟨lift, fac_left, fac_right⟩
-  refine ⟨MonoidalClosed.uncurry lift, ?_, isTerminalZero.hom_ext _ _⟩
-  apply Limits.pushout.hom_ext
-  · apply_fun curry
-    simpa [curry_natural_left]
-  · apply_fun curry
-    dsimp at fac_right
-    simp [← fac_right, curry_eq_iff]
-    rfl
+noncomputable
+def bdryHornPushoutProduct_ι_eq :
+    (bdryHornPushoutProduct m).ι = ∂Δ[m].ι ◫ Λ[2, 1].ι := by
+  dsimp [bdryHornPushoutProduct, Functor.PushoutObjObj.ι]
+  apply pushout.hom_ext _ _
+  all_goals aesop
 
-/-- `0079` `S` is a quasi-category iff `ihom(Δ[2], S) ⟶ ihom(Λ[2, 1], S)` is a trivial fibration. -/
+noncomputable
+def PushoutObjObj_ι_eq {A B X Y : SSet} {f : A ⟶ B} {g : X ⟶ Y} :
+    (Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet) f g).ι = g ◫ f := by
+  dsimp [Functor.PushoutObjObj.ι]
+  exact pushout.hom_ext (by aesop) (by aesop)
+
+-- `0079`
+open HasLiftingProperty ParametrizedAdjunction in
+/-- `S` is a quasi-category iff `ihom(Δ[2], S) ⟶ ihom(Λ[2, 1], S)` is a trivial fibration. -/
 instance quasicategory_iff_internalHom_horn_trivialFibration (S : SSet) :
     Quasicategory S ↔
       trivialFibration ((internalHom.map Λ[2, 1].ι.op).app S) := by
@@ -88,13 +56,13 @@ instance quasicategory_iff_internalHom_horn_trivialFibration (S : SSet) :
     ← contains_innerAnodyne_iff_contains_pushout_maps, le_llp_iff_le_rlp, morphism_le_iff]
   constructor
   · intro h _ _ _ ⟨m⟩
-    constructor
-    intro α β sq
-    exact sqLift_of_newSqLift α β sq ((h _ (.mk m)).sq_hasLift (newSquare _ _ sq))
+    rw [← iff_of_arrow_iso_right _ hornFromPullbackPower_π_arrowIso,
+      ← hasLiftingProperty_iff internalHomAdjunction₂ _ _, bdryHornPushoutProduct_ι_eq]
+    exact h _ (.mk m)
   · intro h _ _ _ ⟨m⟩
-    constructor
-    intro f g sq
-    exact newSqLift_of_sqLift f g sq ((h _ (.mk m)).sq_hasLift (newSq f))
+    rw [← bdryHornPushoutProduct_ι_eq, hasLiftingProperty_iff internalHomAdjunction₂ (bdryHornPushoutProduct m) (hornFromPullbackPower S),
+      iff_of_arrow_iso_right _ hornFromPullbackPower_π_arrowIso]
+    apply h _ (.mk m)
 
 /-- `0071` (special case of `0070`) if `p : X ⟶ Y` is a trivial fibration, then `ihom(B, X) ⟶ ihom(B, Y)` is -/
 instance trivialFibration_of_ihom_map_trivialFibration {X Y : SSet} (B : SSet) (p : X ⟶ Y) (hp: trivialFibration p) :
@@ -121,51 +89,18 @@ def aux (S D : SSet) [Quasicategory D] :
     CategoryTheory.Comma.isoMk (ihom_ihom_symm_iso _ _ _) (ihom_ihom_symm_iso _ _ _)
   exact HasLiftingProperty.of_arrow_iso_right ∂Δ[n].ι H
 
-noncomputable
-def bdryHornPushoutProduct (m : ℕ) : Functor.PushoutObjObj (curriedTensor SSet) Λ[2, 1].ι ∂Δ[m].ι :=
-  Functor.PushoutObjObj.ofHasPushout _ _ _
+lemma _00J8 {A B X Y : SSet} (f : A ⟶ B) {g : X ⟶ Y} [hf : Mono f] (hg : innerAnodyne g) :
+    innerAnodyne (Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet) f g).ι := by
 
-noncomputable
-def hornFromPullbackPower (S : SSet) : Functor.PullbackObjObj internalHom Λ[2, 1].ι (isTerminalZero.from S) :=
-  Functor.PullbackObjObj.ofHasPullback _ _ _
+  sorry
 
-/-
-#check ParametrizedAdjunction.liftStructEquiv internalHomAdjunction₂ (bdryHornPushoutProduct m) (hornFromPullbackPower S)
-
-#check ParametrizedAdjunction.hasLiftingProperty_iff internalHomAdjunction₂ (bdryHornPushoutProduct m) (hornFromPullbackPower S)
-
-/-
-def : Limits.pullback ((ihom Λ[2, 1].toSSet).map (isTerminalZero.from S)) ((pre Λ[2, 1].ι).app Δ[0]) ≅
-  (ihom Λ[2, 1].toSSet).obj S
--/
-
-noncomputable
-def hornFromPullbackPower_π_arrowIso :
-    Arrow.mk (S.hornFromPullbackPower.π) ≅ Arrow.mk ((internalHom.map Λ[2, 1].ι.op).app S) := by
-  apply Arrow.isoMk
-  · sorry
-  · exact Iso.refl _
-  · simp [hornFromPullbackPower]
-    have := isProductOfIsTerminalIsPullback
-    sorry
-
--- `0079`
-/-- `S` is a quasi-category iff `ihom(Δ[2], S) ⟶ ihom(Λ[2, 1], S)` is a trivial fibration. -/
-instance quasicategory_iff_internalHom_horn_trivialFibration' (S : SSet) :
-    Quasicategory S ↔
-      trivialFibration ((internalHom.map Λ[2, 1].ι.op).app S) := by
-  rw [quasicategory_iff_from_innerAnodyne_rlp, morphism_rlp_iff,
-    ← contains_innerAnodyne_iff_contains_pushout_maps, le_llp_iff_le_rlp, morphism_le_iff]
-  constructor
-  · intro h _ _ _ ⟨m⟩
-    have := ParametrizedAdjunction.hasLiftingProperty_iff internalHomAdjunction₂ (bdryHornPushoutProduct m) (hornFromPullbackPower S)
-    dsimp [rlp] at h
-    sorry
-  · intro h _ _ _ ⟨m⟩
-
-    sorry
-/-
--/
--/
+open ParametrizedAdjunction in
+lemma _01BT {X S A B : SSet} (p : X ⟶ S) (i : A ⟶ B)
+    (hp : innerFibration p) [hi : Mono i] :
+    innerFibration (Functor.PullbackObjObj.ofHasPullback internalHom i p).π := by
+  rw [innerFibration_eq_rlp_innerAnodyne] at hp ⊢
+  intro _ _ f hf
+  rw [← hasLiftingProperty_iff internalHomAdjunction₂ (Functor.PushoutObjObj.ofHasPushout _ _ _)]
+  exact hp _ (_00J8 i hf)
 
 end SSet

@@ -3,6 +3,8 @@ import Mathlib.CategoryTheory.Limits.Shapes.Pullback.CommSq
 import Mathlib.Combinatorics.Quiver.ReflQuiver
 import Mathlib.AlgebraicTopology.SimplicialSet.Horn
 import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
+import Mathlib.CategoryTheory.LiftingProperties.ParametrizedAdjunction
+
 
 universe v v' u u'
 
@@ -15,6 +17,8 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [HasPushouts C]
 section Defs
 
 variable {A B X Y : C} (f : A ⟶ B) (g : X ⟶ Y)
+
+#check (Functor.PushoutObjObj.ofHasPushout (curriedTensor C) f g).pt
 
 @[simp]
 noncomputable

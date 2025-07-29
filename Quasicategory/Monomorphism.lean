@@ -2,9 +2,39 @@ import Quasicategory.Basic
 
 universe w v v' u u'
 
-namespace SSet
+open CategoryTheory Simplicial MorphismProperty Limits
 
-open CategoryTheory Simplicial MorphismProperty
+namespace Types
+
+-- by joel
+instance : IsStableUnderCoproducts.{v} (monomorphisms (Type u)) where
+  isStableUnderCoproductsOfShape J  := by
+    apply IsStableUnderCoproductsOfShape.mk
+    intro X₁ X₂ _ _ f hf
+    simp only [monomorphisms.iff, mono_iff_injective] at hf ⊢
+    intro x y h
+    obtain ⟨⟨i⟩, x, rfl⟩ := Types.jointly_surjective_of_isColimit (coproductIsCoproduct X₁) x
+    obtain ⟨⟨j⟩, y, rfl⟩ := Types.jointly_surjective_of_isColimit (coproductIsCoproduct X₁) y
+    dsimp at x y h ⊢
+    change (Sigma.ι X₁ i ≫ Limits.Sigma.map f) x =
+      (Sigma.ι X₁ j ≫ Limits.Sigma.map f) y at h
+    simp only [ι_colimMap] at h
+    dsimp at h
+    obtain rfl := Types.eq_cofanInj_apply_eq_of_isColimit (coproductIsCoproduct X₂) _ _ h
+    obtain rfl := hf _ (Types.cofanInj_injective_of_isColimit (coproductIsCoproduct X₂) _ h)
+    rfl
+
+-- by joel
+instance [HasCoproducts.{v} (Type u)] (J : Type*) [Category J] :
+    IsStableUnderCoproducts.{v} (monomorphisms (J ⥤ Type u)) where
+  isStableUnderCoproductsOfShape J := by
+    rw [← functorCategory_monomorphisms]
+    apply IsStableUnderColimitsOfShape.functorCategory
+    apply isStableUnderCoproductsOfShape_of_isStableUnderCoproducts
+
+end Types
+
+namespace SSet
 
 open MonoidalCategory in
 instance tensorLeft_PreservesMonomorphisms (B : SSet) :
@@ -24,20 +54,27 @@ instance IsStableUnderCobaseChange.monomorphisms : IsStableUnderCobaseChange (mo
     letI _ : Adhesive SSet := adhesive_functor
     Adhesive.mono_of_isPushout_of_mono_right P
 
+-- by joel
 instance IsStableUnderTransfiniteComposition.monomorphisms :
     IsStableUnderTransfiniteComposition.{u} (monomorphisms SSet.{u}) where
   isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := by
     change (MorphismProperty.monomorphisms (_ ⥤ _)).IsStableUnderTransfiniteCompositionOfShape _
     infer_instance
 
+-- by joel
+instance IsStableUnderCoproducts.monomorphisms :
+    IsStableUnderCoproducts.{u} (monomorphisms SSet.{u}) := by
+  change (MorphismProperty.monomorphisms (_ ⥤ _)).IsStableUnderCoproducts
+  infer_instance
+
 -- `0077` (a) monomorphisms are weakly saturated
 instance monomorphisms.WeaklySaturated : WeaklySaturated.{u} (monomorphisms SSet.{u}) :=
   ⟨ IsStableUnderCobaseChange.monomorphisms,
     IsStableUnderRetracts.monomorphisms,
-    by infer_instance,
+    IsStableUnderCoproducts.monomorphisms,
     IsStableUnderTransfiniteComposition.monomorphisms⟩
 
-/-- `modelCategoryQuillen.transfiniteCompositionOfMono` -/
+/-- by joel `modelCategoryQuillen.transfiniteCompositionOfMono` -/
 noncomputable def transfiniteCompositionOfMono_bdryInclusions {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] :
     (coproducts.{u} bdryInclusions).pushouts.TransfiniteCompositionOfShape ℕ i where
   toTransfiniteCompositionOfShape :=
@@ -49,7 +86,7 @@ noncomputable def transfiniteCompositionOfMono_bdryInclusions {X Y : SSet.{u}} (
     rintro _ _ _ ⟨⟩
     exact .mk d
 
-/-- `modelCategoryQuillen.transfiniteCompositions_pushouts_coproducts` -/
+/-- by joel `modelCategoryQuillen.transfiniteCompositions_pushouts_coproducts` -/
 lemma transfiniteCompositions_pushouts_coproducts_bdryInclusions :
     transfiniteCompositions.{u} (coproducts.{u} bdryInclusions).pushouts = monomorphisms SSet.{u} := by
   apply le_antisymm
