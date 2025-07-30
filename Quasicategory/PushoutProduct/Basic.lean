@@ -39,7 +39,33 @@ variable (h : Arrow C) {f g : Arrow C} (sq : f ⟶ g)
 
 @[simp]
 noncomputable
-def rightFunctor_map_left  :
+def leftFunctor_map_left  :
+    pt h.hom f.hom ⟶ pt h.hom g.hom :=
+  pushout.map _ _ _ _
+    (h.right ◁ sq.left) (h.left ◁ sq.right) (h.left ◁ sq.left)
+    (whisker_exchange _ _).symm (by simp [← MonoidalCategory.whiskerLeft_comp, Arrow.w])
+
+@[simp]
+noncomputable
+def leftFunctor_map :
+    Arrow.mk (h.hom ◫ f.hom) ⟶ Arrow.mk (h.hom ◫ g.hom) where
+  left := leftFunctor_map_left h sq
+  right := h.right ◁ sq.right
+  w := by
+    dsimp [Functor.PushoutObjObj.ι]
+    apply pushout.hom_ext
+    · simp [← MonoidalCategory.whiskerLeft_comp, Arrow.w]
+    · simp [← whisker_exchange]
+
+@[simp]
+noncomputable
+def leftFunctor : Arrow C ⥤ Arrow C where
+  obj f := h.hom ◫ f.hom
+  map := leftFunctor_map h
+
+@[simp]
+noncomputable
+def leftBifunctor_map_left :
     pt f.hom h.hom ⟶ pt g.hom h.hom :=
   pushout.map _ _ _ _
     (sq.right ▷ h.left) (sq.left ▷ h.right) (sq.left ▷ h.left)
@@ -47,53 +73,27 @@ def rightFunctor_map_left  :
 
 @[simp]
 noncomputable
-def rightFunctor_map :
-    Arrow.mk (f.hom ◫ h.hom) ⟶ Arrow.mk (g.hom ◫ h.hom) where
-  left := rightFunctor_map_left h sq
-  right := sq.right ▷ h.right
-  w := by
-    dsimp [Functor.PushoutObjObj.ι]
-    apply pushout.hom_ext
-    · simp [← whisker_exchange]
-    · simp [← MonoidalCategory.comp_whiskerRight, Arrow.w]
-
-@[simp]
-noncomputable
-def rightFunctor : Arrow C ⥤ Arrow C where
-  obj f := f.hom ◫ h.hom
-  map := rightFunctor_map h
-
-@[simp]
-noncomputable
-def rightBifunctor_map_left :
-    pt h.hom f.hom ⟶ pt h.hom g.hom :=
-  pushout.map _ _ _ _
-    (h.right ◁ sq.left) (h.left ◁ sq.right) (h.left ◁ sq.left)
-    (whisker_exchange h.hom sq.left).symm (by simp [← MonoidalCategory.whiskerLeft_comp, ← Arrow.w_mk_right])
-
-@[simp]
-noncomputable
-def rightBifunctor_map :
-    rightFunctor f ⟶ rightFunctor g where
+def leftBifunctor_map :
+    leftFunctor f ⟶ leftFunctor g where
   app h := {
-    left := rightBifunctor_map_left h sq
-    right := h.right ◁ sq.right
+    left := leftBifunctor_map_left h sq
+    right := sq.right ▷ h.right
     w := by
       dsimp [Functor.PushoutObjObj.ι]
       apply pushout.hom_ext
-      · simp [← MonoidalCategory.whiskerLeft_comp, Arrow.w]
-      · simp [whisker_exchange] }
+      · simp [whisker_exchange]
+      · simp [← MonoidalCategory.comp_whiskerRight, Arrow.w] }
   naturality f' g' sq' := by
     apply Arrow.hom_ext
     · apply pushout.hom_ext
       all_goals simp [← whisker_exchange_assoc]
-    · exact (whisker_exchange _ _).symm
+    · exact (whisker_exchange _ _)
 
 @[simps!]
 noncomputable
-def rightBifunctor : Arrow C ⥤ Arrow C ⥤ Arrow C where
-  obj := rightFunctor
-  map := rightBifunctor_map
+def leftBifunctor : Arrow C ⥤ Arrow C ⥤ Arrow C where
+  obj := leftFunctor
+  map := leftBifunctor_map
 
 end Functor
 
@@ -117,7 +117,7 @@ def _root_.CategoryTheory.NatTrans.arrowFunctor_NatTrans {G' : D ⥤ C} (h' : G 
 
 @[simps!]
 noncomputable
-def natTransLeftFunctor : D ⥤ C := (NatTrans.arrowFunctor h) ⋙ rightFunctor g ⋙ Arrow.leftFunc
+def natTransLeftFunctor : D ⥤ C := (NatTrans.arrowFunctor h) ⋙ leftFunctor g ⋙ Arrow.leftFunc
 
 @[simp]
 noncomputable
@@ -127,23 +127,23 @@ def natTransLeftFunctor_comp {G' : D ⥤ C} (h' : G ⟶ G') :
 
 @[simps!]
 noncomputable
-def inrDescFunctor : (F ⋙ tensorRight Y) ⟶ (natTransLeftFunctor h g) where
-  app A := (Functor.PushoutObjObj.ofHasPushout (curriedTensor C) (h.app A) g).inr
+def inlDescFunctor : (F ⋙ tensorLeft Y) ⟶ (natTransLeftFunctor h g) where
+  app A := (Functor.PushoutObjObj.ofHasPushout (curriedTensor C) g (h.app A)).inl
 
 @[simps!]
 noncomputable
-def inlDescFunctor : (G ⋙ tensorRight X) ⟶ (natTransLeftFunctor h g) where
-  app A := (Functor.PushoutObjObj.ofHasPushout (curriedTensor C) (h.app A) g).inl
+def inrDescFunctor : (G ⋙ tensorLeft X) ⟶ (natTransLeftFunctor h g) where
+  app A := (Functor.PushoutObjObj.ofHasPushout (curriedTensor C) g (h.app A)).inr
 
 @[simps!]
 noncomputable
-def descFunctor : (natTransLeftFunctor h g) ⟶ (G ⋙ tensorRight Y) where
-  app A := h.app A ◫ g
+def descFunctor : (natTransLeftFunctor h g) ⟶ (G ⋙ tensorLeft Y) where
+  app A := g ◫ h.app A
   naturality _ _ _ := by
     dsimp [Functor.PushoutObjObj.ι]
     apply pushout.hom_ext
+    · simp [← MonoidalCategory.whiskerLeft_comp]
     · simp [whisker_exchange]
-    · simp [← MonoidalCategory.comp_whiskerRight]
 
 end NatTrans
 
@@ -153,18 +153,19 @@ section
 
 variable {A B X Y : C} {f : A ⟶ B} {g : X ⟶ Y} {s : X ⟶ A} {t : Y ⟶ B}
 
-variable (S : C) [hS : ∀ S : C, PreservesColimitsOfSize (tensorRight S)]
+variable (S : C) [hS : ∀ S : C, PreservesColimitsOfSize (tensorLeft S)]
 
 def whiskerPushoutAux (s : X ⟶ A) (g : X ⟶ Y) :
-    IsPushout (s ▷ S) (g ▷ S) ((pushout.inl s g) ▷ S) ((pushout.inr s g) ▷ S) where
-  w := by simp only [← comp_whiskerRight, pushout.condition]
-  isColimit' := ⟨Limits.isColimitOfHasPushoutOfPreservesColimit (tensorRight S) s g⟩
+    IsPushout (S ◁ s) (S ◁ g) (S ◁ (pushout.inl s g)) (S ◁ (pushout.inr s g)) where
+  w := by simp only [← MonoidalCategory.whiskerLeft_comp, pushout.condition]
+  isColimit' := ⟨Limits.isColimitOfHasPushoutOfPreservesColimit (tensorLeft S) s g⟩
 
 def whiskerPushout (h : IsPushout s g f t) :
-    IsPushout (s ▷ S) (g ▷ S) (f ▷ S) (t ▷ S) :=
+    IsPushout (S ◁ s) (S ◁ g) (S ◁ f) (S ◁ t) :=
   (whiskerPushoutAux S s g).of_iso (Iso.refl _) (Iso.refl _) (Iso.refl _)
-    (whiskerRightIso h.isoPushout S).symm (by simp) (by simp)
-    (by simp [← comp_whiskerRight, IsPushout.inl_isoPushout_inv]) (by simp [← comp_whiskerRight, IsPushout.inl_isoPushout_inv])
+    (whiskerLeftIso S h.isoPushout).symm (by simp) (by simp)
+    (by simp [← MonoidalCategory.whiskerLeft_comp, IsPushout.inl_isoPushout_inv])
+    (by simp [← MonoidalCategory.whiskerLeft_comp, IsPushout.inl_isoPushout_inv])
 
 end
 
@@ -172,50 +173,50 @@ section
 
 variable {f g : Arrow C} (ι : Arrow C) (h : f ⟶ g) (hp : IsColimit (PushoutCocone.mk _ _ h.w))
 
-variable [hS : ∀ S : C, PreservesColimitsOfSize (tensorRight S)]
+variable [hS : ∀ S : C, PreservesColimitsOfSize (tensorLeft S)]
 
-variable (s : PushoutCocone ((rightBifunctor.obj ι).map h).left ((rightBifunctor.obj ι).obj f).hom)
+variable (s : PushoutCocone ((leftBifunctor.obj ι).map h).left ((leftBifunctor.obj ι).obj f).hom)
 
 @[simp]
 noncomputable
-def temp_desc : ((rightBifunctor.obj ι).obj g).right ⟶ s.pt :=
+def temp_desc : ((leftFunctor ι).obj g).right ⟶ s.pt :=
   (whiskerPushout ι.right (IsPushout.of_isColimit hp)).desc
-    ((pushout.inr (g.hom ▷ ι.left) (g.left ◁ ι.hom)) ≫ s.inl) s.inr
-    (by simpa [pushout.inr_desc_assoc, Functor.PushoutObjObj.ι] using (pushout.inr _ _) ≫= s.condition)
+    ((pushout.inl _ _) ≫ s.inl) s.inr
+    (by simpa [pushout.inr_desc_assoc, Functor.PushoutObjObj.ι] using (pushout.inl _ _) ≫= s.condition)
 
-def temp_fac_left : ((rightBifunctor.obj ι).obj g).hom ≫ temp_desc ι h hp s = s.inl := by
+def temp_fac_left : ((leftFunctor ι).obj g).hom ≫ temp_desc ι h hp s = s.inl := by
   simp [Functor.PushoutObjObj.ι]
   apply pushout.hom_ext
+  · simp
   · apply (whiskerPushout _ (IsPushout.of_isColimit hp)).hom_ext
-    · simp [← Category.assoc _ (pushout.inl _ _), pushout.condition, ← whisker_exchange_assoc]
-    · simp [← whisker_exchange_assoc]
-      have := pushout.inl _ _ ≫= s.condition
+    · simp [← pushout.condition_assoc, whisker_exchange_assoc]
+    · simp [whisker_exchange_assoc]
+      have := pushout.inr _ _ ≫= s.condition
       simp [Functor.PushoutObjObj.ι] at this
       rw [this]
-  · simp
 
-def temp_uniq (m : ((rightBifunctor.obj ι).obj g).right ⟶ s.pt)
-    (fac_left : ((rightBifunctor.obj ι).obj g).hom ≫ m = s.inl)
-    (fac_right : ((rightBifunctor.obj ι).map h).right ≫ m = s.inr) : m = temp_desc ι h hp s := by
+def temp_uniq (m : ((leftBifunctor.obj ι).obj g).right ⟶ s.pt)
+    (fac_left : ((leftBifunctor.obj ι).obj g).hom ≫ m = s.inl)
+    (fac_right : ((leftBifunctor.obj ι).map h).right ≫ m = s.inr) : m = temp_desc ι h hp s := by
   apply (whiskerPushout _ (IsPushout.of_isColimit hp)).hom_ext
-  · simpa [Functor.PushoutObjObj.ι] using pushout.inr (g.hom ▷ ι.left) (g.left ◁ ι.hom) ≫= fac_left
+  · simpa [Functor.PushoutObjObj.ι] using pushout.inl _ _ ≫= fac_left
   · simpa
 
 noncomputable
-def rightBifunctor_obj_map_preserves_pushouts
+def leftBifunctor_obj_map_preserves_pushouts
       {f g : Arrow C} (ι : Arrow C) (h : f ⟶ g) (hp : IsColimit (PushoutCocone.mk _ _ h.w)) :
-    IsColimit (PushoutCocone.mk _ _ ((rightBifunctor.obj ι).map h).w) :=
+    IsColimit (PushoutCocone.mk _ _ ((leftBifunctor.obj ι).map h).w) :=
   PushoutCocone.IsColimit.mk _ (temp_desc ι h hp) (temp_fac_left ι h hp)
     (by simp) (temp_uniq ι h hp)
 
-def rightBifunctor_obj_map_preserves_pushouts' {A B X Y Z W : C} {f : A ⟶ B} {g : X ⟶ Y} {s : X ⟶ A} {t : Y ⟶ B}
+def leftBifunctor_obj_map_preserves_pushouts' {A B X Y Z W : C} {f : A ⟶ B} {g : X ⟶ Y} {s : X ⟶ A} {t : Y ⟶ B}
       (ι : Z ⟶ W) (h : IsPushout s g f t) :
-    IsPushout ((rightBifunctor.obj (Arrow.mk ι)).map (Arrow.homMk' s t h.w)).left
-      (g ◫ ι)
-      (f ◫ ι)
-      (t ▷ W) := by
-  apply IsPushout.of_isColimit' ⟨((rightBifunctor.obj (Arrow.mk ι)).map (Arrow.homMk' _ _ h.w)).w⟩
-  apply rightBifunctor_obj_map_preserves_pushouts
+    IsPushout ((leftBifunctor.obj (Arrow.mk ι)).map (Arrow.homMk' s t h.w)).left
+      (ι ◫ g)
+      (ι ◫ f)
+      (W ◁ t) := by
+  apply IsPushout.of_isColimit' ⟨((leftBifunctor.obj (Arrow.mk ι)).map (Arrow.homMk' _ _ h.w)).w⟩
+  apply leftBifunctor_obj_map_preserves_pushouts
   exact h.isColimit
 
 end
@@ -229,23 +230,49 @@ variable (J : Type w) [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFoundedLT 
 variable {A B X Y : C} {f : A ⟶ B} (ι : X ⟶ Y) (h : W.TransfiniteCompositionOfShape J f)
 
 noncomputable
-def temp_isoBot : (natTransLeftFunctor h.incl ι).obj ⊥ ≅ pushout (f ▷ X) (A ◁ ι) := by
+def temp_isoBot : (natTransLeftFunctor h.incl ι).obj ⊥ ≅ pushout (ι ▷ A) (X ◁ f) := by
   have : Arrow.mk (h.incl.app ⊥) ≅ Arrow.mk f :=
     Arrow.isoMk h.isoBot (Iso.refl _) (by simpa using (h.isoBot.inv_comp_eq.1 h.fac).symm)
-  exact Comma.leftIso ((rightFunctor (Arrow.mk ι)).mapIso this)
+  exact Comma.leftIso ((leftFunctor (Arrow.mk ι)).mapIso this)
+
+@[simps!]
+def _root_.CategoryTheory.NatTrans.whiskerCocone {C : Type u} [Category.{v} C] {D : Type u'} [Category.{v'} D]
+    {F G : C ⥤ D} (h : F ⟶ G) (s : Cocone G) : Cocone F where
+  pt := s.pt
+  ι := h ≫ s.ι
 
 noncomputable
-def tempppp : TransfiniteCompositionOfShape J (f ◫ ι) where
+def temp_isColimit {m : J} (hm : Order.IsSuccLimit m) :
+    (IsColimit ((Set.principalSegIio m).cocone (natTransLeftFunctor h.incl ι))) where
+  desc := by
+    intro s
+    refine pushout.desc ?_ ?_ ?_
+    · simp
+      have := (h.isWellOrderContinuous.nonempty_isColimit m hm).some.desc
+      simp at this
+
+
+      sorry
+    · simp
+      have := NatTrans.whiskerCocone (whiskerLeft ((Set.principalSegIio m).monotone.functor) (inrDescFunctor h.incl ι)) s
+
+      sorry
+    · sorry
+
+def temp_isWellOrderContinuous : (natTransLeftFunctor h.incl ι).IsWellOrderContinuous where
+  nonempty_isColimit _ hm := ⟨temp_isColimit _ _ _ _ hm⟩
+
+noncomputable
+def tempppp : TransfiniteCompositionOfShape J (ι ◫ f) where
   F := natTransLeftFunctor h.incl ι
-  isoBot := temp_isoBot _ _ _ _
-  isWellOrderContinuous := sorry
-  incl := by
-    have := descFunctor h.incl ι
-    have := Functor.constComp J B (tensorRight Y)
-    dsimp at this
-    sorry
+  isoBot := temp_isoBot ..
+  isWellOrderContinuous := temp_isWellOrderContinuous ..
+  incl := descFunctor h.incl ι ≫ ((tensorLeft Y).constComp J B).hom
   isColimit := sorry
-  fac := sorry
+  fac := by
+    apply pushout.hom_ext
+    · simp [Functor.PushoutObjObj.ι, temp_isoBot, ← MonoidalCategory.whiskerLeft_comp]
+    · simp [Functor.PushoutObjObj.ι, temp_isoBot]
 
 end
 

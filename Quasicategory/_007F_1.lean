@@ -17,13 +17,13 @@ open CategoryTheory Simplicial MorphismProperty MonoidalCategory PushoutProduct
 -- T = saturation bdryHornPushouts
 -- S is the class of all morphisms `i : A → B` such that the pushout product with `Λ[2, 1] ↪ Δ[2]` is in T
 def S : MorphismProperty SSet := fun _ _ i ↦
-  (saturation.{u} bdryHornPushouts) (i ◫ Λ[2, 1].ι)
+  (saturation.{u} bdryHornPushouts) (Λ[2, 1].ι ◫ i)
 
 instance S.IsStableUnderCobaseChange : S.IsStableUnderCobaseChange where
-  of_isPushout h hg := .pushout (rightBifunctor_obj_map_preserves_pushouts' Λ[2, 1].ι h) hg
+  of_isPushout h hg := .pushout (leftBifunctor_obj_map_preserves_pushouts' Λ[2, 1].ι h) hg
 
 instance S.IsStableUnderRetracts : S.IsStableUnderRetracts where
-  of_retract h hg := .retract (Retract.map h (rightFunctor Λ[2, 1].ι)) hg
+  of_retract h hg := .retract (Retract.map h (leftFunctor Λ[2, 1].ι)) hg
 
 open Limits in
 instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposition.{w} S.{w} where
