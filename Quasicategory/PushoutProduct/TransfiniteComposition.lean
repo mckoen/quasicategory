@@ -26,6 +26,10 @@ instance ll {S : SSet} : Functor.IsLeftAdjoint (tensorLeft S) where
 instance rr {S : SSet} : PreservesColimitsOfSize (tensorLeft S) :=
   Functor.instPreservesColimitsOfSizeOfIsLeftAdjoint _
 
+noncomputable
+instance {S : SSet} : PreservesColimitsOfSize (tensorRight S) := by
+  apply preservesColimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight S)
+
 variable {m : J}
 
 @[simps!]
@@ -37,14 +41,14 @@ def _root_.CategoryTheory.NatTrans.whiskerCocone {C : Type u} [Category.{v} C] {
 @[simp]
 noncomputable
 def tempCocone (s : Cocone ((Set.principalSegIio m).monotone.functor ⋙ natTransLeftFunctor c.ι Λ[2, 1].ι)) :
-    Cocone ((Set.principalSegIio m).monotone.functor ⋙ F ⋙ tensorLeft Δ[2]) :=
-  NatTrans.whiskerCocone (whiskerLeft ((Set.principalSegIio m).monotone.functor) (inlDescFunctor c.ι Λ[2, 1].ι)) s
+    Cocone ((Set.principalSegIio m).monotone.functor ⋙ F ⋙ tensorRight Δ[2]) :=
+  NatTrans.whiskerCocone (whiskerLeft ((Set.principalSegIio m).monotone.functor) (inrDescFunctor c.ι Λ[2, 1].ι)) s
 
 @[simp]
 noncomputable
 def tempCocone' (s : Cocone (natTransLeftFunctor c.ι Λ[2, 1].ι)) :
-    (Cocone (F ⋙ tensorLeft Δ[2])) :=
-  NatTrans.whiskerCocone (inlDescFunctor c.ι Λ[2, 1].ι) s
+    (Cocone (F ⋙ tensorRight Δ[2])) :=
+  NatTrans.whiskerCocone (inrDescFunctor c.ι Λ[2, 1].ι) s
 
 instance {m : J} {hm : Order.IsSuccLimit m} : OrderBot (Set.Iio m) := Subtype.orderBot hm.bot_lt
 
@@ -62,8 +66,8 @@ def auxWellOrderCont_desc [hF: F.IsWellOrderContinuous]
     {m : J} (hm : Order.IsSuccLimit m) (s : Cocone ((Set.principalSegIio m).monotone.functor ⋙ (F' F c))) :
     ((Set.principalSegIio m).cocone (F' F c)).pt ⟶ s.pt := by
   letI : OrderBot (Set.Iio m) := Subtype.orderBot hm.bot_lt
-  let H := (Limits.isColimitOfPreserves (tensorLeft Δ[2]) (hF.nonempty_isColimit m hm).some)
-  let H'' := (Limits.isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) (hF.nonempty_isColimit m hm).some)
+  let H := (Limits.isColimitOfPreserves (tensorRight Δ[2]) (hF.nonempty_isColimit m hm).some)
+  let H'' := (Limits.isColimitOfPreserves (tensorRight Λ[2, 1].toSSet) (hF.nonempty_isColimit m hm).some)
   apply pushout.desc (H.desc (tempCocone F c s)) ((pushout.inr _ _) ≫ s.ι.app ⊥)
   apply H''.hom_ext
   intro j

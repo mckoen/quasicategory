@@ -1,6 +1,6 @@
 import Quasicategory.Monomorphism
-import Quasicategory.PushoutProduct.Pushout
-import Quasicategory.PushoutProduct.TransfiniteComposition
+import Quasicategory.PushoutProduct.Basic
+--import Quasicategory.PushoutProduct.TransfiniteComposition
 
 /-!
 
@@ -14,18 +14,20 @@ namespace SSet
 
 open CategoryTheory Simplicial MorphismProperty MonoidalCategory PushoutProduct
 
--- T = WeaklySaturatedOf bdryHornPushouts
+-- T = saturation bdryHornPushouts
 -- S is the class of all morphisms `i : A → B` such that the pushout product with `Λ[2, 1] ↪ Δ[2]` is in T
 def S : MorphismProperty SSet := fun _ _ i ↦
   (saturation.{u} bdryHornPushouts) (i ◫ Λ[2, 1].ι)
 
 instance S.IsStableUnderCobaseChange : S.IsStableUnderCobaseChange where
   of_isPushout h hg :=
-    (saturation_isWeaklySaturated _).IsStableUnderCobaseChange.of_isPushout (SSet.pushoutCommSq_IsPushout h) hg
+    (saturation_isWeaklySaturated _).IsStableUnderCobaseChange.of_isPushout
+      (rightBifunctor_obj_map_preserves_pushouts' Λ[2, 1].ι h) hg
 
 instance S.IsStableUnderRetracts : S.IsStableUnderRetracts where
   of_retract h hg :=
-    (saturation_isWeaklySaturated _).IsStableUnderRetracts.of_retract (Retract.map h (rightFunctor Λ[2, 1].ι)) hg
+    (saturation_isWeaklySaturated _).IsStableUnderRetracts.of_retract
+      (Retract.map h (rightFunctor Λ[2, 1].ι)) hg
 
 set_option maxHeartbeats 800000 in
 open Limits in
@@ -56,22 +58,22 @@ def F'_isoBot {J : Type w} [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFound
 
 open Limits in
 instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposition.{w} S.{w} where
-    isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := by
-      rw [isStableUnderTransfiniteCompositionOfShape_iff]
-      intro X Y f ⟨hf⟩
-      refine .transfinite J _ ?_ ?_
-      · refine {
-        F := F' hf.F (Limits.Cocone.mk _ hf.incl)
-        isoBot := F'_isoBot hf
-        isWellOrderContinuous := F'_woc hf.F _
-        incl := descFunctor hf.incl Λ[2, 1].ι
-        isColimit := c'_IsColimit hf.F _ hf.isColimit
-        fac := by
-          apply pushout.hom_ext
-          · simp [descFunctor, ← MonoidalCategory.whiskerLeft_comp, TransfiniteCompositionOfShape.fac, F'_isoBot]
-          · simp [descFunctor, F'_isoBot] }
-      · intro j hj
-        exact .pushout (newPushoutIsPushout hf.F (Limits.Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
+  isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := by
+    rw [isStableUnderTransfiniteCompositionOfShape_iff]
+    intro X Y f ⟨hf⟩
+    refine .transfinite J _ ?_ ?_
+    · refine {
+      F := F' hf.F (Limits.Cocone.mk _ hf.incl)
+      isoBot := F'_isoBot hf
+      isWellOrderContinuous := F'_woc hf.F _
+      incl := descFunctor hf.incl Λ[2, 1].ι
+      isColimit := c'_IsColimit hf.F _ hf.isColimit
+      fac := by
+        apply pushout.hom_ext
+        · simp [descFunctor, ← MonoidalCategory.whiskerLeft_comp, TransfiniteCompositionOfShape.fac, F'_isoBot]
+        · simp [descFunctor, F'_isoBot] }
+    · intro j hj
+      exact .pushout (newPushoutIsPushout hf.F (Limits.Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
 
 noncomputable
 def c₁' {J : Type*} {X₁ X₂ : Discrete J ⥤ SSet}
