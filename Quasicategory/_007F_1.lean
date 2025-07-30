@@ -20,14 +20,19 @@ def S : MorphismProperty SSet := fun _ _ i ↦
   (saturation.{u} bdryHornPushouts) (i ◫ Λ[2, 1].ι)
 
 instance S.IsStableUnderCobaseChange : S.IsStableUnderCobaseChange where
-  of_isPushout h hg :=
-    (saturation_isWeaklySaturated _).IsStableUnderCobaseChange.of_isPushout
-      (rightBifunctor_obj_map_preserves_pushouts' Λ[2, 1].ι h) hg
+  of_isPushout h hg := .pushout (rightBifunctor_obj_map_preserves_pushouts' Λ[2, 1].ι h) hg
 
 instance S.IsStableUnderRetracts : S.IsStableUnderRetracts where
-  of_retract h hg :=
-    (saturation_isWeaklySaturated _).IsStableUnderRetracts.of_retract
-      (Retract.map h (rightFunctor Λ[2, 1].ι)) hg
+  of_retract h hg := .retract (Retract.map h (rightFunctor Λ[2, 1].ι)) hg
+
+open Limits in
+instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposition.{w} S.{w} where
+  isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := by
+    rw [isStableUnderTransfiniteCompositionOfShape_iff]
+    intro X Y f ⟨hf⟩
+    refine WeaklySaturatedClass.transfinite J _ ?_ ?_
+    · sorry
+    · sorry
 
 set_option maxHeartbeats 800000 in
 open Limits in
@@ -57,7 +62,7 @@ def F'_isoBot {J : Type w} [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFound
     · simp
 
 open Limits in
-instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposition.{w} S.{w} where
+instance Sskj : IsStableUnderTransfiniteComposition.{w} S.{w} where
   isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := by
     rw [isStableUnderTransfiniteCompositionOfShape_iff]
     intro X Y f ⟨hf⟩

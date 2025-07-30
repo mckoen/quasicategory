@@ -4,9 +4,9 @@ import Mathlib.Combinatorics.Quiver.ReflQuiver
 import Mathlib.AlgebraicTopology.SimplicialSet.Horn
 import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 import Mathlib.CategoryTheory.LiftingProperties.ParametrizedAdjunction
-import Mathlib.CategoryTheory.FiberedCategory.Cocartesian
+import Mathlib.CategoryTheory.MorphismProperty.TransfiniteComposition
 
-universe v v' u u'
+universe w v v' u u'
 
 open CategoryTheory MonoidalCategory Limits
 
@@ -211,12 +211,41 @@ def rightBifunctor_obj_map_preserves_pushouts
 def rightBifunctor_obj_map_preserves_pushouts' {A B X Y Z W : C} {f : A ⟶ B} {g : X ⟶ Y} {s : X ⟶ A} {t : Y ⟶ B}
       (ι : Z ⟶ W) (h : IsPushout s g f t) :
     IsPushout ((rightBifunctor.obj (Arrow.mk ι)).map (Arrow.homMk' s t h.w)).left
-      (Functor.PushoutObjObj.ofHasPushout (curriedTensor C) g ι).ι
-      (Functor.PushoutObjObj.ofHasPushout (curriedTensor C) f ι).ι
+      (g ◫ ι)
+      (f ◫ ι)
       (t ▷ W) := by
   apply IsPushout.of_isColimit' ⟨((rightBifunctor.obj (Arrow.mk ι)).map (Arrow.homMk' _ _ h.w)).w⟩
   apply rightBifunctor_obj_map_preserves_pushouts
   exact h.isColimit
+
+end
+
+section
+
+variable (W : MorphismProperty C)
+
+variable (J : Type w) [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFoundedLT J]
+
+variable {A B X Y : C} {f : A ⟶ B} (ι : X ⟶ Y) (h : W.TransfiniteCompositionOfShape J f)
+
+noncomputable
+def temp_isoBot : (natTransLeftFunctor h.incl ι).obj ⊥ ≅ pushout (f ▷ X) (A ◁ ι) := by
+  have : Arrow.mk (h.incl.app ⊥) ≅ Arrow.mk f :=
+    Arrow.isoMk h.isoBot (Iso.refl _) (by simpa using (h.isoBot.inv_comp_eq.1 h.fac).symm)
+  exact Comma.leftIso ((rightFunctor (Arrow.mk ι)).mapIso this)
+
+noncomputable
+def tempppp : TransfiniteCompositionOfShape J (f ◫ ι) where
+  F := natTransLeftFunctor h.incl ι
+  isoBot := temp_isoBot _ _ _ _
+  isWellOrderContinuous := sorry
+  incl := by
+    have := descFunctor h.incl ι
+    have := Functor.constComp J B (tensorRight Y)
+    dsimp at this
+    sorry
+  isColimit := sorry
+  fac := sorry
 
 end
 
