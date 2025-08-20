@@ -14,13 +14,19 @@ namespace SSet
 
 open CategoryTheory Simplicial MorphismProperty MonoidalCategory PushoutProduct
 
--- T = saturation bdryHornPushouts
--- S is the class of all morphisms `i : A → B` such that the pushout product with `Λ[2, 1] ↪ Δ[2]` is in T
+inductive bdryHornPushout : {X Y : SSet} → (X ⟶ Y) → Prop
+  | mk (m : ℕ) : bdryHornPushout (Λ[2, 1].ι □ ∂Δ[m].ι)
+
+/-- the class of pushout-products of `Λ[2, 1] ↪ Δ[2]` with `∂Δ[m] ↪ Δ[m]`. -/
+def bdryHornPushouts : MorphismProperty SSet := fun _ _ p ↦ bdryHornPushout p
+
+/-- `S` is the class of all morphisms `i : A → B` such that the pushout-product with `Λ[2, 1] ↪ Δ[2]` is in
+the saturation of `bdryHornPushouts`. -/
 def S : MorphismProperty SSet := fun _ _ i ↦
-  (saturation.{u} bdryHornPushouts) (Λ[2, 1].ι ◫ i)
+  (saturation.{w} bdryHornPushouts) (Λ[2, 1].ι □ i)
 
 instance S.IsStableUnderCobaseChange : S.IsStableUnderCobaseChange where
-  of_isPushout h hg := .pushout (leftBifunctor_obj_map_preserves_pushouts' Λ[2, 1].ι h) hg
+  of_isPushout h hg := .pushout (leftFunctor_map_preserves_pushouts' Λ[2, 1].ι h) hg
 
 instance S.IsStableUnderRetracts : S.IsStableUnderRetracts where
   of_retract h hg := .retract (Retract.map h (leftFunctor Λ[2, 1].ι)) hg
@@ -30,36 +36,15 @@ instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposi
   isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := by
     rw [isStableUnderTransfiniteCompositionOfShape_iff]
     intro X Y f ⟨hf⟩
-    refine WeaklySaturatedClass.transfinite J _ ?_ ?_
-    · sorry
-    · sorry
+    apply bdryHornPushouts.saturation.transfiniteCompositions_le
+    rw [transfiniteCompositions_iff]
+    refine ⟨J, _, _, _, _, ⟨(leftFunctor_preserves_transfiniteComposition J Λ[2, 1].ι f hf.1), ?_⟩⟩
+    simp only [leftFunctor_preserves_transfiniteComposition]
+    have := hf.map_mem
+    dsimp only [S] at this
+    sorry
 
-set_option maxHeartbeats 800000 in
-open Limits in
-noncomputable
-def F'_isoBot {J : Type w} [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFoundedLT J]
-    {X Y : SSet} {f : X ⟶ Y} (hf : S.TransfiniteCompositionOfShape J f) :
-      (F' hf.F (Limits.Cocone.mk _ hf.incl)).obj ⊥ ≅ (PushoutProduct.pt f Λ[2, 1].ι) where
-  hom := by
-    apply pushout.desc ((Δ[2] ◁ hf.isoBot.hom) ≫ (pushout.inl _ _)) (pushout.inr _ _)
-    simp [← whisker_exchange_assoc, pushout.condition]
-    have := congr_arg (MonoidalCategory.whiskerLeft Λ[2, 1].toSSet) hf.fac
-    simp_rw [← this]
-    rw [← MonoidalCategory.whiskerLeft_comp_assoc, Iso.hom_inv_id_assoc]
-  inv := by
-    apply pushout.desc (((Δ[2] ◁ hf.isoBot.inv) ≫ (pushout.inl _ _))) (pushout.inr _ _)
-    dsimp
-    rw [← whisker_exchange_assoc, pushout.condition, ← MonoidalCategory.whiskerLeft_comp_assoc]
-    have := hf.fac.symm
-    simp_rw [this]
-  inv_hom_id := by
-    apply pushout.hom_ext
-    · simp
-    · simp
-  hom_inv_id := by
-    apply pushout.hom_ext
-    · simp
-    · simp
+/-
 
 open Limits in
 instance Sskj : IsStableUnderTransfiniteComposition.{w} S.{w} where
@@ -189,7 +174,7 @@ instance S.IsStableUnderCoproducts : IsStableUnderCoproducts.{w} S.{w} where
 instance S.WeaklySaturated : WeaklySaturated.{w} S.{w} where
   IsStableUnderCobaseChange := by infer_instance
   IsStableUnderRetracts := by infer_instance
-  IsStableUnderCoproducts := by infer_instance
+  IsStableUnderCoproducts := by sorry
   IsStableUnderTransfiniteComposition := by infer_instance
 
 lemma bdryInclusions_le_S : bdryInclusions ≤ S := fun _ _ _ ⟨_⟩ ↦ .of _ (.mk _)
@@ -243,7 +228,7 @@ def horn_to_pushout :
 lemma leftSqCommAux : s_restricted i ≫ Δ[2] ◁ Λ[n, i].ι = Λ[n, i].ι ≫ s i := rfl
 
 lemma leftSqComm :
-    horn_to_pushout i ≫ Λ[n, i].ι ◫ Λ[2, 1].ι = Λ[n, i].ι ≫ s i := by
+    horn_to_pushout i ≫ Λ[n, i].ι □ Λ[2, 1].ι = Λ[n, i].ι ≫ s i := by
   rw [← leftSqCommAux]
   dsimp [horn_to_pushout, pushoutProduct]
   rw [Category.assoc, Limits.pushout.inl_desc]
@@ -324,7 +309,7 @@ noncomputable
 def pushout_to_horn : (PushoutProduct.pt Λ[n, i].ι Λ[2, 1].ι) ⟶ Λ[n, i] :=
   Limits.pushout.desc (r_restrict_horn_n i) (r_restrict_horn_2 i h0 hn) rfl
 
-lemma rightSqComm : pushout_to_horn i h0 hn ≫ (Λ[n, i]).ι = (Λ[n, i].ι ◫ Λ[2, 1].ι) ≫ r i := by
+lemma rightSqComm : pushout_to_horn i h0 hn ≫ (Λ[n, i]).ι = (Λ[n, i].ι □ Λ[2, 1].ι) ≫ r i := by
   dsimp [pushout_to_horn, pushoutProduct]
   apply Limits.pushout.hom_ext; all_goals aesop
 
@@ -356,7 +341,7 @@ lemma restricted_r_comp_s : horn_to_pushout i ≫ pushout_to_horn i h0 hn = 𝟙
   aesop
 
 noncomputable
-instance hornRetract : RetractArrow Λ[n, i].ι (Λ[n, i].ι ◫ Λ[2, 1].ι) where
+instance hornRetract : RetractArrow Λ[n, i].ι (Λ[n, i].ι □ Λ[2, 1].ι) where
   i := {
     left := horn_to_pushout i
     right := s i
@@ -368,3 +353,4 @@ instance hornRetract : RetractArrow Λ[n, i].ι (Λ[n, i].ι ◫ Λ[2, 1].ι) wh
     w := rightSqComm i h0 hn
   }
   retract := Arrow.hom_ext _ _ (restricted_r_comp_s i h0 hn) (r_comp_s i)
+-/
