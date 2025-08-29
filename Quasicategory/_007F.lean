@@ -14,13 +14,6 @@ open CategoryTheory MorphismProperty Simplicial SSet PushoutProduct MonoidalCate
 
 variable {n : ℕ}
 
-open unionProd in
-noncomputable
-def unionProd_toSSet_iso (A : Subcomplex Δ[n]):
-    PushoutProduct.pt A.ι Λ[2, 1].ι ≅
-      (A.unionProd Λ[2, 1]).toSSet :=
-  (IsPushout.isoPushout (isPushout Λ[2, 1] A)).symm ≪≫ symmIso _ _
-
 noncomputable
 def image_arrow_iso_of_mono {X Y : SSet} (f : X ⟶ Y) [Mono f] (A : Subcomplex X) :
     Arrow.mk (Subcomplex.homOfLE (image_le_range A f)) ≅ Arrow.mk A.ι := by
@@ -302,12 +295,14 @@ lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1])
         ((arrow_mk_iso_iff _ (image_arrow_iso_of_mono _ _)).2
           (.of _ (.mk Fin.zero_lt_one Fin.one_lt_last)))
 
+--  (IsPushout.isoPushout (isPushout A Λ[2, 1])).symm
 noncomputable
-def arrow_unionProd_iso : Arrow.mk (∂Δ[n].ι ◫ Λ[2, 1].ι) ≅ Arrow.mk (∂Δ[n].unionProd Λ[2, 1]).ι := by
-  refine Arrow.isoMk (unionProd_toSSet_iso _) (β_ Δ[2] Δ[n]) ?_
-  simp [unionProd_toSSet_iso]
+def arrow_unionProd_iso : Arrow.mk (∂Δ[n].ι □ Λ[2, 1].ι) ≅ Arrow.mk (∂Δ[n].unionProd Λ[2, 1]).ι := by
+  refine Arrow.isoMk ((IsPushout.isoPushout (unionProd.isPushout _ Λ[2, 1])).symm) (Iso.refl _) ?_
   apply Limits.pushout.hom_ext
-  all_goals aesop
+  · simp [CategoryTheory.Functor.PushoutObjObj.ofHasPushout]
+    sorry
+  · sorry
 
 lemma innerAnodyne_eq_T : innerAnodyne.{u} = (saturation.{u} bdryHornPushouts) := by
   apply le_antisymm
@@ -316,13 +311,15 @@ lemma innerAnodyne_eq_T : innerAnodyne.{u} = (saturation.{u} bdryHornPushouts) :
     exact .retract (hornRetract _ h0 hn) (monomorphisms_le_S _ (.infer_property _))
   · intro _ _ _ ⟨_⟩
     rw [← innerAnodyne_eq_saturation_innerHornInclusions]
-    exact (arrow_mk_iso_iff _ arrow_unionProd_iso).2 unionProd_ι_innerAnodyne
+    sorry
+    --refine (arrow_mk_iso_iff _ arrow_unionProd_iso).2 unionProd_ι_innerAnodyne
 
 -- `007F` (a)
 lemma monoPushout_innerAnodyne {A B : SSet} (i : A ⟶ B) [Mono i] :
-    innerAnodyne (i ◫ Λ[2, 1].ι) := by
+    innerAnodyne (i □ Λ[2, 1].ι) := by
   rw [innerAnodyne_eq_T]
-  exact monomorphisms_le_S i (.infer_property _)
+  sorry
+  --exact monomorphisms_le_S i (.infer_property _)
 
 -- `007F` (b)
 lemma contains_innerAnodyne_iff_contains_pushout_maps
@@ -330,4 +327,4 @@ lemma contains_innerAnodyne_iff_contains_pushout_maps
     (bdryHornPushouts ≤ S) ↔ (innerAnodyne.{u} ≤ S) := by
   constructor
   · simp [innerAnodyne_eq_T, ← WeaklySaturated.le_iff]
-  · exact fun h _ _ _ ⟨m⟩ ↦ h _ (monoPushout_innerAnodyne ∂Δ[m].ι)
+  · sorry--exact fun h _ _ _ ⟨m⟩ ↦ h _ (monoPushout_innerAnodyne ∂Δ[m].ι)

@@ -91,8 +91,8 @@ inductive WeaklySaturatedClass (T : MorphismProperty C) : {X Y : C} → (X ⟶ Y
   | of ⦃X Y : C⦄ (f : X ⟶ Y) (h : T f) : WeaklySaturatedClass T f
   | pushout ⦃X Y Z W : C⦄ ⦃f : X ⟶ Y⦄ ⦃g : X ⟶ Z⦄ ⦃inl : Z ⟶ W⦄ ⦃inr : Y ⟶ W⦄ (_ : IsPushout g f inl inr) : WeaklySaturatedClass T f → WeaklySaturatedClass T inl
   | retract ⦃X Y Z W : C⦄ ⦃f : X ⟶ Y⦄ ⦃g : Z ⟶ W⦄ (_ : RetractArrow f g) : WeaklySaturatedClass T g → WeaklySaturatedClass T f
-  | coproduct (J : Type w) (X₁ X₂ : (Discrete J) ⥤ C) (c₁ : Cocone X₁) (c₂ : Cocone X₂) (h₁ : IsColimit c₁) (_ : IsColimit c₂)
-      (f : X₁ ⟶ X₂) : (_ : ∀ (j : (Discrete J)), (WeaklySaturatedClass T) (f.app j)) → WeaklySaturatedClass T (h₁.desc (Cocone.mk _ (f ≫ c₂.ι)))
+  | coproduct (J : Type w) (X₁ X₂ : Discrete J ⥤ C) (c₁ : Cocone X₁) (c₂ : Cocone X₂) (h₁ : IsColimit c₁) (_ : IsColimit c₂)
+      (f : X₁ ⟶ X₂) : (_ : ∀ (j : Discrete J), (WeaklySaturatedClass T) (f.app j)) → WeaklySaturatedClass T (h₁.desc (Cocone.mk _ (f ≫ c₂.ι)))
   | transfinite (J : Type w) [LinearOrder J] [SuccOrder J] [OrderBot J] [WellFoundedLT J]
       {X Y : C} (f : X ⟶ Y) (hf : CategoryTheory.TransfiniteCompositionOfShape J f) :
         (∀ (j : J), (hj : ¬IsMax j) → WeaklySaturatedClass T (hf.F.map (homOfLE (Order.le_succ j)))) → WeaklySaturatedClass T f
@@ -105,12 +105,10 @@ def saturation : MorphismProperty C := fun _ _ f ↦ WeaklySaturatedClass.{w} T 
 instance saturation_isWeaklySaturated (T : MorphismProperty C) : WeaklySaturated.{w} (saturation.{w} T) where
   IsStableUnderCobaseChange := ⟨fun h hf ↦ .pushout h hf⟩
   IsStableUnderRetracts := ⟨fun h hf ↦ .retract h hf⟩
-  IsStableUnderCoproducts := {
-    isStableUnderCoproductsOfShape := fun J _ _ _ _ _ h₂ f hf ↦
-      .coproduct J _ _ _ _ _ h₂ f hf }
-  IsStableUnderTransfiniteComposition := {
-    isStableUnderTransfiniteCompositionOfShape := fun J _ _ _ _ ↦
-      ⟨fun _ _ f hf ↦ .transfinite J f _ hf.some.map_mem⟩ }
+  IsStableUnderCoproducts := ⟨fun J _ _ _ _ _ h₂ f hf ↦
+    .coproduct J _ _ _ _ _ h₂ f hf⟩
+  IsStableUnderTransfiniteComposition := ⟨fun J _ _ _ _ ↦
+    ⟨fun _ _ f hf ↦ .transfinite J f _ hf.some.map_mem⟩⟩
 
 lemma le_saturation : T ≤ T.saturation := .of
 
@@ -135,6 +133,12 @@ lemma llp_rlp_eq_saturation {T : MorphismProperty C} [HasSmallObjectArgument.{w}
     exact le_saturation _
   · rw [← WeaklySaturated.le_iff]
     exact T.le_llp_rlp
+
+lemma saturation_saturation_eq {T : MorphismProperty C} :
+    saturation.{w} (saturation.{w} T) = saturation.{w} T := by
+  apply le_antisymm
+  · rw [← WeaklySaturated.le_iff]
+  · exact le_saturation _
 
 end WeaklySaturated
 

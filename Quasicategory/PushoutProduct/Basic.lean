@@ -345,6 +345,14 @@ def leftFunctor_preserves_transfiniteComposition
 
 variable (W : MorphismProperty C) (hf : W.TransfiniteCompositionOfShape J f)
 
+/-
+∀ (j : J), ¬IsMax j →
+  W.saturation (Λ[2, 1].ι □ hf.F.map (homOfLE ⋯))
+
+∀ (j : J), ¬IsMax j →
+  W.saturation ((natTransLeftFunctor hf.incl Λ[2, 1].ι).map (homOfLE ⋯))
+-/
+
 lemma mflakdw (j : J) (hj : ¬IsMax j)
       (hW : ∀ (j : J), ¬IsMax j → W (ι □ hf.F.map (homOfLE (Order.le_succ j)))) :
     W.saturation ((natTransLeftFunctor hf.incl ι).map (homOfLE (Order.le_succ j))) := by

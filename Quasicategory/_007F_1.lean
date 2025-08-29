@@ -1,6 +1,6 @@
 import Quasicategory.Monomorphism
 import Quasicategory.PushoutProduct.Basic
---import Quasicategory.PushoutProduct.TransfiniteComposition
+import Quasicategory.PushoutProduct.TransfiniteComposition
 
 /-!
 
@@ -39,31 +39,12 @@ instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposi
     apply bdryHornPushouts.saturation.transfiniteCompositions_le
     rw [transfiniteCompositions_iff]
     refine ⟨J, _, _, _, _, ⟨(leftFunctor_preserves_transfiniteComposition J Λ[2, 1].ι f hf.1), ?_⟩⟩
-    simp only [leftFunctor_preserves_transfiniteComposition]
-    have := hf.map_mem
-    dsimp only [S] at this
-    sorry
+
+    intro j hj
+    dsimp only [leftFunctor_preserves_transfiniteComposition]
+    exact WeaklySaturatedClass.pushout (PushoutProduct.newPushoutIsPushout hf.F (Limits.Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
 
 /-
-
-open Limits in
-instance Sskj : IsStableUnderTransfiniteComposition.{w} S.{w} where
-  isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := by
-    rw [isStableUnderTransfiniteCompositionOfShape_iff]
-    intro X Y f ⟨hf⟩
-    refine .transfinite J _ ?_ ?_
-    · refine {
-      F := F' hf.F (Limits.Cocone.mk _ hf.incl)
-      isoBot := F'_isoBot hf
-      isWellOrderContinuous := F'_woc hf.F _
-      incl := descFunctor hf.incl Λ[2, 1].ι
-      isColimit := c'_IsColimit hf.F _ hf.isColimit
-      fac := by
-        apply pushout.hom_ext
-        · simp [descFunctor, ← MonoidalCategory.whiskerLeft_comp, TransfiniteCompositionOfShape.fac, F'_isoBot]
-        · simp [descFunctor, F'_isoBot] }
-    · intro j hj
-      exact .pushout (newPushoutIsPushout hf.F (Limits.Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
 
 noncomputable
 def c₁' {J : Type*} {X₁ X₂ : Discrete J ⥤ SSet}
@@ -169,6 +150,7 @@ instance S.IsStableUnderCoproducts : IsStableUnderCoproducts.{w} S.{w} where
       dsimp only [c₁', SSet.c₁', c₂', f', descFunctor, tensorLeft, curriedTensor,
         Functor.mapCocone]
       aesop
+  -/
 
 -- S is weakly saturated because T is
 instance S.WeaklySaturated : WeaklySaturated.{w} S.{w} where
@@ -190,7 +172,7 @@ variable {n : ℕ} (i : Fin (n + 1))
 -- 1 if j = i
 -- 2 if j > i
 def s_aux : Fin (n + 1) →o Fin 3 where
-  toFun j :=   if j < i then 0 else if j = i then 1 else 2
+  toFun j := if j < i then 0 else if j = i then 1 else 2
   monotone' j k h := by
     simp
     split
@@ -206,7 +188,7 @@ def standard_map : Δ[n] ⟶ Δ[2] :=
   stdSimplex.map (SimplexCategory.mkHom (s_aux i))
 
 -- the above map restricted to the horn
-def horn_map : (Λ[n, i] : SSet) ⟶ Δ[2] :=
+def horn_map : Λ[n, i].toSSet ⟶ Δ[2] :=
   Λ[n, i].ι ≫ (standard_map i)
 
 -- on vertices j maps to
@@ -217,21 +199,22 @@ def s : Δ[n] ⟶ Δ[2] ⊗ Δ[n] :=
   FunctorToTypes.prod.lift (standard_map i) (𝟙 _)
 
 def s_restricted :
-    (Λ[n, i] : SSet) ⟶ Δ[2] ⊗ Λ[n, i] :=
+    Λ[n, i].toSSet ⟶ Δ[2] ⊗ Λ[n, i] :=
   FunctorToTypes.prod.lift (horn_map i) (𝟙 _)
 
 noncomputable
 def horn_to_pushout :
-    (Λ[n, i] : SSet) ⟶ (PushoutProduct.pt Λ[n, i].ι Λ[2, 1].ι) :=
-  s_restricted i ≫ (Limits.pushout.inl (Λ[2, 1].ι ▷ Λ[n, i]) ((Λ[2, 1] : SSet) ◁ Λ[n, i].ι))
+    Λ[n, i].toSSet ⟶ (PushoutProduct.pt Λ[2, 1].ι Λ[n, i].ι) :=
+  s_restricted i ≫ (Limits.pushout.inl _ _)
 
 lemma leftSqCommAux : s_restricted i ≫ Δ[2] ◁ Λ[n, i].ι = Λ[n, i].ι ≫ s i := rfl
 
 lemma leftSqComm :
-    horn_to_pushout i ≫ Λ[n, i].ι □ Λ[2, 1].ι = Λ[n, i].ι ≫ s i := by
+    horn_to_pushout i ≫ Λ[2, 1].ι □ Λ[n, i].ι = Λ[n, i].ι ≫ s i := by
   rw [← leftSqCommAux]
-  dsimp [horn_to_pushout, pushoutProduct]
-  rw [Category.assoc, Limits.pushout.inl_desc]
+  dsimp [horn_to_pushout, pushoutProduct, Functor.PushoutObjObj.ofHasPushout]
+  sorry
+  --rw [Category.assoc, Limits.pushout.inl_desc]
 
 def r_aux : Fin 3 × Fin (n + 1) →o Fin (n + 1) where
   toFun := fun ⟨k, j⟩ ↦ if (j < i ∧ k = 0) ∨ (j > i ∧ k = 2) then j else i
@@ -284,7 +267,7 @@ def r_restrict_horn_2 : (Λ[2, 1] : SSet) ⊗ Δ[n] ⟶ Λ[n, i] where
         omega
       · omega
 
--- r restricted along (Λ[n, i] : SSet)
+-- r restricted along Λ[n, i].toSSet
 noncomputable
 def r_restrict_horn_n : Δ[2] ⊗ Λ[n, i] ⟶ Λ[n, i] where
   app k := by
@@ -306,12 +289,12 @@ def r_restrict_horn_n : Δ[2] ⊗ Λ[n, i] ⟶ Λ[n, i] where
 
 open stdSimplex SimplexCategory in
 noncomputable
-def pushout_to_horn : (PushoutProduct.pt Λ[n, i].ι Λ[2, 1].ι) ⟶ Λ[n, i] :=
+def pushout_to_horn : (PushoutProduct.pt Λ[2, 1].ι Λ[n, i].ι) ⟶ Λ[n, i] :=
   Limits.pushout.desc (r_restrict_horn_n i) (r_restrict_horn_2 i h0 hn) rfl
 
-lemma rightSqComm : pushout_to_horn i h0 hn ≫ (Λ[n, i]).ι = (Λ[n, i].ι □ Λ[2, 1].ι) ≫ r i := by
+lemma rightSqComm : pushout_to_horn i h0 hn ≫ (Λ[n, i]).ι = (Λ[2, 1].ι □ Λ[n, i].ι) ≫ r i := by
   dsimp [pushout_to_horn, pushoutProduct]
-  apply Limits.pushout.hom_ext; all_goals aesop
+  apply Limits.pushout.hom_ext; all_goals sorry
 
 lemma r_aux_comp_s_aux_prod_id :
     OrderHom.comp (r_aux i) ((s_aux i).prod (OrderHom.id)) = OrderHom.id := by
@@ -331,7 +314,7 @@ lemma r_comp_s : s i ≫ r i = 𝟙 Δ[n] := by
   rw [r_aux_comp_s_aux_prod_id]
   simp
 
-lemma restricted_r_comp_s : horn_to_pushout i ≫ pushout_to_horn i h0 hn = 𝟙 (Λ[n, i] : SSet) := by
+lemma restricted_r_comp_s : horn_to_pushout i ≫ pushout_to_horn i h0 hn = 𝟙 Λ[n, i].toSSet := by
   dsimp [horn_to_pushout, pushout_to_horn]
   rw [Category.assoc, Limits.pushout.inl_desc]
   ext k ⟨x, hx⟩
@@ -341,7 +324,7 @@ lemma restricted_r_comp_s : horn_to_pushout i ≫ pushout_to_horn i h0 hn = 𝟙
   aesop
 
 noncomputable
-instance hornRetract : RetractArrow Λ[n, i].ι (Λ[n, i].ι □ Λ[2, 1].ι) where
+instance hornRetract : RetractArrow Λ[n, i].ι (Λ[2, 1].ι □ Λ[n, i].ι) where
   i := {
     left := horn_to_pushout i
     right := s i
@@ -353,4 +336,3 @@ instance hornRetract : RetractArrow Λ[n, i].ι (Λ[n, i].ι □ Λ[2, 1].ι) wh
     w := rightSqComm i h0 hn
   }
   retract := Arrow.hom_ext _ _ (restricted_r_comp_s i h0 hn) (r_comp_s i)
--/
