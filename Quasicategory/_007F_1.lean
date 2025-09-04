@@ -212,9 +212,7 @@ lemma leftSqCommAux : s_restricted i ≫ Δ[2] ◁ Λ[n, i].ι = Λ[n, i].ι ≫
 lemma leftSqComm :
     horn_to_pushout i ≫ Λ[2, 1].ι □ Λ[n, i].ι = Λ[n, i].ι ≫ s i := by
   rw [← leftSqCommAux]
-  dsimp [horn_to_pushout, pushoutProduct, Functor.PushoutObjObj.ofHasPushout]
-  sorry
-  --rw [Category.assoc, Limits.pushout.inl_desc]
+  simp [horn_to_pushout, pushoutProduct, Functor.PushoutObjObj.ι]
 
 def r_aux : Fin 3 × Fin (n + 1) →o Fin (n + 1) where
   toFun := fun ⟨k, j⟩ ↦ if (j < i ∧ k = 0) ∨ (j > i ∧ k = 2) then j else i
@@ -294,7 +292,7 @@ def pushout_to_horn : (PushoutProduct.pt Λ[2, 1].ι Λ[n, i].ι) ⟶ Λ[n, i] :
 
 lemma rightSqComm : pushout_to_horn i h0 hn ≫ (Λ[n, i]).ι = (Λ[2, 1].ι □ Λ[n, i].ι) ≫ r i := by
   dsimp [pushout_to_horn, pushoutProduct]
-  apply Limits.pushout.hom_ext; all_goals sorry
+  apply Limits.pushout.hom_ext; all_goals dsimp [Functor.PushoutObjObj.ι]; aesop
 
 lemma r_aux_comp_s_aux_prod_id :
     OrderHom.comp (r_aux i) ((s_aux i).prod (OrderHom.id)) = OrderHom.id := by

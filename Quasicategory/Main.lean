@@ -35,16 +35,16 @@ def hornFromPullbackPower_π_arrowIso :
 
 noncomputable
 def bdryHornPushoutProduct_ι_eq :
-    (bdryHornPushoutProduct m).ι = ∂Δ[m].ι ◫ Λ[2, 1].ι := by
+    (bdryHornPushoutProduct m).ι = Λ[2, 1].ι □ ∂Δ[m].ι := by
   dsimp [bdryHornPushoutProduct, Functor.PushoutObjObj.ι]
-  apply pushout.hom_ext _ _
-  all_goals aesop
+/-
 
 noncomputable
 def PushoutObjObj_ι_eq {A B X Y : SSet} {f : A ⟶ B} {g : X ⟶ Y} :
     (Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet) f g).ι = g ◫ f := by
   dsimp [Functor.PushoutObjObj.ι]
   exact pushout.hom_ext (by aesop) (by aesop)
+-/
 
 -- `0079`
 open HasLiftingProperty ParametrizedAdjunction in
@@ -57,7 +57,7 @@ instance quasicategory_iff_internalHom_horn_trivialFibration (S : SSet) :
   constructor
   · intro h _ _ _ ⟨m⟩
     rw [← iff_of_arrow_iso_right _ hornFromPullbackPower_π_arrowIso,
-      ← hasLiftingProperty_iff internalHomAdjunction₂ _ _, bdryHornPushoutProduct_ι_eq]
+      ← hasLiftingProperty_iff internalHomAdjunction₂ _ _]
     exact h _ (.mk m)
   · intro h _ _ _ ⟨m⟩
     rw [← bdryHornPushoutProduct_ι_eq, hasLiftingProperty_iff internalHomAdjunction₂ (bdryHornPushoutProduct m) (hornFromPullbackPower S),
