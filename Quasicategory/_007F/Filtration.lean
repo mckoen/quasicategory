@@ -7,31 +7,27 @@ variable {n : ℕ}
 
 namespace σ
 
+/-- doesn't make sense for n = 0, so do n + 1. -/
 noncomputable
-def filtration (n : ℕ) (i : Σₗ (b : Fin n), Fin b.succ) :
-    (Δ[n] ⊗ Δ[2]).Subcomplex :=
-  ∂Δ[n].unionProd Λ[2, 1] ⊔
-    (⨆ (j) (_ : j ≤ i), ofSimplex (σ.simplex j).1)
+def filtration (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
+    (Δ[n + 1] ⊗ Δ[2]).Subcomplex :=
+  ∂Δ[n + 1].unionProd Λ[2, 1] ⊔ (⨆ (j) (_ : j ≤ i), σ j)
 
 lemma filtration_bot :
-    filtration (n + 1) ⊥ = ∂Δ[n + 1].unionProd Λ[2, 1] ⊔ ofSimplex (σ.simplex ⊥).1 := by
-  simp [σ.filtration]
+    filtration ⊥ = ∂Δ[n + 1].unionProd Λ[2, 1] ⊔ σ ⊥ := by
+  simp [σ, filtration]
 
+open Sigma.Lex in
 lemma filtration_succ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
-    filtration (n + 1) (Sigma.Lex.succ i) =
-      filtration (n + 1) i ⊔ ofSimplex (σ.simplex (Sigma.Lex.succ i)).1 := by
+    filtration (succ i) =
+      filtration i ⊔ σ (succ i) := by
   simp only [filtration]
   apply le_antisymm
-  · apply sup_le (le_sup_of_le_left le_sup_left)
-    apply iSup₂_le
-    intro i' hi'
-    cases lt_or_eq_of_le hi'
-    · next hi' =>
-      exact
+  · apply sup_le (le_sup_of_le_left le_sup_left) (iSup₂_le fun i' hi' ↦ ?_)
+    obtain hi' | rfl := lt_or_eq_of_le hi'
+    · exact
         le_sup_of_le_left (le_sup_of_le_right (le_iSup₂_of_le i' (Order.le_of_lt_succ hi') le_rfl))
-    · next hi' =>
-      subst hi'
-      exact le_sup_of_le_right le_rfl
+    · exact le_sup_of_le_right le_rfl
   · apply sup_le
     · exact
       sup_le le_sup_left
@@ -41,7 +37,7 @@ lemma filtration_succ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
       le_sup_of_le_right
         (le_iSup₂_of_le (Sigma.Lex.succ i) (le_refl (Sigma.Lex.succ i)) fun i_1 ⦃a⦄ a ↦ a)
 
-lemma filtration_monotone (n : ℕ) : Monotone (filtration n) := fun _ _ h ↦
+lemma filtration_monotone : Monotone (filtration (n := n)) := fun _ _ h ↦
   sup_le le_sup_left
     (iSup₂_le fun i hi ↦
       le_sup_of_le_right (le_iSup₂_of_le i (hi.trans h) fun _ _ a ↦ a))
@@ -51,29 +47,25 @@ end σ
 namespace τ
 
 noncomputable
-def filtration (n : ℕ) (i : Σₗ (b : Fin (n + 2)), Fin b.succ) :
+def filtration (i : Σₗ (b : Fin (n + 2)), Fin b.succ) :
     (Δ[n + 1] ⊗ Δ[2]).Subcomplex :=
-  (σ.filtration (n + 1) ⊤) ⊔ (⨆ (j) (_ : j ≤ i), ofSimplex (τ.simplex j).1)
+  (σ.filtration ⊤) ⊔ (⨆ (j) (_ : j ≤ i), τ j)
 
 lemma filtration_bot :
-    filtration n ⊥ = σ.filtration (n + 1) ⊤ ⊔ ofSimplex (τ.simplex ⊥).1 := by
+    filtration (⊥ : Σₗ (b : Fin (n + 2)), Fin b.succ) = σ.filtration ⊤ ⊔ τ ⊥ := by
   simp [filtration, σ.filtration]
 
+open Sigma.Lex in
 lemma filtration_succ (i : Σₗ (b : Fin (n + 2)), Fin b.succ) :
-    filtration n (Sigma.Lex.succ i) =
-      filtration n i ⊔ ofSimplex (τ.simplex (Sigma.Lex.succ i)).1 := by
+    filtration (succ i) =
+      filtration i ⊔ τ (succ i) := by
   simp only [filtration]
   apply le_antisymm
-  · apply sup_le (le_sup_of_le_left le_sup_left)
-    apply iSup₂_le
-    intro i' hi'
-    cases lt_or_eq_of_le hi'
-    · next hi' =>
-      exact
+  · apply sup_le (le_sup_of_le_left le_sup_left) (iSup₂_le fun i' hi' ↦ ?_)
+    obtain hi' | rfl := lt_or_eq_of_le hi'
+    · exact
         le_sup_of_le_left (le_sup_of_le_right (le_iSup₂_of_le i' (Order.le_of_lt_succ hi') le_rfl))
-    · next hi' =>
-      subst hi'
-      exact le_sup_of_le_right le_rfl
+    · exact le_sup_of_le_right le_rfl
   · apply sup_le
     · exact
       sup_le le_sup_left
@@ -84,7 +76,7 @@ lemma filtration_succ (i : Σₗ (b : Fin (n + 2)), Fin b.succ) :
         (le_iSup₂_of_le (Sigma.Lex.succ i) (le_refl (Sigma.Lex.succ i)) fun i_1 ⦃a⦄ a ↦ a)
 
 lemma filtration_last :
-    filtration n ⊤ = ⊤ := by
+    filtration (⊤ : Σₗ (b : Fin (n + 2)), Fin b.succ) = ⊤ := by
   dsimp [filtration]
   rw [prodStdSimplex.subcomplex_eq_top_iff _ rfl]
   intro x hx
@@ -93,7 +85,7 @@ lemma filtration_last :
   rw [← Subcomplex.ofSimplex_le_iff]
   exact le_sup_of_le_right (le_iSup₂_of_le i le_top le_rfl)
 
-lemma filtration_monotone (n : ℕ) : Monotone (filtration n) := fun _ _ h ↦
+lemma filtration_monotone : Monotone (filtration (n := n)) := fun _ _ h ↦
   sup_le le_sup_left
     (iSup₂_le fun i hi ↦
       le_sup_of_le_right (le_iSup₂_of_le i (hi.trans h) fun _ _ a ↦ a))
