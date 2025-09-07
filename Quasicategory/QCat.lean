@@ -37,5 +37,5 @@ instance : MonoidalClosed QCat := fullMonoidalClosedSubcategory Quasicategory
 instance : EnrichedOrdinaryCategory QCat QCat := enrichedOrdinaryCategorySelf QCat
 
 instance : EnrichedCategory QCat QCat := EnrichedOrdinaryCategory.toEnrichedCategory
-#print axioms ihom_isQuasicategory
+
 end
