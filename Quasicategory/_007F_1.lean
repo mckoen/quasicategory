@@ -44,14 +44,13 @@ instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposi
     dsimp only [leftFunctor_preserves_transfiniteComposition]
     exact WeaklySaturatedClass.pushout (PushoutProduct.newPushoutIsPushout hf.F (Limits.Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
 
-/-
 
 noncomputable
 def c₁' {J : Type*} {X₁ X₂ : Discrete J ⥤ SSet}
     {c₁ : Limits.Cocone X₁} (c₂ : Limits.Cocone X₂)
     (h₁ : Limits.IsColimit c₁) (f : X₁ ⟶ X₂) :
     Limits.Cocone (natTransLeftFunctor f Λ[2, 1].ι) := {
-      pt := PushoutProduct.pt (h₁.desc { pt := c₂.pt, ι := f ≫ c₂.ι }) Λ[2, 1].ι
+      pt := PushoutProduct.pt Λ[2, 1].ι (h₁.desc { pt := c₂.pt, ι := f ≫ c₂.ι })
       ι := {
         app j := by
           apply Limits.pushout.desc
@@ -149,14 +148,14 @@ instance S.IsStableUnderCoproducts : IsStableUnderCoproducts.{w} S.{w} where
     · intro j
       dsimp only [c₁', SSet.c₁', c₂', f', descFunctor, tensorLeft, curriedTensor,
         Functor.mapCocone]
+      simp only [Functor.PushoutObjObj.ι]
       aesop
-  -/
 
 -- S is weakly saturated because T is
 instance S.WeaklySaturated : WeaklySaturated.{w} S.{w} where
   IsStableUnderCobaseChange := by infer_instance
   IsStableUnderRetracts := by infer_instance
-  IsStableUnderCoproducts := by sorry
+  IsStableUnderCoproducts := by infer_instance
   IsStableUnderTransfiniteComposition := by infer_instance
 
 lemma bdryInclusions_le_S : bdryInclusions ≤ S := fun _ _ _ ⟨_⟩ ↦ .of _ (.mk _)

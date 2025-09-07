@@ -105,9 +105,37 @@ def newPushoutIsColimit_desc {j} (s : PushoutCocone ((φ F c).app j) (Λ[2, 1].�
   pushout.desc s.inr ((pushout.inr _ _) ≫ s.inl)
     (by simpa [Functor.PushoutObjObj.ι] using ((pushout.inr _ _) ≫= s.condition).symm)
 
+lemma auxxxxxxxx {j} (s : PushoutCocone ((φ F c).app j) (Λ[2, 1].ι □ F.map (homOfLE (Order.le_succ j))))
+   (h2 : j ≤ Order.succ j) (h11 : Λ[2, 1].ι ▷ F.obj j ≫ Δ[2] ◁ F.map (homOfLE h2) = Λ[2, 1].toSSet ◁ F.map (homOfLE h2) ≫ Λ[2, 1].ι ▷ F.obj (Order.succ j))
+    (h13 : Λ[2, 1].toSSet ◁ c.ι.app j ≫ 𝟙 (Λ[2, 1].toSSet ⊗ c.pt) =
+      Λ[2, 1].toSSet ◁ F.map (homOfLE h2) ≫ Λ[2, 1].toSSet ◁ c.ι.app (Order.succ j))
+    (h21 : Λ[2, 1].ι ▷ F.obj (Order.succ j) ≫ s.inr =
+  Λ[2, 1].toSSet ◁ c.ι.app (Order.succ j) ≫ pushout.inr (Λ[2, 1].ι ▷ F.obj j) (Λ[2, 1].toSSet ◁ c.ι.app j) ≫ s.inl)
+     : pushout.inl (Λ[2, 1].ι ▷ F.obj j) (Λ[2, 1].toSSet ◁ c.ι.app j) ≫
+    pushout.map (Λ[2, 1].ι ▷ F.obj j) (Λ[2, 1].toSSet ◁ c.ι.app j) (Λ[2, 1].ι ▷ F.obj (Order.succ j))
+        (Λ[2, 1].toSSet ◁ c.ι.app (Order.succ j)) (Δ[2] ◁ F.map (homOfLE h2)) (𝟙 (Λ[2, 1].toSSet ⊗ c.pt))
+        (Λ[2, 1].toSSet ◁ F.map (homOfLE h2)) h11 h13 ≫
+      pushout.desc s.inr (pushout.inr (Λ[2, 1].ι ▷ F.obj j) (Λ[2, 1].toSSet ◁ c.ι.app j) ≫ s.inl) h21 =
+    pushout.inl (Λ[2, 1].ι ▷ F.obj j) (Λ[2, 1].toSSet ◁ c.ι.app j) ≫ s.inl := by
+  rw [pushout.inl_desc_assoc]
+  have := (pushout.inl _ _) ≫= s.condition
+  simp [Functor.PushoutObjObj.ι] at this
+  rw [this]
+  have := s.condition
+  have H := pushout.condition (f := (Λ[2, 1].ι ▷ F.obj (Order.succ j))) (g := (Λ[2, 1].toSSet ◁ c.ι.app (Order.succ j)))
+  have H' := cocone_ι_facs_app F c (j := j)
+  dsimp at H'
+  rw [Category.id_comp] at H'
+  sorry
+
+/-
+set_option maxHeartbeats 3000000 in
+set_option maxRecDepth 200000 in
+-/
 omit [OrderBot J] [WellFoundedLT J] [F.IsWellOrderContinuous] in
 lemma newPushoutIsColimit_fac_left {j} (s : PushoutCocone ((φ F c).app j) (Λ[2, 1].ι □ F.map (homOfLE (Order.le_succ j)))) :
     (natTransLeftFunctor c.ι Λ[2, 1].ι).map (homOfLE (Order.le_succ j)) ≫ newPushoutIsColimit_desc F c s = s.inl := by
+  /-
   simp only [Fin.isValue, natTransLeftFunctor_obj, Functor.const_obj_obj, Functor.succNatTrans,
     id_to_succ, Functor.id_obj, Monotone.functor_obj, homOfLE_leOfHom, Functor.comp_obj,
     NatTrans.hcomp_app, NatTrans.id_app, φ_j, Arrow.mk_left, NatTrans.arrowFunctor_obj_left,
@@ -117,11 +145,24 @@ lemma newPushoutIsColimit_fac_left {j} (s : PushoutCocone ((φ F c).app j) (Λ[2
     Functor.PushoutObjObj.ofHasPushout_inr, natTransLeftFunctor_map, Functor.const_obj_map,
     MonoidalCategory.whiskerLeft_id, newPushoutIsColimit_desc, PushoutCocone.ι_app_right,
     PushoutCocone.ι_app_left]
+  -/
   apply pushout.hom_ext
-  · rw [pushout.inl_desc_assoc]
+  · simp only [Fin.isValue, natTransLeftFunctor_obj, Functor.const_obj_obj, Functor.succNatTrans,
+      id_to_succ, Functor.id_obj, Monotone.functor_obj, homOfLE_leOfHom, Functor.comp_obj,
+      NatTrans.hcomp_app, NatTrans.id_app, φ_j, Arrow.mk_left, NatTrans.arrowFunctor_obj_left,
+      Arrow.mk_right, NatTrans.arrowFunctor_obj_right, Arrow.mk_hom, NatTrans.arrowFunctor_obj_hom,
+      Functor.PushoutObjObj.ι, curriedTensor_obj_obj, Functor.PushoutObjObj.ofHasPushout_pt,
+      curriedTensor_map_app, curriedTensor_obj_map, Functor.PushoutObjObj.ofHasPushout_inl,
+      Functor.PushoutObjObj.ofHasPushout_inr, natTransLeftFunctor_map, Functor.const_obj_map,
+      MonoidalCategory.whiskerLeft_id, newPushoutIsColimit_desc, PushoutCocone.ι_app_right,
+      PushoutCocone.ι_app_left]
     have := (pushout.inl _ _) ≫= s.condition
     simp [Functor.PushoutObjObj.ι] at this
     rw [this]
+    rw [pushout.inl_desc_assoc]
+
+    /-
+    -/
 
     sorry
   · sorry--simp only [pushout.inr_desc_assoc, Category.id_comp, pushout.inr_desc]
