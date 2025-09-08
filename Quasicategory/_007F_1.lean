@@ -42,20 +42,34 @@ instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposi
 
     intro j hj
     dsimp only [leftFunctor_preserves_transfiniteComposition]
-    exact WeaklySaturatedClass.pushout (PushoutProduct.newPushoutIsPushout hf.F (Limits.Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
+    exact .pushout (newPushoutIsPushout hf.F (Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
 
+/-
+{F G : D ⥤ C} (h : F ⟶ G) {X Y : C} (g : X ⟶ Y) (X_1 : D),
+        (natTransLeftFunctor h g).obj X_1 = pushout (g ▷ F.obj X_1) (X ◁ h.app X_1)
 
+(natTransLeftFunctor h Λ[2, 1].ι).obj X_1
+
+pushout (f ▷ X) (A ◁ g) ⟶ B ⊗ Y
+
+Λ[2, 1].ι □ h₁.desc {pt := c₂.pt, ι := f ≫ c₂.ι}
+
+ (pushout (Λ[2, 1].ι ▷ c₁.pt) (Λ[2, 1].toSSet ◁ h₁.desc { pt := c₂.pt, ι := f ≫ c₂.ι })
+-/
+
+open Limits in
 noncomputable
 def c₁' {J : Type*} {X₁ X₂ : Discrete J ⥤ SSet}
-    {c₁ : Limits.Cocone X₁} (c₂ : Limits.Cocone X₂)
-    (h₁ : Limits.IsColimit c₁) (f : X₁ ⟶ X₂) :
-    Limits.Cocone (natTransLeftFunctor f Λ[2, 1].ι) := {
+    {c₁ : Cocone X₁} (c₂ : Cocone X₂)
+    (h₁ : IsColimit c₁) (f : X₁ ⟶ X₂) :
+    Cocone (natTransLeftFunctor f Λ[2, 1].ι) := {
       pt := PushoutProduct.pt Λ[2, 1].ι (h₁.desc { pt := c₂.pt, ι := f ≫ c₂.ι })
-      ι := {
+      ι :=
+        {
         app j := by
           apply Limits.pushout.desc
             (Δ[2] ◁ c₁.ι.app j ≫ (Limits.pushout.inl _ _))
-            ((Λ[2, 1] : SSet) ◁ c₂.ι.app j ≫ (Limits.pushout.inr _ _))
+            (Λ[2, 1].toSSet ◁ c₂.ι.app j ≫ (Limits.pushout.inr _ _))
           have := h₁.fac { pt := c₂.pt, ι := f ≫ c₂.ι } j
           dsimp at this
           simp

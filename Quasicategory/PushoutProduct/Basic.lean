@@ -106,6 +106,7 @@ variable {F G : D ⥤ C} (h : F ⟶ G)
 
 variable {X Y : C} (g : X ⟶ Y)
 
+/-- `(A : D) ↦ (h.app A : F.obj A ⟶ G.obj A)` -/
 @[simps!]
 def _root_.CategoryTheory.NatTrans.arrowFunctor : D ⥤ Arrow C where
   obj A := Arrow.mk (h.app A)
@@ -116,9 +117,12 @@ def _root_.CategoryTheory.NatTrans.arrowFunctor_NatTrans {G' : D ⥤ C} (h' : G 
     NatTrans.arrowFunctor h ⟶ NatTrans.arrowFunctor (h ≫ h') where
   app X := Arrow.homMk' (𝟙 _) (h'.app X)
 
+/-- `(A : D) ↦ pushout (g ▷ F.obj A) (X ◁ h.app A)` -/
 @[simps!]
 noncomputable
 def natTransLeftFunctor : D ⥤ C := NatTrans.arrowFunctor h ⋙ leftFunctor g ⋙ Arrow.leftFunc
+
+-- include interactions with whiskering
 
 @[simp]
 noncomputable
