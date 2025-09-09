@@ -224,8 +224,8 @@ lemma σ.filtration_innerAnodyne {i j : Σₗ (b : Fin (n + 1)), Fin b.succ} (h 
     apply id_mem
   | succ n _ =>
     by_cases hn : i < ⊤
-    · have σsq := σ.filtrationPushout_intermediate.{u} i hn
-      rw [σ.innerHornImage, σ, ofSimplex_eq_range, σ.f] at σsq
+    · have σsq := σ.filtrationPushout_intermediate i hn
+      rw [σ.innerHornImage, σ.subcomplex, ofSimplex_eq_range, σ.s] at σsq
       refine of_isPushout (Subcomplex.Sq.isPushout σsq).flip
         ((arrow_mk_iso_iff _ (image_arrow_iso_of_mono _ _)).2
           (.of _ (.mk (Nat.lt_of_sub_eq_succ rfl) (?_))))
@@ -248,8 +248,8 @@ lemma τ.filtration_innerAnodyne {i j : Σₗ (b : Fin (n + 2)), Fin b.succ} (h 
     Fin.succ_mk, Fin.zero_eta, homOfLE_leOfHom, Functor.comp_map, forget_map]
   intro i
   by_cases hn : i < ⊤
-  · have τsq := τ.filtrationPushout_intermediate.{u} i hn
-    rw [τ.innerHornImage, τ, ofSimplex_eq_range, τ.g] at τsq
+  · have τsq := τ.filtrationPushout_intermediate i hn
+    rw [τ.innerHornImage, τ.subcomplex, ofSimplex_eq_range, τ.t] at τsq
     refine of_isPushout (Subcomplex.Sq.isPushout τsq).flip
       ((arrow_mk_iso_iff _ (image_arrow_iso_of_mono _ _)).2
         (.of _ (.mk (Nat.lt_of_sub_eq_succ rfl) (?_))))
@@ -274,8 +274,8 @@ lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1])
   | succ n _ =>
     let σsq := (σ.filtrationPushout_zero.{u} (n := n))
     let τsq := (τ.filtrationPushout_zero.{u} (n := n))
-    rw [Sigma.Lex.bot_eq_zero, σ, ofSimplex_eq_range] at σsq
-    rw [Sigma.Lex.bot_eq_zero, τ, ofSimplex_eq_range] at τsq
+    rw [Sigma.Lex.bot_eq_zero, σ.subcomplex, ofSimplex_eq_range] at σsq
+    rw [Sigma.Lex.bot_eq_zero, τ.subcomplex, ofSimplex_eq_range] at τsq
     change innerHornInclusions.saturation
         ((homOfLE σ.filtrationPushout_zero.{u}.le₃₄) ≫
         (homOfLE (σ.filtration_monotone bot_le)) ≫
@@ -289,7 +289,7 @@ lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1])
       comp_mem _ _ _ (τ.filtration_innerAnodyne.{u} bot_le) <|
       comp_mem _ _ _ (of_isIso _ _) (of_isIso _ _)
     · refine of_isPushout σsq.isPushout.flip
-        ((arrow_mk_iso_iff _ (image_arrow_iso_of_mono (σ.f ⊥) Λ[n + 2, 1])).2
+        ((arrow_mk_iso_iff _ (image_arrow_iso_of_mono (σ.s ⊥) Λ[n + 2, 1])).2
           (.of _ (.mk Fin.zero_lt_one Fin.one_lt_last)))
     · exact of_isPushout τsq.isPushout.flip
         ((arrow_mk_iso_iff _ (image_arrow_iso_of_mono _ _)).2

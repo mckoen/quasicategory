@@ -11,16 +11,16 @@ namespace σ
 noncomputable
 def filtration (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     (Δ[n + 1] ⊗ Δ[2]).Subcomplex :=
-  ∂Δ[n + 1].unionProd Λ[2, 1] ⊔ (⨆ (j) (_ : j ≤ i), σ j)
+  ∂Δ[n + 1].unionProd Λ[2, 1] ⊔ (⨆ (j) (_ : j ≤ i), σ.subcomplex j)
 
 lemma filtration_bot :
-    filtration ⊥ = ∂Δ[n + 1].unionProd Λ[2, 1] ⊔ σ ⊥ := by
-  simp [σ, filtration]
+    filtration ⊥ = ∂Δ[n + 1].unionProd Λ[2, 1] ⊔ σ.subcomplex ⊥ := by
+  simp [σ.subcomplex, filtration]
 
 open Sigma.Lex in
 lemma filtration_succ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     filtration (succ i) =
-      filtration i ⊔ σ (succ i) := by
+      filtration i ⊔ σ.subcomplex (succ i) := by
   simp only [filtration]
   apply le_antisymm
   · apply sup_le (le_sup_of_le_left le_sup_left) (iSup₂_le fun i' hi' ↦ ?_)
@@ -49,16 +49,16 @@ namespace τ
 noncomputable
 def filtration (i : Σₗ (b : Fin (n + 2)), Fin b.succ) :
     (Δ[n + 1] ⊗ Δ[2]).Subcomplex :=
-  (σ.filtration ⊤) ⊔ (⨆ (j) (_ : j ≤ i), τ j)
+  (σ.filtration ⊤) ⊔ (⨆ (j) (_ : j ≤ i), τ.subcomplex j)
 
 lemma filtration_bot :
-    filtration (⊥ : Σₗ (b : Fin (n + 2)), Fin b.succ) = σ.filtration ⊤ ⊔ τ ⊥ := by
+    filtration (⊥ : Σₗ (b : Fin (n + 2)), Fin b.succ) = σ.filtration ⊤ ⊔ τ.subcomplex ⊥ := by
   simp [filtration, σ.filtration]
 
 open Sigma.Lex in
 lemma filtration_succ (i : Σₗ (b : Fin (n + 2)), Fin b.succ) :
     filtration (succ i) =
-      filtration i ⊔ τ (succ i) := by
+      filtration i ⊔ τ.subcomplex (succ i) := by
   simp only [filtration]
   apply le_antisymm
   · apply sup_le (le_sup_of_le_left le_sup_left) (iSup₂_le fun i' hi' ↦ ?_)
@@ -81,7 +81,7 @@ lemma filtration_last :
   rw [prodStdSimplex.subcomplex_eq_top_iff _ rfl]
   intro x hx
   obtain ⟨i, hi⟩ := τ.nonDegenerateEquiv.surjective ⟨x, hx⟩
-  obtain rfl : τ.simplex i = x := by rw [τ.simplex, hi]
+  obtain rfl : τ.simplex i = x := congrArg Subtype.val hi
   rw [← Subcomplex.ofSimplex_le_iff]
   exact le_sup_of_le_right (le_iSup₂_of_le i le_top le_rfl)
 

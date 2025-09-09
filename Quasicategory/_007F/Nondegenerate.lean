@@ -7,87 +7,75 @@ open CategoryTheory MonoidalCategory SSet Simplicial SimplexCategory prodStdSimp
 
 variable {n : ℕ}
 
+@[simp]
+def τ.simplex₂' (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : Fin (n + 3) →o Fin 3 where
+  toFun k :=
+    if k ≤ ⟨i.2, by dsimp; omega⟩ then 0
+    else if k ≤ i.1.castSucc.succ then 1
+    else 2
+  monotone' := by
+    refine Fin.monotone_iff_le_succ.mpr ?_
+    intro j
+    simp_rw [Fin.le_iff_val_le_val]
+    simp
+    split
+    · next h => simp
+    · next h =>
+      have : ¬j.1 + 1 ≤ i.2.1 := fun h' ↦ h (le_trans (Fin.castSucc_le_succ j) h')
+      simp [this]
+      split
+      · next =>
+          split
+          all_goals omega
+      · next h =>
+        have : ¬j.1 ≤ i.1 := by omega
+        simp [this]
+
 /-- defined for `0 ≤ a ≤ b ≤ n`. Can define it for `b = n + 1`,
   but then it lands in `Λ[2, 2] _⦋n + 2⦌`. -/
-def τ.objMk₂ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : Δ[2] _⦋n + 2⦌  :=
-  stdSimplex.objMk.{u} {
-    toFun k :=
-      if k ≤ (⟨i.2, by omega⟩ : Fin (n + 3)) then 0
-      else if k ≤ i.1.castSucc.succ then 1
-      else 2
-    monotone' := by
-      refine Fin.monotone_iff_le_succ.mpr ?_
-      rintro (j : Fin (n + 2))
+@[simp]
+def τ.simplex₂ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : Δ[2] _⦋n + 2⦌  :=
+  stdSimplex.objEquiv.symm (mkHom (simplex₂' i))
+
+@[simp]
+def σ.simplex₂' (i : Σₗ (b : Fin n), Fin b.succ) : Fin (n + 2) →o Fin 3 where
+  toFun k :=
+    if k ≤ ⟨i.2, by omega⟩ then 0
+    else if k ≤ ⟨i.1 + 1, by omega⟩ then 1
+    else 2
+  monotone' := by
+    refine Fin.monotone_iff_le_succ.mpr ?_
+    intro j
+    simp_rw [Fin.le_iff_val_le_val]
+    simp_all only [Nat.reduceAdd, Fin.coe_castSucc, Fin.val_succ, Fin.isValue, add_le_add_iff_right, Fin.val_fin_le]
+    split
+    next => omega
+    next =>
       split
-      · next h => simp
-      · next h =>
-        have : ¬j.succ ≤ ⟨i.2, by omega⟩ := fun h' ↦ h (le_trans (Fin.castSucc_le_succ j) h')
-        simp [this]
+      next h_1 =>
         split
-        · next => aesop
-        · next h =>
-          have : ¬j ≤ i.1.castSucc := fun h' ↦ h (le_trans (Fin.castSucc_le_castSucc_iff.2 h') (Fin.castSucc_le_succ i.1.castSucc))
-          simp [this] }
+        next =>omega
+        next =>
+          split
+          all_goals omega
+      next =>
+        split
+        next => omega
+        next =>
+          split
+          all_goals omega
 
 /-- defined for `0 ≤ a ≤ b < n`. Can define it for `b = n`,
   but then it lands in `Λ[2, 2] _⦋n + 1⦌`. -/
-def σ.objMk₂ (i : Σₗ (b : Fin n), Fin b.succ) : Δ[2] _⦋n + 1⦌  :=
-  stdSimplex.objMk.{u} {
-    toFun k :=
-      if k ≤ (⟨i.2, by omega⟩ : Fin (n + 1)) then 0
-      else if k ≤ i.1.succ then 1
-      else 2
-    monotone' := by
-      refine Fin.monotone_iff_le_succ.mpr ?_
-      rintro (j : Fin (n + 1))
-      split
-      · next h => simp
-      · next h =>
-        have : ¬j.succ ≤ ⟨i.2, by omega⟩ := by
-          intro h'
-          rw [Fin.coe_eq_castSucc] at h
-          exact h (le_trans (Fin.castSucc_le_succ j) h')
-        simp [this]
-        split
-        · next =>
-          simp at h
-          simp_all only [Fin.val_succ, not_le, Fin.isValue]
-          split
-          next
-            h_2 =>
-            simp_all only [Fin.isValue, Fin.le_zero_iff, len_mk, Nat.reduceAdd, Fin.one_eq_zero_iff,
-              OfNat.ofNat_ne_one]
-            have := lt_of_le_of_lt h_2 h
-            apply this.not_le
-            exact Fin.castSucc_le_succ j
-          next h_2 =>
-            aesop
-            --simp_all only [not_le, Fin.isValue]
-            --split
-            --next h_3 => simp_all only [Fin.isValue, le_refl]
-            --next h_3 => simp_all only [not_le, Fin.isValue, Fin.reduceLE]
-        · next h =>
-          rename_i q
-          have : ¬j.succ ≤ i.1.succ := by
-            simp_all
-            apply lt_trans h ?_
-            exact Fin.castSucc_lt_succ j
-          dsimp at this
-          simp [this]
-          simp_all only [len_mk, Fin.val_succ, not_le, Fin.isValue]
-          split
-          next h_2 =>
-            simp_all only [Fin.isValue, Fin.le_zero_iff, len_mk, Nat.reduceAdd, Fin.reduceEq]
-            have := lt_of_le_of_lt h_2 q
-            apply this.not_le
-            exact Fin.castSucc_le_succ j
-          next h_2 => simp_all only [not_le, Fin.isValue, le_refl] }
+@[simp]
+def σ.simplex₂ (i : Σₗ (b : Fin n), Fin b.succ) : Δ[2] _⦋n + 1⦌  :=
+  stdSimplex.objEquiv.symm (mkHom (simplex₂' i))
 
-lemma σ.objMk₂_injective : Function.Injective (σ.objMk₂ (n := n)) := by
+lemma σ.simplex₂_injective : Function.Injective (σ.simplex₂ (n := n)) := by
   intro i j h
   rcases i with ⟨b, a⟩
   rcases j with ⟨b', a'⟩
-  dsimp [σ.objMk₂] at h
+  dsimp at h
   wlog hb : b < b' generalizing b b'
   · simp only [not_lt] at hb
     obtain hb | rfl := hb.lt_or_eq
@@ -101,8 +89,7 @@ lemma σ.objMk₂_injective : Function.Injective (σ.objMk₂ (n := n)) := by
       have := stdSimplex.objMk_injective h
       simp at this
       have := DFunLike.congr_fun (stdSimplex.objMk_injective h) ⟨a', by dsimp; omega⟩
-      simp [Fin.le_iff_val_le_val] at this
-      rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
+      simp_rw [Fin.le_iff_val_le_val] at this
       simp [ha.not_le] at this
   exfalso
   have := stdSimplex.objMk_injective h
@@ -117,16 +104,14 @@ lemma σ.objMk₂_injective : Function.Injective (σ.objMk₂ (n := n)) := by
   have p'' : ⟨b'.1 + 1, by omega⟩ ≤ b'.castSucc.succ := by
     rw [Fin.le_iff_val_le_val]
     simp
-  simp [Fin.le_iff_val_le_val] at this
-  rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at this
   simp [p, p', p''] at this
   omega
 
-lemma τ.objMk₂_injective : Function.Injective (τ.objMk₂ (n := n)) := by
+lemma τ.simplex₂_injective : Function.Injective (τ.simplex₂ (n := n)) := by
   intro i j h
   rcases i with ⟨b, a⟩
   rcases j with ⟨b', a'⟩
-  dsimp [τ.objMk₂] at h
+  dsimp [τ.simplex₂] at h
   wlog hb : b < b' generalizing b b'
   · simp only [not_lt] at hb
     obtain hb | rfl := hb.lt_or_eq
@@ -161,23 +146,19 @@ lemma τ.objMk₂_injective : Function.Injective (τ.objMk₂ (n := n)) := by
   simp at this
   omega
 
-instance (b : Fin n) : OrderTop (Fin b.succ) where
-  top := ⟨b, Nat.lt_add_one b⟩
-  le_top a := Nat.le_of_lt_succ a.isLt
+def τ.simplex (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : (Δ[n] ⊗ Δ[2] : SSet) _⦋n + 2⦌ :=
+  (stdSimplex.objEquiv.symm (σ ⟨i.2, by omega⟩ ≫ σ i.1), stdSimplex.objEquiv.symm (mkHom (τ.simplex₂' i)))
 
-def τ' (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : (Δ[n] ⊗ Δ[2] : SSet) _⦋n + 2⦌ :=
-  (stdSimplex.objEquiv.symm (σ ⟨i.2, by omega⟩ ≫ σ i.1), τ.objMk₂ i)
-
-def σ' (i : Σₗ (b : Fin n), Fin b.succ) : (Δ[n] ⊗ Δ[2] : SSet) _⦋n + 1⦌ :=
-  (stdSimplex.objEquiv.symm (σ ⟨i.2, by omega⟩), σ.objMk₂ i)
+def σ.simplex (i : Σₗ (b : Fin n), Fin b.succ) : (Δ[n] ⊗ Δ[2] : SSet) _⦋n + 1⦌ :=
+  (stdSimplex.objEquiv.symm (σ ⟨i.2, by omega⟩), stdSimplex.objEquiv.symm (mkHom (σ.simplex₂' i)))
 
 /-- for all `0 ≤ a ≤ b < n`, we get a nondegenerate `(n+1)`-simplex. -/
 def σ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin n), Fin b.succ) :
     (Δ[n] ⊗ Δ[2] : SSet).nonDegenerate (n + 1) := by
-  refine ⟨σ' i, ?_⟩
+  refine ⟨σ.simplex i, ?_⟩
   rcases i with ⟨b, a⟩
   rw [prodStdSimplex.nonDegenerate_iff']
-  simp [σ']
+  simp [σ.simplex]
   simp [SSet.yonedaEquiv, yonedaCompUliftFunctorEquiv, stdSimplex.objEquiv, Equiv.ulift]
   intro x y h
   simp at h
@@ -186,7 +167,7 @@ def σ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin n), Fin b.succ) :
   have h₁ := congr_arg Prod.fst h
   have h₂ := congr_arg Prod.snd h
   rw [stdSimplex.ext'_iff, SimplexCategory.Hom.ext_iff, OrderHom.ext_iff] at h₁ h₂
-  simp [stdSimplex, σ, objMk₂, SSet.uliftFunctor, stdSimplex.objEquiv, stdSimplex.objMk] at h₁ h₂
+  simp [stdSimplex, σ, SSet.uliftFunctor, stdSimplex.objEquiv, stdSimplex.objMk] at h₁ h₂
   replace h₁ := congr_fun h₁ 0
   replace h₂ := congr_fun h₂ 0
   simp [Hom.toOrderHom, Fin.predAbove] at h₁ h₂
@@ -194,8 +175,6 @@ def σ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin n), Fin b.succ) :
   simp
   split at h₂
   · next h =>
-    simp at h
-    rw [Nat.mod_eq_of_lt (by omega)] at h
     simp_all only [Fin.isValue, Fin.val_zero, Fin.val_natCast]
     split at h₁
     next h_2 =>
@@ -217,7 +196,6 @@ def σ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin n), Fin b.succ) :
       next h_3 =>
         split at h₁
         next h_4 =>
-          rw [Nat.mod_eq_of_lt (by omega)] at h_3
           omega
         simpa
       next h_3 =>
@@ -227,7 +205,6 @@ def σ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin n), Fin b.succ) :
           all_goals omega
   · next h =>
     simp at h
-    rw [Nat.mod_eq_of_lt (by omega)] at h
     simp [h] at h₁
     split at h₁
     · next h' =>
@@ -249,29 +226,18 @@ def σ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin n), Fin b.succ) :
           split at h₂
           next h_4 =>
             simp_all only [Fin.isValue, not_le, Fin.val_one]
-            rw [Nat.mod_eq_of_lt (by omega)] at h_3
-            omega
           omega
-      next h_2 =>
-        split at h₂
-        omega
-        next h_3 =>
-          split at h₂
-          omega
-          next h_4 =>
-            simp_all only [Fin.isValue, not_le, Fin.val_two]
-            rw [Nat.mod_eq_of_lt (by omega)] at h_3
-            omega
+      next h_2 => omega
 
 /-- for all `0 ≤ a ≤ b ≤ n`, we get a nondegenerate `(n+2)`-simplex. -/
 def τ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     (Δ[n] ⊗ Δ[2] : SSet).nonDegenerate (n + 2) := by
-  refine ⟨τ' i, ?_⟩
+  refine ⟨τ.simplex i, ?_⟩
   rcases i with ⟨b, a⟩
   rw [nonDegenerate_iff _ rfl]
   ext x
-  change (((Fin.predAbove b) ∘ (Fin.predAbove ⟨a, _⟩)) x).1 + _ = x
-  dsimp [Fin.predAbove, τ', objMk₂]
+  change (((Fin.predAbove b) ∘ (Fin.predAbove ⟨a, _⟩)) x).1 + (τ.simplex₂' ⟨b, a⟩ x) = x
+  simp [Fin.predAbove, τ.simplex, simplex₂]
   split
   · next h =>
     simp_rw [Fin.lt_pred_iff]
@@ -302,7 +268,7 @@ def σ.nonDegenerateEquiv :
     (Σₗ (b : Fin n), Fin b.succ) ≃ (Δ[n] ⊗ Δ[2] : SSet).nonDegenerate (n + 1) := by
   refine Equiv.ofBijective (σ.nonDegenerateEquiv.toFun) ?_
   constructor
-  · exact fun _ _ h ↦ σ.objMk₂_injective (congr_arg (Prod.snd ∘ Subtype.val) h)
+  · exact fun _ _ h ↦ σ.simplex₂_injective (congr_arg (Prod.snd ∘ Subtype.val) h)
   ·
 -/
 /-- There is a bijection (via `τ`) between pairs `0 ≤ a ≤ b ≤ n` and nondegenerate
@@ -313,7 +279,7 @@ def τ.nonDegenerateEquiv :
   refine Equiv.ofBijective (τ.nonDegenerateEquiv.toFun) ?_
   constructor
   · intro i j h
-    simpa using τ.objMk₂_injective (congr_arg (Prod.snd ∘ Subtype.val) h)
+    simpa using τ.simplex₂_injective (congr_arg (Prod.snd ∘ Subtype.val) h)
   · intro x
     have α := (prodStdSimplex.nonDegenerate_iff _ rfl).1 x.2
     let f := x.1.2

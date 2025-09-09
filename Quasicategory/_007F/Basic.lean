@@ -1,33 +1,30 @@
 import Quasicategory._007F.Nondegenerate
 
+universe u
+
 open CategoryTheory Simplicial MonoidalCategory SSet
 
 variable {n : ℕ}
 
-abbrev σ.simplex (i : Σₗ (b : Fin n), Fin b.succ) := nonDegenerateEquiv.toFun i
-
 noncomputable
-abbrev τ.simplex (i : Σₗ (b : Fin (n + 1)), Fin b.succ) := nonDegenerateEquiv i
-
-noncomputable
-abbrev σ.f (i : Σₗ (b : Fin n), Fin b.succ) :
+abbrev σ.s (i : Σₗ (b : Fin n), Fin b.succ) :
     Δ[n + 1] ⟶ Δ[n] ⊗ Δ[2] :=
-  yonedaEquiv.symm (simplex i)
+  yonedaEquiv.symm (σ.simplex i)
 
-noncomputable abbrev τ.g (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
+noncomputable abbrev τ.t (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     Δ[n + 2] ⟶ Δ[n] ⊗ Δ[2] :=
-  yonedaEquiv.symm (simplex i)
+  yonedaEquiv.symm (τ.simplex i)
 
 noncomputable
-def σ (i : Σₗ (b : Fin n), Fin b.succ) := Subcomplex.ofSimplex (σ.simplex i).1
+def σ.subcomplex (i : Σₗ (b : Fin n), Fin b.succ) := Subcomplex.ofSimplex (σ.simplex i)
 
 noncomputable
-def τ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) := Subcomplex.ofSimplex (τ.simplex i).1
+def τ.subcomplex (i : Σₗ (b : Fin (n + 1)), Fin b.succ) := Subcomplex.ofSimplex (τ.simplex i)
 
-instance (i : Σₗ (b : Fin n), Fin b.succ) : Mono (σ.f i) := by
+instance (i : Σₗ (b : Fin n), Fin b.succ) : Mono (σ.s i) := by
   rw [stdSimplex.mono_iff]
   exact (prodStdSimplex.nonDegenerate_iff' _).1 (σ.nonDegenerateEquiv.toFun i).2
 
-instance (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : Mono (τ.g i) := by
+instance (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : Mono (τ.t i) := by
   rw [stdSimplex.mono_iff]
   exact (prodStdSimplex.nonDegenerate_iff' _).1 (τ.nonDegenerateEquiv i).2
