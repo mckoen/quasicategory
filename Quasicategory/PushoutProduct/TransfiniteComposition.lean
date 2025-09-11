@@ -2,6 +2,11 @@ import Quasicategory.PushoutProduct.Basic
 
 open CategoryTheory MonoidalCategory Simplicial SSet Limits
 
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
+  [HasPushouts C]
+
+variable {A B : SSet} (f : A ⟶ B)
+
 namespace CategoryTheory.PushoutProduct
 
 variable {J : Type w} [LinearOrder J] [SuccOrder J]
@@ -13,23 +18,25 @@ variable {j : J}
 def id_to_succ : (.id J) ⟶ Order.succ_mono.functor where
   app j := homOfLE (Order.le_succ j)
 
+/-
 lemma cocone_ι_facs : (id_to_succ ◫ 𝟙 F) ≫ (whiskerLeft Order.succ_mono.functor c.ι) = c.ι := by
   ext : 2
   simp [NatTrans.hcomp, whiskerLeft]
+-/
 
 @[simp]
 noncomputable
-def φ_j (j : J) : (natTransLeftFunctor (id_to_succ ◫ 𝟙 F) Λ[2, 1].ι).obj j ⟶ (natTransLeftFunctor c.ι Λ[2, 1].ι).obj j :=
+def φ_j (j : J) : (natTransLeftFunctor (id_to_succ ◫ 𝟙 F) f).obj j ⟶ (natTransLeftFunctor c.ι f).obj j :=
   pushout.desc
     (pushout.inl _ _)
-    (Λ[2, 1].toSSet ◁ c.ι.app (Order.succ j) ≫ pushout.inr _ _)
+    (_ ◁ c.ι.app (Order.succ j) ≫ pushout.inr _ _)
     (by simp [← MonoidalCategory.whiskerLeft_comp_assoc, c.ι.naturality, pushout.condition])
 
 lemma newSqComm :
-    (φ_j F c j) ≫
-      ((natTransLeftFunctor c.ι Λ[2, 1].ι).map (homOfLE (Order.le_succ j))) =
-    (Λ[2, 1].ι □ (F.map (homOfLE (Order.le_succ j)))) ≫
-      pushout.inl _ _ := by
+    (φ_j f F c j) ≫
+      ((natTransLeftFunctor c.ι f).map (homOfLE (Order.le_succ j))) =
+    (f □ (F.map (homOfLE (Order.le_succ j)))) ≫
+      ((inlDescFunctor c.ι f).app (Order.succ j)) := by
   simp [Functor.PushoutObjObj.ι]
   apply pushout.hom_ext
   · simp
@@ -37,18 +44,18 @@ lemma newSqComm :
 
 noncomputable
 def newPushoutCocone (j : J) : PushoutCocone
-    (φ_j F c j) (Λ[2, 1].ι □ (F.map (homOfLE (Order.le_succ j)))) :=
-  PushoutCocone.mk _ _ (newSqComm F c)
+    (φ_j f F c j) (f □ (F.map (homOfLE (Order.le_succ j)))) :=
+  PushoutCocone.mk _ _ (newSqComm f F c)
 
 @[simp]
 noncomputable
-def newPushoutIsColimit_desc (s : PushoutCocone (φ_j F c j) (Λ[2, 1].ι □ (F.map (homOfLE (Order.le_succ j))))) :
-    (natTransLeftFunctor c.ι Λ[2, 1].ι).obj (Order.succ j) ⟶ s.pt :=
+def newPushoutIsColimit_desc (s : PushoutCocone (φ_j f F c j) (f □ (F.map (homOfLE (Order.le_succ j))))) :
+    (natTransLeftFunctor c.ι f).obj (Order.succ j) ⟶ s.pt :=
   pushout.desc s.inr ((pushout.inr _ _) ≫ s.inl)
     (by simpa [Functor.PushoutObjObj.ι] using ((pushout.inr _ _) ≫= s.condition).symm)
 
-lemma newPushoutIsColimit_fac_left (s : PushoutCocone (φ_j F c j) (Λ[2, 1].ι □ F.map (homOfLE (Order.le_succ j)))) :
-    (natTransLeftFunctor c.ι Λ[2, 1].ι).map (homOfLE (Order.le_succ j)) ≫ newPushoutIsColimit_desc F c s = s.inl := by
+lemma newPushoutIsColimit_fac_left (s : PushoutCocone (φ_j f F c j) (f □ F.map (homOfLE (Order.le_succ j)))) :
+    (natTransLeftFunctor c.ι f).map (homOfLE (Order.le_succ j)) ≫ newPushoutIsColimit_desc f F c s = s.inl := by
   simp only [Fin.isValue, natTransLeftFunctor_obj, Functor.const_obj_obj,
     id_to_succ, Functor.id_obj, Monotone.functor_obj, homOfLE_leOfHom, Functor.comp_obj,
     NatTrans.hcomp_app, NatTrans.id_app, φ_j, Arrow.mk_left, NatTrans.arrowFunctor_obj_left,
@@ -63,33 +70,34 @@ lemma newPushoutIsColimit_fac_left (s : PushoutCocone (φ_j F c j) (Λ[2, 1].ι 
     simp [Functor.PushoutObjObj.ι] at this
     rw [this]
     rw [pushout.inl_desc_assoc]
-    have := (Δ[2] ◁ F.map (homOfLE (Order.le_succ j))) ≫=
-      pushout.inl_desc s.inr (pushout.inr (Λ[2, 1].ι ▷ F.obj j) (Λ[2, 1].toSSet ◁ c.ι.app j) ≫ s.inl) (newPushoutIsColimit_desc.proof_7 F c s)
+    have := (_ ◁ F.map (homOfLE (Order.le_succ j))) ≫=
+      pushout.inl_desc s.inr (pushout.inr (f ▷ F.obj j) (_ ◁ c.ι.app j) ≫ s.inl) (newPushoutIsColimit_desc.proof_6 f F c s)
     rw [← this]
     dsimp only [NatTrans.arrowFunctor, Arrow.mk, Functor.id_obj]
     rfl
   · simp only [pushout.inr_desc_assoc, Category.id_comp, pushout.inr_desc]
 
 noncomputable
-def newPushoutIsColimit : IsColimit (newPushoutCocone F c j) := by
-  refine PushoutCocone.IsColimit.mk _ (newPushoutIsColimit_desc F c) ?_ ?_ ?_
-  · exact newPushoutIsColimit_fac_left _ _
+def newPushoutIsColimit : IsColimit (newPushoutCocone f F c j) := by
+  refine PushoutCocone.IsColimit.mk _ (newPushoutIsColimit_desc f F c) ?_ ?_ ?_
+  · exact newPushoutIsColimit_fac_left _ _ _
   · intro
-    simp only [newPushoutIsColimit_desc, pushout.inl_desc]
+    simp only [newPushoutIsColimit_desc, pushout.inl_desc, Arrow.mk, NatTrans.arrowFunctor, inlDescFunctor,
+      Functor.id_obj, Functor.PushoutObjObj.ofHasPushout]
   · intro _ _ h h'
     apply pushout.hom_ext
-    · dsimp only [Functor.id_obj, Arrow.mk, NatTrans.arrowFunctor, newPushoutIsColimit_desc]
+    · dsimp only [inlDescFunctor, Functor.id_obj, Arrow.mk, NatTrans.arrowFunctor, newPushoutIsColimit_desc]
       rw [pushout.inl_desc, ← h']
-      dsimp only [NatTrans.arrowFunctor, Arrow.mk, Functor.id_obj]
+      simp [inlDescFunctor]
     · dsimp only [Functor.id_obj, Arrow.mk, NatTrans.arrowFunctor, newPushoutIsColimit_desc]
       rw [pushout.inr_desc, ← h]
       simp
 
 def newPushoutIsPushout (j : J) : IsPushout
-    (φ_j F c j)
-    (Λ[2, 1].ι □ F.map (homOfLE (Order.le_succ j)))
-    ((natTransLeftFunctor c.ι Λ[2, 1].ι).map (homOfLE (Order.le_succ j)))
+    (φ_j f F c j)
+    (f □ F.map (homOfLE (Order.le_succ j)))
+    ((natTransLeftFunctor c.ι f).map (homOfLE (Order.le_succ j)))
     (pushout.inl _ _) :=
-  .of_isColimit (newPushoutIsColimit F c)
+  .of_isColimit (newPushoutIsColimit f F c)
 
 end CategoryTheory.PushoutProduct

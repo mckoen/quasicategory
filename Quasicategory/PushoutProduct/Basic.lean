@@ -364,4 +364,97 @@ lemma mflakdw (j : J) (hj : ¬IsMax j)
 
 end Transfinite
 
+section Coproduct
+
+variable {A B : C} (f : A ⟶ B)
+
+open Limits in
+noncomputable
+def c₁' {J : Type*} {X₁ X₂ : Discrete J ⥤ C}
+    {c₁ : Cocone X₁} (c₂ : Cocone X₂)
+    (h₁ : IsColimit c₁) (f' : X₁ ⟶ X₂) :
+    Cocone (natTransLeftFunctor f' f) := {
+      pt := PushoutProduct.pt f (h₁.desc { pt := c₂.pt, ι := f' ≫ c₂.ι })
+      ι :=
+        {
+        app j := by
+          apply Limits.pushout.desc
+            (_ ◁ c₁.ι.app j ≫ (Limits.pushout.inl _ _))
+            (_ ◁ c₂.ι.app j ≫ (Limits.pushout.inr _ _))
+          have := h₁.fac { pt := c₂.pt, ι := f' ≫ c₂.ι } j
+          dsimp at this
+          simp
+          rw [← MonoidalCategory.whiskerLeft_comp_assoc, ← this, MonoidalCategory.whiskerLeft_comp_assoc,
+            ← Limits.pushout.condition, whisker_exchange_assoc]
+        naturality := by
+          intro j k s
+          dsimp
+          apply Limits.pushout.hom_ext
+          · simp
+            rw [← MonoidalCategory.whiskerLeft_comp_assoc, c₁.ι.naturality]
+            simp
+          · simp
+            rw [← MonoidalCategory.whiskerLeft_comp_assoc, c₂.ι.naturality]
+            simp } }
+
+variable  {J : Type*} {X₁ : Discrete J ⥤ C}  {X₂ : Discrete J ⥤ C}
+    [PreservesColimit X₁ (tensorLeft A)] [PreservesColimit X₁ (tensorLeft B)]
+    [PreservesColimit X₂ (tensorLeft A)]
+
+
+set_option maxHeartbeats 800000 in
+open Limits in
+noncomputable
+def c₁'_isColimit
+    {c₁ : Cocone X₁} (c₂ : Cocone X₂)
+    (h₁ : IsColimit c₁) (h₂ : IsColimit c₂) (f' : X₁ ⟶ X₂) : IsColimit (c₁' f c₂ h₁ f') where
+  desc s := by
+    dsimp [c₁']
+    let s₁ := Cocone.mk s.pt (inlDescFunctor f' f ≫ s.ι)
+    let s₂ := Cocone.mk s.pt (inrDescFunctor f' f ≫ s.ι)
+    let hs₁ := (isColimitOfPreserves (tensorLeft B) h₁)
+    let hs₂ := (isColimitOfPreserves (tensorLeft A) h₂)
+    let hs₁' := (isColimitOfPreserves (tensorLeft A) h₁)
+    apply pushout.desc (hs₁.desc s₁) (hs₂.desc s₂)
+    apply hs₁'.hom_ext
+    intro j
+    let hs₁_fac := hs₁.fac s₁ j
+    let hs₂_fac := hs₂.fac s₂ j
+    simp [s₁, s₂, hs₁, hs₂] at hs₁_fac hs₂_fac ⊢
+    rw [whisker_exchange_assoc, ← MonoidalCategory.whiskerLeft_comp_assoc, hs₁_fac]
+    simp [hs₂_fac, pushout.condition_assoc]
+  fac s j := by
+    simp [c₁']
+    apply pushout.hom_ext
+    · simp
+      exact (isColimitOfPreserves (tensorLeft _) h₁).fac { pt := s.pt, ι := inlDescFunctor f' f ≫ s.ι } j
+    · let s₂ := Cocone.mk s.pt (inrDescFunctor f' f ≫ s.ι)
+      let hs₂ := (isColimitOfPreserves (tensorLeft A) h₂)
+      let hs₂_fac := hs₂.fac s₂ j
+      simp [s₂] at hs₂_fac ⊢
+      rw [hs₂_fac]
+  uniq s m hj := by
+    simp
+    apply pushout.hom_ext
+    · let s₁ := Cocone.mk s.pt (inlDescFunctor f' f ≫ s.ι)
+      let hs₁ := (isColimitOfPreserves (tensorLeft B) h₁)
+      apply hs₁.hom_ext
+      intro j
+      simp
+      have := hs₁.fac s₁ j
+      dsimp [s₁, c₁'] at this
+      rw [this, ← hj j]
+      simp [c₁']
+    · let s₂ := Cocone.mk s.pt (inrDescFunctor f' f ≫ s.ι)
+      let hs₂ := (isColimitOfPreserves (tensorLeft A) h₂)
+      apply hs₂.hom_ext
+      intro j
+      simp
+      have := hs₂.fac s₂ j
+      dsimp [s₂] at this
+      rw [this, ← hj j]
+      simp [c₁']
+
+end Coproduct
+
 end CategoryTheory.PushoutProduct

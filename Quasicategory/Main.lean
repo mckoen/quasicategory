@@ -12,12 +12,8 @@ open CategoryTheory Simplicial MorphismProperty MonoidalCategory MonoidalClosed 
 variable {S : SSet} {m : ℕ}
 
 noncomputable
-def bdryHornPushoutProduct (m : ℕ) : (curriedTensor SSet).PushoutObjObj Λ[2, 1].ι ∂Δ[m].ι :=
-  Functor.PushoutObjObj.ofHasPushout _ _ _
-
-noncomputable
 def hornFromPullbackPower (S : SSet) : internalHom.PullbackObjObj Λ[2, 1].ι (isTerminalZero.from S) :=
-  Functor.PullbackObjObj.ofHasPullback internalHom Λ[2, 1].ι (isTerminalZero.from S)
+  Functor.PullbackObjObj.ofHasPullback ..
 
 noncomputable
 def pullback_ihom_terminal_iso {S : SSet} :
@@ -33,19 +29,6 @@ def hornFromPullbackPower_π_arrowIso :
   refine Arrow.isoMk (Iso.refl _) pullback_ihom_terminal_iso ?_
   simp [pullback_ihom_terminal_iso, Functor.PullbackObjObj.π]
 
-noncomputable
-def bdryHornPushoutProduct_ι_eq :
-    (bdryHornPushoutProduct m).ι = Λ[2, 1].ι □ ∂Δ[m].ι := by
-  dsimp [bdryHornPushoutProduct, Functor.PushoutObjObj.ι]
-/-
-
-noncomputable
-def PushoutObjObj_ι_eq {A B X Y : SSet} {f : A ⟶ B} {g : X ⟶ Y} :
-    (Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet) f g).ι = g ◫ f := by
-  dsimp [Functor.PushoutObjObj.ι]
-  exact pushout.hom_ext (by aesop) (by aesop)
--/
-
 -- `0079`
 open HasLiftingProperty ParametrizedAdjunction in
 /-- `S` is a quasi-category iff `ihom(Δ[2], S) ⟶ ihom(Λ[2, 1], S)` is a trivial fibration. -/
@@ -58,11 +41,11 @@ instance quasicategory_iff_internalHom_horn_trivialFibration (S : SSet) :
   · intro h _ _ _ ⟨m⟩
     rw [← iff_of_arrow_iso_right _ hornFromPullbackPower_π_arrowIso,
       ← hasLiftingProperty_iff internalHomAdjunction₂ _ _]
-    exact h _ (.mk m)
+    exact h _ ⟨m⟩
   · intro h _ _ _ ⟨m⟩
-    rw [← bdryHornPushoutProduct_ι_eq, hasLiftingProperty_iff internalHomAdjunction₂ (bdryHornPushoutProduct m) (hornFromPullbackPower S),
+    rw [hasLiftingProperty_iff internalHomAdjunction₂,
       iff_of_arrow_iso_right _ hornFromPullbackPower_π_arrowIso]
-    apply h _ (.mk m)
+    exact h _ ⟨m⟩
 
 /-- `0071` (special case of `0070`) if `p : X ⟶ Y` is a trivial fibration, then `ihom(B, X) ⟶ ihom(B, Y)` is -/
 instance trivialFibration_of_ihom_map_trivialFibration {X Y : SSet} (B : SSet) (p : X ⟶ Y) (hp: trivialFibration p) :
@@ -89,10 +72,103 @@ def aux (S D : SSet) [Quasicategory D] :
     CategoryTheory.Comma.isoMk (ihom_ihom_symm_iso _ _ _) (ihom_ihom_symm_iso _ _ _)
   exact HasLiftingProperty.of_arrow_iso_right ∂Δ[n].ι H
 
-lemma _00J8 {A B X Y : SSet} (f : A ⟶ B) {g : X ⟶ Y} [hf : Mono f] (hg : innerAnodyne g) :
-    innerAnodyne (Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet) f g).ι := by
+section _00J8
+
+variable {A B X Y : SSet} (f : A ⟶ B) {g : X ⟶ Y} [hf : Mono f]
+
+/-- `T` is the class of all morphisms `i` such that `f □ i` is inner anodyne. -/
+def T : MorphismProperty SSet := fun _ _ i ↦
+  innerAnodyne (f □ i)
+
+instance : IsStableUnderCobaseChange (T f) where
+  of_isPushout h hg := by
+    dsimp only [T]
+    exact IsStableUnderCobaseChange.of_isPushout (leftFunctor_map_preserves_pushouts' f h) hg
+
+instance : IsStableUnderRetracts (T f) where
+  of_retract h hg := by
+    dsimp only [T]
+    exact IsStableUnderRetracts.of_retract (Retract.map h (leftFunctor f)) hg
+
+set_option maxHeartbeats 400000 in
+instance : IsStableUnderCoproducts.{w} (T f) where
+  isStableUnderCoproductsOfShape J := by
+    refine (isStableUnderColimitsOfShape_iff_colimitsOfShape_le _ (Discrete J)).mpr ?_
+    intro X Y _ hf
+    cases hf with
+    | mk X₁ X₂ c₁ c₂ h₁ h₂ f' hf =>
+    dsimp only [T]
+    dsimp only [MorphismProperty.functorCategory, T] at hf
+    apply (WeaklySaturated.IsStableUnderCoproducts.isStableUnderCoproductsOfShape J).colimitsOfShape_le
+    let α := h₁.desc { pt := c₂.pt, ι := f' ≫ c₂.ι }
+    let f'' := descFunctor f' f
+    let c₁' := c₁' f c₂ h₁ f'
+    let h₁' : Limits.IsColimit c₁' := c₁'_isColimit f c₂ h₁ h₂ f'
+    let c₂' := (tensorLeft B).mapCocone c₂
+    let h₂' : Limits.IsColimit c₂' := Limits.isColimitOfPreserves (tensorLeft B) h₂
+    convert colimitsOfShape.mk (natTransLeftFunctor f' f) (X₂ ⋙ tensorLeft B) c₁' c₂' h₁' h₂' f'' hf
+    convert h₁'.uniq _ _ _
+    · rfl
+    · rfl
+    · intro j
+      dsimp only [c₁', PushoutProduct.c₁', c₂', f'', descFunctor, tensorLeft, curriedTensor,
+        Functor.mapCocone]
+      simp only [Functor.PushoutObjObj.ι]
+      aesop
+
+open Limits in
+instance : IsStableUnderTransfiniteComposition.{w} (T f) where
+  isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := by
+    rw [isStableUnderTransfiniteCompositionOfShape_iff]
+    intro X Y f' ⟨hf⟩
+    apply innerAnodyne.transfiniteCompositions_le
+    rw [transfiniteCompositions_iff]
+    refine ⟨J, _, _, _, _, ⟨(leftFunctor_preserves_transfiniteComposition J f f' hf.1), ?_⟩⟩
+
+    intro j hj
+    dsimp only [leftFunctor_preserves_transfiniteComposition]
+    exact IsStableUnderCobaseChange.of_isPushout (newPushoutIsPushout f hf.F (Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
+
+instance : WeaklySaturated.{w} (T f) where
+  IsStableUnderCobaseChange := by infer_instance
+  IsStableUnderRetracts := by infer_instance
+  IsStableUnderCoproducts := by infer_instance
+  IsStableUnderTransfiniteComposition := by infer_instance
+
+inductive hornMonoPushout : {X Y : SSet} → (X ⟶ Y) → Prop
+  | mk (X Y : SSet) (i : X ⟶ Y) (hi : Mono i) : hornMonoPushout (Λ[2, 1].ι □ i)
+
+def hornMonoPushouts : MorphismProperty SSet := fun _ _ p ↦ hornMonoPushout p
+
+lemma saturation_hornMonoPushouts_eq : saturation.{w} hornMonoPushouts = innerAnodyne.{w} := by
+  apply le_antisymm
+  · rw [← WeaklySaturated.le_iff]
+    intro _ _ _ ⟨X, Y, i, hi⟩
+    exact monoPushout_innerAnodyne _
+  · rw [innerAnodyne_eq_T, ← WeaklySaturated.le_iff]
+    intro _ _ _ ⟨m⟩
+    exact .of _ (.mk _ _ _ (instMonoι _))
+
+lemma innerAnodyne_le_T : innerAnodyne ≤ T f := by
+  rw [← saturation_hornMonoPushouts_eq, ← WeaklySaturated.le_iff]
+  intro _ _ _ ⟨X, Y, i, hi⟩
+  dsimp only [T]
+  have : Arrow.mk (f □ Λ[2, 1].ι □ i) ≅ Arrow.mk (Λ[2, 1].ι □ f □ i) := by
+    refine Arrow.isoMk ?_ ?_ ?_
+    ·
+      sorry
+    · sorry
+    · sorry
+  rw [innerAnodyne.arrow_mk_iso_iff this, ← saturation_hornMonoPushouts_eq]
+  apply WeaklySaturatedClass.of
+  refine .mk _ _ (f □ i) ?_
 
   sorry
+
+lemma _00J8 (hg : innerAnodyne g) :
+    innerAnodyne (f □ g) := innerAnodyne_le_T _ _ hg
+
+end _00J8
 
 open ParametrizedAdjunction in
 lemma _01BT {X S A B : SSet} (p : X ⟶ S) (i : A ⟶ B)
@@ -100,7 +176,7 @@ lemma _01BT {X S A B : SSet} (p : X ⟶ S) (i : A ⟶ B)
     innerFibration (Functor.PullbackObjObj.ofHasPullback internalHom i p).π := by
   rw [innerFibration_eq_rlp_innerAnodyne] at hp ⊢
   intro _ _ f hf
-  rw [← hasLiftingProperty_iff internalHomAdjunction₂ (Functor.PushoutObjObj.ofHasPushout _ _ _)]
+  rw [← hasLiftingProperty_iff internalHomAdjunction₂]
   exact hp _ (_00J8 i hf)
 
 end SSet

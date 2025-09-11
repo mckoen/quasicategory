@@ -42,102 +42,7 @@ instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposi
 
     intro j hj
     dsimp only [leftFunctor_preserves_transfiniteComposition]
-    exact .pushout (newPushoutIsPushout hf.F (Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
-
-/-
-{F G : D ⥤ C} (h : F ⟶ G) {X Y : C} (g : X ⟶ Y) (X_1 : D),
-        (natTransLeftFunctor h g).obj X_1 = pushout (g ▷ F.obj X_1) (X ◁ h.app X_1)
-
-(natTransLeftFunctor h Λ[2, 1].ι).obj X_1
-
-pushout (f ▷ X) (A ◁ g) ⟶ B ⊗ Y
-
-Λ[2, 1].ι □ h₁.desc {pt := c₂.pt, ι := f ≫ c₂.ι}
-
- (pushout (Λ[2, 1].ι ▷ c₁.pt) (Λ[2, 1].toSSet ◁ h₁.desc { pt := c₂.pt, ι := f ≫ c₂.ι })
--/
-
-open Limits in
-noncomputable
-def c₁' {J : Type*} {X₁ X₂ : Discrete J ⥤ SSet}
-    {c₁ : Cocone X₁} (c₂ : Cocone X₂)
-    (h₁ : IsColimit c₁) (f : X₁ ⟶ X₂) :
-    Cocone (natTransLeftFunctor f Λ[2, 1].ι) := {
-      pt := PushoutProduct.pt Λ[2, 1].ι (h₁.desc { pt := c₂.pt, ι := f ≫ c₂.ι })
-      ι :=
-        {
-        app j := by
-          apply Limits.pushout.desc
-            (Δ[2] ◁ c₁.ι.app j ≫ (Limits.pushout.inl _ _))
-            (Λ[2, 1].toSSet ◁ c₂.ι.app j ≫ (Limits.pushout.inr _ _))
-          have := h₁.fac { pt := c₂.pt, ι := f ≫ c₂.ι } j
-          dsimp at this
-          simp
-          rw [← MonoidalCategory.whiskerLeft_comp_assoc, ← this, MonoidalCategory.whiskerLeft_comp_assoc,
-            ← Limits.pushout.condition, whisker_exchange_assoc]
-        naturality := by
-          intro j k s
-          dsimp
-          apply Limits.pushout.hom_ext
-          · simp
-            rw [← MonoidalCategory.whiskerLeft_comp_assoc, c₁.ι.naturality]
-            rfl
-          · simp
-            rw [← MonoidalCategory.whiskerLeft_comp_assoc, c₂.ι.naturality]
-            rfl } }
-
-set_option maxHeartbeats 800000 in
-open Limits in
-noncomputable
-def c₁'_isColimit {J : Type*} {X₁ X₂ : Discrete J ⥤ SSet}
-    {c₁ : Cocone X₁} (c₂ : Cocone X₂)
-    (h₁ : IsColimit c₁) (h₂ : IsColimit c₂) (f : X₁ ⟶ X₂) : IsColimit (c₁' c₂ h₁ f) where
-  desc s := by
-    dsimp [c₁']
-    let s₁ := Cocone.mk s.pt (inlDescFunctor f Λ[2, 1].ι ≫ s.ι)
-    let s₂ := Cocone.mk s.pt (inrDescFunctor f Λ[2, 1].ι ≫ s.ι)
-    let hs₁ := (isColimitOfPreserves (tensorLeft Δ[2]) h₁)
-    let hs₂ := (isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) h₂)
-    let hs₁' := (isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) h₁)
-    apply pushout.desc (hs₁.desc s₁) (hs₂.desc s₂)
-    apply hs₁'.hom_ext
-    intro j
-    let hs₁_fac := hs₁.fac s₁ j
-    let hs₂_fac := hs₂.fac s₂ j
-    simp [s₁, s₂, hs₁, hs₂] at hs₁_fac hs₂_fac ⊢
-    rw [whisker_exchange_assoc, ← MonoidalCategory.whiskerLeft_comp_assoc, hs₁_fac]
-    simp [hs₂_fac, pushout.condition_assoc]
-  fac s j := by
-    simp [c₁']
-    apply pushout.hom_ext
-    · simp
-      exact (isColimitOfPreserves (tensorLeft Δ[2]) h₁).fac { pt := s.pt, ι := inlDescFunctor f Λ[2, 1].ι ≫ s.ι } j
-    · let s₂ := Cocone.mk s.pt (inrDescFunctor f Λ[2, 1].ι ≫ s.ι)
-      let hs₂ := (isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) h₂)
-      let hs₂_fac := hs₂.fac s₂ j
-      simp [s₂] at hs₂_fac ⊢
-      rw [hs₂_fac]
-  uniq s m hj := by
-    simp
-    apply pushout.hom_ext
-    · let s₁ := Cocone.mk s.pt (inlDescFunctor f Λ[2, 1].ι ≫ s.ι)
-      let hs₁ := (isColimitOfPreserves (tensorLeft Δ[2]) h₁)
-      apply hs₁.hom_ext
-      intro j
-      simp
-      have := hs₁.fac s₁ j
-      dsimp [s₁, c₁'] at this
-      rw [this, ← hj j]
-      simp [c₁']
-    · let s₂ := Cocone.mk s.pt (inrDescFunctor f Λ[2, 1].ι ≫ s.ι)
-      let hs₂ := (isColimitOfPreserves (tensorLeft (Λ[2, 1] : SSet)) h₂)
-      apply hs₂.hom_ext
-      intro j
-      simp
-      have := hs₂.fac s₂ j
-      dsimp [s₂] at this
-      rw [this, ← hj j]
-      simp [c₁']
+    exact .pushout (newPushoutIsPushout Λ[2, 1].ι hf.F (Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
 
 set_option maxHeartbeats 400000 in
 instance S.IsStableUnderCoproducts : IsStableUnderCoproducts.{w} S.{w} where
@@ -151,8 +56,8 @@ instance S.IsStableUnderCoproducts : IsStableUnderCoproducts.{w} S.{w} where
     apply (WeaklySaturated.IsStableUnderCoproducts.isStableUnderCoproductsOfShape J).colimitsOfShape_le
     let α := h₁.desc { pt := c₂.pt, ι := f ≫ c₂.ι }
     let f' := descFunctor f Λ[2, 1].ι
-    let c₁' := c₁' c₂ h₁ f
-    let h₁' : Limits.IsColimit c₁' := c₁'_isColimit c₂ h₁ h₂ f
+    let c₁' := c₁' Λ[2, 1].ι c₂ h₁ f
+    let h₁' : Limits.IsColimit c₁' := c₁'_isColimit Λ[2, 1].ι c₂ h₁ h₂ f
     let c₂' := (tensorLeft Δ[2]).mapCocone c₂
     let h₂' : Limits.IsColimit c₂' := Limits.isColimitOfPreserves (tensorLeft Δ[2]) h₂
     convert colimitsOfShape.mk (natTransLeftFunctor f Λ[2, 1].ι) (X₂ ⋙ tensorLeft Δ[2]) c₁' c₂' h₁' h₂' f' hf
@@ -160,7 +65,7 @@ instance S.IsStableUnderCoproducts : IsStableUnderCoproducts.{w} S.{w} where
     · rfl
     · rfl
     · intro j
-      dsimp only [c₁', SSet.c₁', c₂', f', descFunctor, tensorLeft, curriedTensor,
+      dsimp only [c₁', PushoutProduct.c₁', c₂', f', descFunctor, tensorLeft, curriedTensor,
         Functor.mapCocone]
       simp only [Functor.PushoutObjObj.ι]
       aesop

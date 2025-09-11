@@ -23,15 +23,24 @@ lemma innerHornImage_eq_iSup : innerHornImage i =
     ⨆ (j : ({⟨i.snd.succ, by omega⟩}ᶜ : Set (Fin (n + 3)))), (face {j.1}ᶜ).image (s i) := by
   simp only [innerHornImage, horn_eq_iSup, image_iSup]
 
+-- ofSimplex ((s i).app (Opposite.op ⦋n + 1⦌) (objEquiv.symm (δ j)))
+open SimplexCategory in
 lemma face_image_eq_range_comp (j : Fin (n + 3)) :
-    (face {j}ᶜ).image (s i) = range ((stdSimplex.δ j) ≫ SSet.yonedaEquiv.symm (σ.simplex i)) := by
-  simp [range_comp]
+    (face {j}ᶜ).image (s i) = range (SSet.yonedaEquiv.symm ((objEquiv (m := .op ⦋n + 1⦌)).symm (δ j)) ≫ s i) := by
+  rw [face_singleton_compl, ofSimplex_eq_range, ← range_comp]
+
+-- ofSimplex ((s i).app (Opposite.op ⦋n + 1⦌) (objEquiv.symm (δ j)))
+open SimplexCategory in
+lemma face_image_eq_ofSimplex (j : Fin (n + 3)) :
+    (face {j}ᶜ).image (s i) = ofSimplex ((s i).app (Opposite.op ⦋n + 1⦌) (objEquiv.symm (δ j))) := by
+  rw [face_image_eq_range_comp]
+  simp [range_eq_ofSimplex]
 
 /-- each face of `σ b a` except the `a`-th and `a + 1`-th is contained in `∂Δ[n] ⊗ Δ[2]`. -/
 lemma face_ne_snd_succ_image_le_boundary_prod_top (a : Fin b.succ) (j : Fin (n + 3))
     (hj : ¬j = ⟨a, by omega⟩) (hj' : ¬j = ⟨a.succ, by omega⟩) :
     (face {j}ᶜ).image (s ⟨b, a⟩) ≤ ∂Δ[n + 1].prod ⊤ := by
-  simp [face_singleton_compl]
+  rw [face_image_eq_ofSimplex, ofSimplex_le_iff]
   refine ⟨?_, Set.mem_univ _⟩
   change ¬Function.Surjective (Fin.predAbove _ ∘ j.succAbove)
   intro h
