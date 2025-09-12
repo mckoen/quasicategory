@@ -144,7 +144,7 @@ lemma saturation_hornMonoPushouts_eq : saturation.{w} hornMonoPushouts = innerAn
   apply le_antisymm
   · rw [← WeaklySaturated.le_iff]
     intro _ _ _ ⟨X, Y, i, hi⟩
-    exact monoPushout_innerAnodyne _
+    exact hornMonoPushout_innerAnodyne _
   · rw [innerAnodyne_eq_T, ← WeaklySaturated.le_iff]
     intro _ _ _ ⟨m⟩
     exact .of _ (.mk _ _ _ (instMonoι _))
@@ -154,15 +154,10 @@ lemma innerAnodyne_le_T : innerAnodyne ≤ T f := by
   intro _ _ _ ⟨X, Y, i, hi⟩
   dsimp only [T]
   have : Arrow.mk (f □ Λ[2, 1].ι □ i) ≅ Arrow.mk (Λ[2, 1].ι □ f □ i) := by
-    refine Arrow.isoMk ?_ ?_ ?_
-    ·
-      sorry
-    · sorry
-    · sorry
+    sorry
   rw [innerAnodyne.arrow_mk_iso_iff this, ← saturation_hornMonoPushouts_eq]
   apply WeaklySaturatedClass.of
   refine .mk _ _ (f □ i) ?_
-
   sorry
 
 lemma _00J8 (hg : innerAnodyne g) :

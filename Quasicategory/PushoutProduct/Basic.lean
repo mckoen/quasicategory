@@ -17,7 +17,7 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [HasPushouts C]
 
 section Defs
 
-variable {A B X Y : C} (f : A ⟶ B) (g : X ⟶ Y)
+variable {A B X Y Z W : C} (f : A ⟶ B) (g : X ⟶ Y) (h : Z ⟶ W)
 
 @[simp]
 noncomputable
@@ -31,6 +31,128 @@ abbrev pushoutProduct : pushout (f ▷ X) (A ◁ g) ⟶ B ⊗ Y :=
 
 /-- Notation for the pushout-product. -/
 scoped infixr:80 " □ " => PushoutProduct.pushoutProduct
+
+def pt_tensorLeft_iso' [PreservesColimit (span (f ▷ X) (A ◁ g)) (tensorLeft W)] :
+    IsPushout (W ◁ (f ▷ X)) (W ◁ (A ◁ g))
+      (W ◁ (pushout.inl (f ▷ X) (A ◁ g))) (W ◁ (pushout.inr (f ▷ X) (A ◁ g))) where
+  w := by simp only [← MonoidalCategory.whiskerLeft_comp, pushout.condition]
+  isColimit' := ⟨Limits.isColimitOfHasPushoutOfPreservesColimit (tensorLeft W) _ _⟩
+
+@[simp]
+noncomputable
+def pt_tensorLeft_iso [PreservesColimitsOfSize (tensorLeft W)] : W ⊗ (pt f g) ≅ pt (W ◁ f) g := by
+    refine (pt_tensorLeft_iso' _ _).isoPushout ≪≫ ?_
+    refine HasColimit.isoOfNatIso ?_
+    dsimp
+    refine spanExt ?_ ?_ ?_ ?_ ?_
+    · exact (α_ W A X).symm
+    · exact (α_ W B X).symm
+    · exact (α_ W A Y).symm
+    · exact (associator_inv_naturality_middle W f X).symm
+    · simp only [Iso.symm_hom, tensor_whiskerLeft, Iso.inv_hom_id_assoc]
+
+def pt_tensorRight_iso' [PreservesColimit (span (f ▷ X) (A ◁ g)) (tensorRight W)] :
+    IsPushout ((f ▷ X) ▷ W) ((A ◁ g) ▷ W)
+      ((pushout.inl (f ▷ X) (A ◁ g)) ▷ W) ((pushout.inr (f ▷ X) (A ◁ g)) ▷ W) where
+  w := by simp only [← MonoidalCategory.comp_whiskerRight, pushout.condition]
+  isColimit' := ⟨Limits.isColimitOfHasPushoutOfPreservesColimit (tensorRight W) _ _⟩
+
+@[simp]
+noncomputable
+def pt_tensorRight_iso [PreservesColimitsOfSize (tensorRight W)] : (pt f g) ⊗ W ≅ pt f (g ▷ W) := by
+  refine (pt_tensorRight_iso' _ _).isoPushout ≪≫ HasColimit.isoOfNatIso ?_
+  apply spanExt ?_ ?_ ?_ ?_ ?_
+  · exact α_ A X W
+  · exact α_ B X W
+  · exact α_ A Y W
+  · exact (associator_naturality_left f X W).symm
+  · exact (associator_naturality_middle A g W).symm
+
+noncomputable
+def whiskerRight_iso [PreservesColimitsOfSize (tensorRight W)] :
+    Arrow.mk ((f □ g) ▷ W) ≅ Arrow.mk (f □ (g ▷ W)) := by
+  refine Arrow.isoMk (pt_tensorRight_iso f g) (α_ B Y W) ?_
+  · apply (pt_tensorRight_iso' _ _).hom_ext
+    all_goals simp [Functor.PushoutObjObj.ι, ← MonoidalCategory.comp_whiskerRight_assoc]
+
+noncomputable
+def whiskerLeft_iso [PreservesColimitsOfSize (tensorLeft W)] :
+    Arrow.mk (W ◁ (f □ g)) ≅ Arrow.mk ((W ◁ f) □ g) := by
+  refine Arrow.isoMk (pt_tensorLeft_iso _ _) (α_ W B Y).symm ?_
+  · apply (pt_tensorLeft_iso' _ _).hom_ext
+    all_goals simp [Functor.PushoutObjObj.ι, ← MonoidalCategory.whiskerLeft_comp_assoc]
+
+@[simp]
+noncomputable
+def pt_associator_iso
+      [PreservesColimit (span (g ▷ Z) (X ◁ h)) (tensorLeft A)]
+      [PreservesColimit (span (f ▷ X) (A ◁ g)) (tensorRight Z)]
+      [PreservesColimitsOfSize (tensorRight W)]
+      [PreservesColimitsOfSize (tensorLeft B)] :
+    pt (f □ g) h ≅ pt f (g □ h) where
+  hom := by
+    apply pushout.desc ?_ ?_ ?_
+    · exact (α_ _ _ _).hom ≫ (B ◁ pushout.inl _ _) ≫ pushout.inl _ _
+    · refine (pt_tensorRight_iso _ _).hom ≫ ?_
+      refine pushout.desc ?_ ?_ ?_
+      · exact (B ◁ pushout.inr _ _) ≫ pushout.inl _ _
+      · exact pushout.inr _ _
+      · dsimp [Functor.PushoutObjObj.ι]
+        rw [← whisker_exchange_assoc, pushout.condition,
+          ← MonoidalCategory.whiskerLeft_comp_assoc, IsPushout.inr_desc]
+    · dsimp [Functor.PushoutObjObj.ι]
+      apply (pt_tensorRight_iso' _ _).hom_ext
+      · rw [← MonoidalCategory.comp_whiskerRight_assoc]
+        simp
+        rw [← MonoidalCategory.whiskerLeft_comp_assoc, pushout.condition]
+        sorry
+      ·
+        sorry
+  inv := by
+    apply pushout.desc ?_ ?_ ?_
+    · refine (pt_tensorLeft_iso _ _).hom ≫ ?_
+      refine pushout.desc ?_ ?_ ?_
+      · exact 𝟙 _ ≫ pushout.inl _ _
+      · exact (pushout.inl _ _ ▷ W) ≫ pushout.inr _ _
+      · dsimp [Functor.PushoutObjObj.ι]
+        rw [Category.id_comp]
+        rw [whisker_exchange_assoc, ← pushout.condition,
+          ← MonoidalCategory.comp_whiskerRight_assoc, IsPushout.inl_desc]
+    · exact (α_ _ _ _).inv ≫ (pushout.inr _ _) ▷ W ≫ pushout.inr _ _
+    · dsimp [Functor.PushoutObjObj.ι]
+      apply (pt_tensorLeft_iso' _ _).hom_ext
+      ·
+        sorry
+      ·
+        sorry
+
+@[simp]
+noncomputable
+def pt_comm_iso [BraidedCategory C] : pt f g ≅ pt g f :=
+  pushoutSymmetry (f ▷ X) (A ◁ g) ≪≫
+    (HasColimit.isoOfNatIso (spanExt (β_ _ _) (β_ _ _) (β_ _ _)
+    (BraidedCategory.braiding_naturality_right A g).symm
+    (BraidedCategory.braiding_naturality_left f X).symm))
+
+noncomputable
+def comm_iso [BraidedCategory C] : Arrow.mk (f □ g) ≅ Arrow.mk (g □ f) := by
+  refine Arrow.isoMk (pt_comm_iso f g) (β_ _ _) ?_
+  · simp [Functor.PushoutObjObj.ι]
+    aesop
+
+noncomputable
+def associator
+      [PreservesColimit (span (g ▷ Z) (X ◁ h)) (tensorLeft A)]
+      [PreservesColimit (span (f ▷ X) (A ◁ g)) (tensorRight Z)]
+      [PreservesColimitsOfSize (tensorRight W)]
+      [PreservesColimitsOfSize (tensorLeft B)]
+    [BraidedCategory C] : Arrow.mk ((f □ g) □ h) ≅ Arrow.mk (f □ g □ h) := by
+  refine Arrow.isoMk (pt_associator_iso _ _ _) (α_ _ _ _) ?_
+  · simp [Functor.PushoutObjObj.ι]
+    apply pushout.hom_ext
+    · simp [← MonoidalCategory.whiskerLeft_comp]
+    ·
+      sorry
 
 end Defs
 
@@ -95,6 +217,21 @@ noncomputable
 def leftBifunctor : Arrow C ⥤ Arrow C ⥤ Arrow C where
   obj := leftFunctor
   map := leftBifunctor_map
+
+noncomputable
+instance [HasInitial C] [HasTerminal C]
+    [∀ W : C, PreservesColimitsOfSize (tensorRight W)]
+    [∀ W : C, PreservesColimitsOfSize (tensorLeft W)]
+    [BraidedCategory C] : MonoidalCategory (Arrow C) where
+  tensorObj X Y := (leftBifunctor.obj X).obj Y
+  whiskerLeft X _ _ f := (leftBifunctor.obj X).map f
+  whiskerRight f X := (leftBifunctor.map f).app X
+  tensorUnit := Arrow.mk (initial.to (terminal C))
+  associator X Y Z := associator X.hom Y.hom Z.hom
+  leftUnitor X := by
+    simp [Functor.PushoutObjObj.ι]
+    sorry
+  rightUnitor := sorry
 
 end Functor
 

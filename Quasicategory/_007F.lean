@@ -314,7 +314,7 @@ lemma innerAnodyne_eq_T : innerAnodyne.{u} = (saturation.{u} bdryHornPushouts) :
     exact (arrow_mk_iso_iff _ arrow_unionProd_iso).2 unionProd_ι_innerAnodyne
 
 -- `007F` (a)
-lemma monoPushout_innerAnodyne {A B : SSet} (i : A ⟶ B) [Mono i] :
+lemma hornMonoPushout_innerAnodyne {A B : SSet} (i : A ⟶ B) [Mono i] :
     innerAnodyne (Λ[2, 1].ι □ i) := by
   rw [innerAnodyne_eq_T]
   exact monomorphisms_le_S i (.infer_property _)
@@ -325,4 +325,4 @@ lemma contains_innerAnodyne_iff_contains_pushout_maps
     (bdryHornPushouts ≤ S) ↔ (innerAnodyne.{u} ≤ S) := by
   constructor
   · simp [innerAnodyne_eq_T, ← WeaklySaturated.le_iff]
-  · exact fun h _ _ _ ⟨m⟩ ↦ h _ (monoPushout_innerAnodyne ∂Δ[m].ι)
+  · exact fun h _ _ _ ⟨m⟩ ↦ h _ (hornMonoPushout_innerAnodyne ∂Δ[m].ι)
