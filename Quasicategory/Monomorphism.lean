@@ -1,6 +1,7 @@
 import Quasicategory.Basic
+import Quasicategory.PushoutProduct.TransfiniteComposition
 
-universe w v v' u u'
+universe v u
 
 open CategoryTheory Simplicial MorphismProperty Limits
 
@@ -49,6 +50,12 @@ instance tensorLeft_PreservesMonomorphisms (B : SSet) :
     exact Prod.ext h.1 (hf h.2)
 
 instance IsStableUnderCobaseChange.monomorphisms : IsStableUnderCobaseChange (monomorphisms SSet) where
+  of_isPushout {_ _ _ _ f _ _ _} P hf :=
+    letI _ : Mono f := hf
+    letI _ : Adhesive SSet := adhesive_functor
+    Adhesive.mono_of_isPushout_of_mono_right P
+
+instance {C : Type u} [Category.{v} C] [Adhesive C] : IsStableUnderCobaseChange (monomorphisms C) where
   of_isPushout {_ _ _ _ f _ _ _} P hf :=
     letI _ : Mono f := hf
     letI _ : Adhesive SSet := adhesive_functor

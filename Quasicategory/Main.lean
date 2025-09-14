@@ -136,29 +136,29 @@ instance : WeaklySaturated.{w} (T f) where
   IsStableUnderTransfiniteComposition := by infer_instance
 
 inductive hornMonoPushout : {X Y : SSet} → (X ⟶ Y) → Prop
-  | mk (X Y : SSet) (i : X ⟶ Y) (hi : Mono i) : hornMonoPushout (Λ[2, 1].ι □ i)
+  | mk {X Y : SSet} (i : X ⟶ Y) (hi : Mono i) : hornMonoPushout (Λ[2, 1].ι □ i)
 
 def hornMonoPushouts : MorphismProperty SSet := fun _ _ p ↦ hornMonoPushout p
 
 lemma saturation_hornMonoPushouts_eq : saturation.{w} hornMonoPushouts = innerAnodyne.{w} := by
   apply le_antisymm
   · rw [← WeaklySaturated.le_iff]
-    intro _ _ _ ⟨X, Y, i, hi⟩
-    exact hornMonoPushout_innerAnodyne _
+    intro _ _ _ ⟨i, _⟩
+    exact hornMonoPushout_innerAnodyne i
   · rw [innerAnodyne_eq_T, ← WeaklySaturated.le_iff]
     intro _ _ _ ⟨m⟩
-    exact .of _ (.mk _ _ _ (instMonoι _))
+    exact .of _ (.mk _ (instMonoι _))
 
 lemma innerAnodyne_le_T : innerAnodyne ≤ T f := by
   rw [← saturation_hornMonoPushouts_eq, ← WeaklySaturated.le_iff]
-  intro _ _ _ ⟨X, Y, i, hi⟩
+  intro _ _ _ ⟨i, _⟩
   dsimp only [T]
-  have : Arrow.mk (f □ Λ[2, 1].ι □ i) ≅ Arrow.mk (Λ[2, 1].ι □ f □ i) := by
-    sorry
-  rw [innerAnodyne.arrow_mk_iso_iff this, ← saturation_hornMonoPushouts_eq]
-  apply WeaklySaturatedClass.of
-  refine .mk _ _ (f □ i) ?_
-  sorry
+  have : Arrow.mk (f □ Λ[2, 1].ι □ i) ≅ Arrow.mk (Λ[2, 1].ι □ f □ i) :=
+    (comm_iso _ _) ≪≫
+    (PushoutProduct.associator _ _ _) ≪≫
+    (iso_of_arrow_iso Λ[2, 1].ι _ _ (comm_iso i f))
+  rw [innerAnodyne.arrow_mk_iso_iff this]
+  sorry--exact hornMonoPushout_innerAnodyne (f □ i)
 
 lemma _00J8 (hg : innerAnodyne g) :
     innerAnodyne (f □ g) := innerAnodyne_le_T _ _ hg
