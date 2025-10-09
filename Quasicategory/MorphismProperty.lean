@@ -1,6 +1,7 @@
 import Mathlib.CategoryTheory.SmallObject.TransfiniteCompositionLifting
 import Mathlib.SetTheory.Cardinal.Order
 import Mathlib.CategoryTheory.SmallObject.Basic
+import Quasicategory.PushoutProduct.Basic
 
 universe w v u
 
@@ -139,6 +140,79 @@ lemma saturation_saturation_eq {T : MorphismProperty C} :
   apply le_antisymm
   · rw [← WeaklySaturated.le_iff]
   · exact le_saturation _
+
+section PushoutProduct
+
+open PushoutProduct MonoidalCategory Limits
+
+variable [MonoidalCategory C] [HasPushouts C]
+
+variable {A B : C} (ι : A ⟶ B)
+
+/-- `T.pushoutProduct ι` is the class of all morphisms `i` such that `ι □ i` is in `T`. -/
+@[simp]
+def pushoutProduct : MorphismProperty C := fun _ _ i ↦ T (ι □ i)
+
+variable [∀ S : C, Limits.PreservesColimitsOfSize (tensorLeft S)]
+
+instance [T.IsStableUnderCobaseChange] : IsStableUnderCobaseChange (T.pushoutProduct ι) where
+  of_isPushout h hg := by
+    dsimp
+    exact IsStableUnderCobaseChange.of_isPushout (leftFunctor_map_preserves_pushouts ι h) hg
+
+instance [T.IsStableUnderRetracts] : IsStableUnderRetracts (T.pushoutProduct ι) where
+  of_retract h hg := by
+    dsimp
+    exact IsStableUnderRetracts.of_retract (Retract.map h (leftFunctor ι)) hg
+
+instance [IsStableUnderCoproducts.{w} T] : IsStableUnderCoproducts.{w} (T.pushoutProduct ι) where
+  isStableUnderCoproductsOfShape J := by
+    refine (isStableUnderColimitsOfShape_iff_colimitsOfShape_le _ (Discrete J)).mpr ?_
+    intro X Y f hf
+    cases hf with
+    | mk X₁ X₂ c₁ c₂ h₁ h₂ f hf =>
+    dsimp only [pushoutProduct]
+    dsimp only [MorphismProperty.functorCategory, pushoutProduct] at hf
+    apply (IsStableUnderCoproducts.isStableUnderCoproductsOfShape J).colimitsOfShape_le
+    let α := h₁.desc { pt := c₂.pt, ι := f ≫ c₂.ι }
+    let f' := descFunctor f ι
+    let c₁' := c₁' ι c₂ h₁ f
+    let h₁' : Limits.IsColimit c₁' := c₁'_isColimit ι c₂ h₁ h₂ f
+    let c₂' := (tensorLeft B).mapCocone c₂
+    let h₂' : Limits.IsColimit c₂' := Limits.isColimitOfPreserves (tensorLeft B) h₂
+    convert colimitsOfShape.mk (natTransLeftFunctor f ι) (X₂ ⋙ tensorLeft B) c₁' c₂' h₁' h₂' f' hf
+    convert h₁'.uniq _ _ _
+    · rfl
+    · rfl
+    · intro j
+      dsimp only [c₁', PushoutProduct.c₁', c₂', f', descFunctor, tensorLeft, curriedTensor,
+        Functor.mapCocone]
+      simp [Functor.PushoutObjObj.ι]
+      apply pushout.hom_ext
+      · simp [← MonoidalCategory.whiskerLeft_comp]
+      · simp [whisker_exchange]
+
+open Limits in
+instance [T.IsStableUnderCobaseChange] [IsStableUnderTransfiniteComposition.{w} T] : IsStableUnderTransfiniteComposition.{w} (T.pushoutProduct ι) where
+  isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := by
+    rw [isStableUnderTransfiniteCompositionOfShape_iff.{w}]
+    intro X Y f' ⟨hf⟩
+    apply T.transfiniteCompositions_le
+    rw [transfiniteCompositions_iff]
+    refine ⟨J, _, _, _, _, ⟨(leftFunctor_preserves_transfiniteComposition J ι f' hf.1), ?_⟩⟩
+
+    intro j hj
+    dsimp only [leftFunctor_preserves_transfiniteComposition]
+    exact IsStableUnderCobaseChange.of_isPushout (newPushoutIsPushout ι hf.F (Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
+
+instance pushoutProduct_Saturated [WeaklySaturated.{w} T]
+    [∀ (S : C), PreservesColimitsOfSize.{w, w, v, v, u, u} (tensorLeft S)] : WeaklySaturated.{w} (T.pushoutProduct ι) where
+  IsStableUnderCobaseChange := by infer_instance
+  IsStableUnderRetracts := by infer_instance
+  IsStableUnderCoproducts := by infer_instance
+  IsStableUnderTransfiniteComposition := by infer_instance
+
+end PushoutProduct
 
 end WeaklySaturated
 

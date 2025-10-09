@@ -1,6 +1,4 @@
 import Quasicategory.Monomorphism
-import Quasicategory.PushoutProduct.Basic
-import Quasicategory.PushoutProduct.TransfiniteComposition
 
 /-!
 
@@ -20,66 +18,13 @@ inductive bdryHornPushout : {X Y : SSet} → (X ⟶ Y) → Prop
 /-- the class of pushout-products of `Λ[2, 1] ↪ Δ[2]` with `∂Δ[m] ↪ Δ[m]`. -/
 def bdryHornPushouts : MorphismProperty SSet := fun _ _ p ↦ bdryHornPushout p
 
-/-- `S` is the class of all morphisms `i : A → B` such that the pushout-product with `Λ[2, 1] ↪ Δ[2]` is in
+/-- `bdryInclusions` is contained in the class of all morphisms `i : A → B` such that the pushout-product with `Λ[2, 1] ↪ Δ[2]` is in
 the saturation of `bdryHornPushouts`. -/
-def S : MorphismProperty SSet := fun _ _ i ↦
-  (saturation.{w} bdryHornPushouts) (Λ[2, 1].ι □ i)
+lemma bdryInclusions_le_S : bdryInclusions ≤
+  (saturation.{w} bdryHornPushouts).pushoutProduct Λ[2, 1].ι := fun _ _ _ ⟨_⟩ ↦ .of _ (.mk _)
 
-instance S.IsStableUnderCobaseChange : S.IsStableUnderCobaseChange where
-  of_isPushout h hg := .pushout (leftFunctor_map_preserves_pushouts' Λ[2, 1].ι h) hg
-
-instance S.IsStableUnderRetracts : S.IsStableUnderRetracts where
-  of_retract h hg := .retract (Retract.map h (leftFunctor Λ[2, 1].ι)) hg
-
-open Limits in
-instance S.IsStableUnderTransfiniteComposition : IsStableUnderTransfiniteComposition.{w} S.{w} where
-  isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := by
-    rw [isStableUnderTransfiniteCompositionOfShape_iff]
-    intro X Y f ⟨hf⟩
-    apply bdryHornPushouts.saturation.transfiniteCompositions_le
-    rw [transfiniteCompositions_iff]
-    refine ⟨J, _, _, _, _, ⟨(leftFunctor_preserves_transfiniteComposition J Λ[2, 1].ι f hf.1), ?_⟩⟩
-
-    intro j hj
-    dsimp only [leftFunctor_preserves_transfiniteComposition]
-    exact .pushout (newPushoutIsPushout Λ[2, 1].ι hf.F (Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
-
-set_option maxHeartbeats 400000 in
-instance S.IsStableUnderCoproducts : IsStableUnderCoproducts.{w} S.{w} where
-  isStableUnderCoproductsOfShape J := by
-    refine (isStableUnderColimitsOfShape_iff_colimitsOfShape_le S (Discrete J)).mpr ?_
-    intro X Y f hf
-    cases hf with
-    | mk X₁ X₂ c₁ c₂ h₁ h₂ f hf =>
-    dsimp only [S]
-    dsimp only [MorphismProperty.functorCategory, S] at hf
-    apply (WeaklySaturated.IsStableUnderCoproducts.isStableUnderCoproductsOfShape J).colimitsOfShape_le
-    let α := h₁.desc { pt := c₂.pt, ι := f ≫ c₂.ι }
-    let f' := descFunctor f Λ[2, 1].ι
-    let c₁' := c₁' Λ[2, 1].ι c₂ h₁ f
-    let h₁' : Limits.IsColimit c₁' := c₁'_isColimit Λ[2, 1].ι c₂ h₁ h₂ f
-    let c₂' := (tensorLeft Δ[2]).mapCocone c₂
-    let h₂' : Limits.IsColimit c₂' := Limits.isColimitOfPreserves (tensorLeft Δ[2]) h₂
-    convert colimitsOfShape.mk (natTransLeftFunctor f Λ[2, 1].ι) (X₂ ⋙ tensorLeft Δ[2]) c₁' c₂' h₁' h₂' f' hf
-    convert h₁'.uniq _ _ _
-    · rfl
-    · rfl
-    · intro j
-      dsimp only [c₁', PushoutProduct.c₁', c₂', f', descFunctor, tensorLeft, curriedTensor,
-        Functor.mapCocone]
-      simp only [Functor.PushoutObjObj.ι]
-      aesop
-
--- S is weakly saturated because T is
-instance S.WeaklySaturated : WeaklySaturated.{w} S.{w} where
-  IsStableUnderCobaseChange := by infer_instance
-  IsStableUnderRetracts := by infer_instance
-  IsStableUnderCoproducts := by infer_instance
-  IsStableUnderTransfiniteComposition := by infer_instance
-
-lemma bdryInclusions_le_S : bdryInclusions ≤ S := fun _ _ _ ⟨_⟩ ↦ .of _ (.mk _)
-
-lemma monomorphisms_le_S : monomorphisms SSet.{u} ≤ S.{u} := by
+lemma monomorphisms_le_S : monomorphisms SSet.{w} ≤
+    (saturation.{w} bdryHornPushouts).pushoutProduct Λ[2, 1].ι := by
   rw [monomorphism_eq_saturation_bdryInclusions, ← WeaklySaturated.le_iff]
   exact bdryInclusions_le_S
 
@@ -130,7 +75,7 @@ lemma leftSqCommAux : s_restricted i ≫ Δ[2] ◁ Λ[n, i].ι = Λ[n, i].ι ≫
 lemma leftSqComm :
     horn_to_pushout i ≫ Λ[2, 1].ι □ Λ[n, i].ι = Λ[n, i].ι ≫ s i := by
   rw [← leftSqCommAux]
-  simp [horn_to_pushout, pushoutProduct, Functor.PushoutObjObj.ι]
+  simp [horn_to_pushout, Functor.PushoutObjObj.ι]
 
 def r_aux : Fin 3 × Fin (n + 1) →o Fin (n + 1) where
   toFun := fun ⟨k, j⟩ ↦ if (j < i ∧ k = 0) ∨ (j > i ∧ k = 2) then j else i
@@ -209,7 +154,7 @@ def pushout_to_horn : (PushoutProduct.pt Λ[2, 1].ι Λ[n, i].ι) ⟶ Λ[n, i] :
   Limits.pushout.desc (r_restrict_horn_n i) (r_restrict_horn_2 i h0 hn) rfl
 
 lemma rightSqComm : pushout_to_horn i h0 hn ≫ (Λ[n, i]).ι = (Λ[2, 1].ι □ Λ[n, i].ι) ≫ r i := by
-  dsimp [pushout_to_horn, pushoutProduct]
+  dsimp [pushout_to_horn]
   apply Limits.pushout.hom_ext; all_goals dsimp [Functor.PushoutObjObj.ι]; aesop
 
 lemma r_aux_comp_s_aux_prod_id :

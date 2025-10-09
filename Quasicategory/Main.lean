@@ -83,7 +83,7 @@ def T : MorphismProperty SSet := fun _ _ i ↦
 instance : IsStableUnderCobaseChange (T f) where
   of_isPushout h hg := by
     dsimp only [T]
-    exact IsStableUnderCobaseChange.of_isPushout (leftFunctor_map_preserves_pushouts' f h) hg
+    exact IsStableUnderCobaseChange.of_isPushout (leftFunctor_map_preserves_pushouts f h) hg
 
 instance : IsStableUnderRetracts (T f) where
   of_retract h hg := by

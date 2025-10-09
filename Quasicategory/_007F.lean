@@ -272,21 +272,21 @@ lemma unionProd_ι_innerAnodyne : innerAnodyne.{u} (∂Δ[n].unionProd Λ[2, 1])
     exact (arrow_mk_iso_iff _ zero_unionProd_arrowIso).2
       (.of _ (.mk Fin.zero_lt_one Fin.one_lt_last))
   | succ n _ =>
-    let σsq := (σ.filtrationPushout_zero.{u} (n := n))
-    let τsq := (τ.filtrationPushout_zero.{u} (n := n))
+    let σsq := (σ.filtrationPushout_zero (n := n))
+    let τsq := (τ.filtrationPushout_zero (n := n))
     rw [Sigma.Lex.bot_eq_zero, σ.subcomplex, ofSimplex_eq_range] at σsq
     rw [Sigma.Lex.bot_eq_zero, τ.subcomplex, ofSimplex_eq_range] at τsq
     change innerHornInclusions.saturation
-        ((homOfLE σ.filtrationPushout_zero.{u}.le₃₄) ≫
+        ((homOfLE σ.filtrationPushout_zero.le₃₄) ≫
         (homOfLE (σ.filtration_monotone bot_le)) ≫
-        (homOfLE τ.filtrationPushout_zero.{u}.le₃₄) ≫
+        (homOfLE τ.filtrationPushout_zero.le₃₄) ≫
         (homOfLE (τ.filtration_monotone bot_le)) ≫
         (isoOfEq τ.filtration_last).hom ≫
         (topIso _).hom)
     refine comp_mem _ _ _ ?_ <|
-      comp_mem _ _ _ (σ.filtration_innerAnodyne.{u} bot_le) <|
+      comp_mem _ _ _ (σ.filtration_innerAnodyne bot_le) <|
       comp_mem _ _ _ ?_ <|
-      comp_mem _ _ _ (τ.filtration_innerAnodyne.{u} bot_le) <|
+      comp_mem _ _ _ (τ.filtration_innerAnodyne bot_le) <|
       comp_mem _ _ _ (of_isIso _ _) (of_isIso _ _)
     · refine of_isPushout σsq.isPushout.flip
         ((arrow_mk_iso_iff _ (image_arrow_iso_of_mono (σ.s ⊥) Λ[n + 2, 1])).2

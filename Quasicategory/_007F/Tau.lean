@@ -19,6 +19,12 @@ noncomputable
 abbrev innerHornImage : (Δ[n + 1] ⊗ Δ[2]).Subcomplex :=
   Λ[n + 3, ⟨i.snd.succ, by omega⟩].image (t i)
 
+open SimplexCategory in
+lemma face_image_eq_range_comp (j : Fin (n + 4)) :
+    (face {j}ᶜ).image (t i) = range (stdSimplex.δ j ≫ t i) := by
+  rw [face_singleton_compl, ofSimplex_eq_range, ← range_comp]
+  congr
+
 lemma innerHornImage_eq_iSup : innerHornImage i =
     ⨆ (j : ({⟨i.snd.succ, by omega⟩}ᶜ : Set (Fin (n + 4)))), (face {j.1}ᶜ).image (t i) := by
   simp only [innerHornImage, horn_eq_iSup, image_iSup]
@@ -141,7 +147,7 @@ lemma face_last_image_le_top_prod_horn (a : Fin (n + 1)) :
   · simp [Fin.lt_iff_val_lt_val] at he
     omega
 
-/-- for `0 ≤ a ≤ b < n` the `b + 2`-th face of `τ b a` is `σ b a`. -/
+/-- for `0 ≤ a ≤ b ≤ n` the `b + 2`-th face of `τ b a` is `σ b a`. -/
 lemma face_fst_succ_succ_image_eq (b : Fin (n + 1)) (a : Fin b.succ) :
     (face {⟨b + 2, by omega⟩}ᶜ).image (t ⟨b.castSucc, a⟩) = σ.subcomplex ⟨b, a⟩ := by
   simp [face_singleton_compl]
@@ -173,7 +179,7 @@ lemma face_fst_succ_succ_image_eq (b : Fin (n + 1)) (a : Fin b.succ) :
       simp [show ¬e.1 + 1 ≤ a by omega, show ¬e.1 ≤ b by omega, show ¬e.1 ≤ a by omega,
         show ¬e.1 ≤ b + 1 by omega]
 
-/-- for `0 ≤ a ≤ b < n` the `b + 2`-th face of `τ (b + 1) a` is `σ b a`. -/
+/-- for `0 ≤ a ≤ b ≤ n` the `b + 2`-th face of `τ (b + 1) a` is `σ b a`. -/
 lemma face_fst_succ_succ_image_succ_eq (b : Fin (n + 1)) (a : Fin b.succ) :
     (face {⟨b + 2, by omega⟩}ᶜ).image (t ⟨b.succ, a.castSucc⟩) = σ.subcomplex ⟨b, a⟩ := by
   simp [face_singleton_compl]
@@ -233,7 +239,7 @@ lemma face_snd_succ_image_eq (a : Fin b) :
       split
       all_goals simp [show ¬e.1 + 1 ≤ a by omega]
 
-/-- for `0 ≤ a < b ≤ n`, the image of `Λ[n + 2, a + 2]` under `g b (a + 1)` is contained
+/-- for `0 ≤ a < b ≤ n + 1`, the image of `Λ[n + 3, a + 2]` under `t b (a + 1)` is contained
   in `Y(b, a)`. -/
 lemma innerHornImage_intermediate_le_filtration (b : Fin (n + 2)) (a : Fin b) :
     innerHornImage ⟨b, a.succ⟩ ≤ filtration ⟨b, a.castSucc⟩ := by
@@ -247,14 +253,11 @@ lemma innerHornImage_intermediate_le_filtration (b : Fin (n + 2)) (a : Fin b) :
     exact image_le_range _ _
   · by_cases h' : j = b.succ.castSucc
     · subst h'
-      cases b using Fin.cases with
-    | zero =>
-      apply le_sup_of_le_right
-      apply le_iSup_of_le ⟨0, ⟨0, Nat.zero_lt_succ _⟩⟩
-      simp only [Fin.succ_zero_eq_one, Fin.castSucc_one, Fin.val_succ, Fin.val_zero, Fin.eq_zero,
-        Fin.isValue, Fin.val_one, le_refl, ofSimplex_eq_range, iSup_pos, τ.subcomplex]
-      exact image_le_range _ _
-    | succ b =>
+      have : b ≠ 0 := by
+        by_contra h'
+        rw [h'] at a
+        exact Nat.not_lt_zero _ a.2
+      obtain ⟨b, rfl⟩ := Fin.eq_succ_of_ne_zero this
       have : a.1 < b := by
         apply Nat.lt_of_le_of_ne a.is_le
         simp only [Fin.val_succ, Sigma.Lex.Fin.fst_eq, Set.mem_compl_iff, Set.mem_singleton_iff,
@@ -304,12 +307,9 @@ lemma innerHornImage_join_le_filtration (b : Fin (n + 1)) :
     · subst h''
       obtain rfl | ⟨b , rfl⟩ := Fin.eq_last_or_eq_castSucc b
       · exact (le_sup_of_le_left (le_sup_of_le_left (face_last_image_le_top_prod_horn 0)))
-      · have := face_fst_succ_succ_image_eq b.succ ⟨0, Nat.zero_lt_succ _⟩
-        simp [Fin.succ] at this ⊢
-        rw [this]
-        apply (le_sup_of_le_right _)
-        simp only [σ.subcomplex, Fin.val_succ, Fin.coe_castSucc, le_top, iSup_pos, ofSimplex_eq_range]
-        exact le_iSup_of_le ⟨b.succ, 0⟩ le_rfl
+      · apply (le_sup_of_le_right _)
+        apply le_iSup₂_of_le ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩ le_top
+        exact (face_fst_succ_succ_image_eq b.succ ⟨0, Nat.zero_lt_succ _⟩).le
     exact
       le_sup_of_le_left
         (le_sup_of_le_right

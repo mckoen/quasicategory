@@ -1,5 +1,4 @@
 import Quasicategory.Basic
-import Quasicategory.PushoutProduct.TransfiniteComposition
 
 universe v u
 

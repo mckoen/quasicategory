@@ -13,6 +13,12 @@ open CategoryTheory Simplicial MorphismProperty
 inductive BoundaryInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk n : BoundaryInclusion ∂Δ[n].ι
 
+example {X Y : SSet} (f : X ⟶ Y) (h : BoundaryInclusion f) :
+    ∃ (n : ℕ), HEq f ∂Δ[n].ι := by
+  induction h
+  case mk n =>
+  · refine ⟨n, Quiver.heq_of_homOfEq_ext rfl rfl rfl⟩
+
 /-- The class of all boundary inclusions. -/
 def bdryInclusions : MorphismProperty SSet := fun _ _ p ↦ BoundaryInclusion p
 

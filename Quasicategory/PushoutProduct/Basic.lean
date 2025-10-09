@@ -5,7 +5,6 @@ import Mathlib.AlgebraicTopology.SimplicialSet.Horn
 import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 import Mathlib.CategoryTheory.LiftingProperties.ParametrizedAdjunction
 import Mathlib.CategoryTheory.MorphismProperty.TransfiniteComposition
-import Quasicategory.MorphismProperty
 import Mathlib.CategoryTheory.Adhesive
 
 universe w v v' u u'
@@ -378,53 +377,30 @@ end
 
 section Pushout
 
-variable {f g : Arrow C} (ι : Arrow C) (h : f ⟶ g) (hp : IsColimit (PushoutCocone.mk _ _ h.w))
-
 variable [hS : ∀ S : C, PreservesColimitsOfSize (tensorLeft S)]
 
-variable (s : PushoutCocone ((leftBifunctor.obj ι).map h).left ((leftBifunctor.obj ι).obj f).hom)
-
-@[simp]
-noncomputable
-def temp_desc : ((leftFunctor ι).obj g).right ⟶ s.pt :=
-  (whiskerPushout ι.right (IsPushout.of_isColimit hp)).desc
-    ((pushout.inl _ _) ≫ s.inl) s.inr
-    (by simpa [pushout.inr_desc_assoc, Functor.PushoutObjObj.ι] using (pushout.inl _ _) ≫= s.condition)
-
-def temp_fac_left : ((leftFunctor ι).obj g).hom ≫ temp_desc ι h hp s = s.inl := by
-  simp [Functor.PushoutObjObj.ι]
-  apply pushout.hom_ext
-  · simp
-  · apply (whiskerPushout _ (IsPushout.of_isColimit hp)).hom_ext
-    · simp [← pushout.condition_assoc, whisker_exchange_assoc]
-    · simp [whisker_exchange_assoc]
-      have := pushout.inr _ _ ≫= s.condition
-      simp [Functor.PushoutObjObj.ι] at this
-      rw [this]
-
-def temp_uniq (m : ((leftBifunctor.obj ι).obj g).right ⟶ s.pt)
-    (fac_left : ((leftBifunctor.obj ι).obj g).hom ≫ m = s.inl)
-    (fac_right : ((leftBifunctor.obj ι).map h).right ≫ m = s.inr) : m = temp_desc ι h hp s := by
-  apply (whiskerPushout _ (IsPushout.of_isColimit hp)).hom_ext
-  · simpa [Functor.PushoutObjObj.ι] using pushout.inl _ _ ≫= fac_left
-  · simpa
-
-noncomputable
-def leftFunctor_map_preserves_pushouts
-      {f g : Arrow C} (ι : Arrow C) (h : f ⟶ g) (hp : IsColimit (PushoutCocone.mk _ _ h.w)) :
-    IsColimit (PushoutCocone.mk _ _ ((leftBifunctor.obj ι).map h).w) :=
-  PushoutCocone.IsColimit.mk _ (temp_desc ι h hp) (temp_fac_left ι h hp)
-    (by simp) (temp_uniq ι h hp)
-
-def leftFunctor_map_preserves_pushouts' {A B X Y Z W : C} {f : A ⟶ B} {g : X ⟶ Y} {s : X ⟶ A} {t : Y ⟶ B}
-      (ι : Z ⟶ W) (h : IsPushout s g f t) :
-    IsPushout ((leftBifunctor.obj (Arrow.mk ι)).map (Arrow.homMk' s t h.w)).left
+def leftFunctor_map_preserves_pushouts {A B K L X Y : C} {f : A ⟶ B} {g : K ⟶ L} {s : K ⟶ A} {t : L ⟶ B}
+      (ι : X ⟶ Y) (h : IsPushout s g f t) :
+    IsPushout ((leftFunctor (Arrow.mk ι)).map (Arrow.homMk' s t h.w)).left
       (ι □ g)
       (ι □ f)
-      (W ◁ t) := by
-  apply IsPushout.of_isColimit' ⟨((leftBifunctor.obj (Arrow.mk ι)).map (Arrow.homMk' _ _ h.w)).w⟩
-  apply leftFunctor_map_preserves_pushouts
-  exact h.isColimit
+      (Y ◁ t) := by
+  have P₁ := whiskerPushout Y h
+  have a : pushout.inl _ _ ≫ ι □ g = Y ◁ g := (Functor.PushoutObjObj.ofHasPushout (curriedTensor C) ι g).inl_ι
+  have b : pushout.inl _ _ ≫ ι □ f = Y ◁ f := (Functor.PushoutObjObj.ofHasPushout (curriedTensor C) ι f).inl_ι
+  rw [← a, ← b] at P₁
+  apply IsPushout.of_top P₁
+  · apply pushout.hom_ext
+    · simp [Functor.PushoutObjObj.ι, ← MonoidalCategory.whiskerLeft_comp, h.w]
+    · simp [Functor.PushoutObjObj.ι, whisker_exchange]
+  · have P₂ := (Functor.PushoutObjObj.ofHasPushout (curriedTensor C) ι g).isPushout
+    refine IsPushout.of_left ?_ ?_ P₂
+    · have P₃ := (Functor.PushoutObjObj.ofHasPushout (curriedTensor C) ι f).isPushout
+      have := IsPushout.paste_horiz (whiskerPushout X h) P₃
+      dsimp at this
+      rw [whisker_exchange] at this
+      simpa
+    · aesop
 
 end Pushout
 
@@ -549,22 +525,104 @@ def leftFunctor_preserves_transfiniteComposition
     · simp [Functor.PushoutObjObj.ι, temp_isoBot, ← MonoidalCategory.whiskerLeft_comp]
     · simp [Functor.PushoutObjObj.ι, temp_isoBot]
 
-variable (W : MorphismProperty C) (hf : W.TransfiniteCompositionOfShape J f)
+end Transfinite
+
+section Transfinite'
+
+variable {X Y : C} (ι : X ⟶ Y)
+
+variable {J : Type w} [LinearOrder J] [SuccOrder J]
+  (F : J ⥤ C) (c : Cocone F) (hc : IsColimit c)
+
+variable {j : J}
 
 /-
-∀ (j : J), ¬IsMax j →
-  W.saturation (Λ[2, 1].ι □ hf.F.map (homOfLE ⋯))
+@[simp]
+def id_to_succ : (.id J) ⟶ Order.succ_mono.functor where
+  app j := homOfLE (Order.le_succ j)
 
-∀ (j : J), ¬IsMax j →
-  W.saturation ((natTransLeftFunctor hf.incl Λ[2, 1].ι).map (homOfLE ⋯))
+lemma cocone_ι_facs : (id_to_succ ◫ 𝟙 F) ≫ (whiskerLeft Order.succ_mono.functor c.ι) = c.ι := by
+  ext : 2
+  simp [NatTrans.hcomp, whiskerLeft]
 -/
 
-lemma mflakdw (j : J) (hj : ¬IsMax j)
-      (hW : ∀ (j : J), ¬IsMax j → W (ι □ hf.F.map (homOfLE (Order.le_succ j)))) :
-    W.saturation ((natTransLeftFunctor hf.incl ι).map (homOfLE (Order.le_succ j))) := by
-  sorry
+@[simp]
+noncomputable
+def φ_j (j : J) : (pushout (ι ▷ F.obj j) (X ◁ F.map (homOfLE (Order.le_succ j)))) ⟶ (natTransLeftFunctor c.ι ι).obj j :=
+  pushout.desc
+    (pushout.inl _ _)
+    (_ ◁ c.ι.app (Order.succ j) ≫ pushout.inr _ _)
+    (by simp [← MonoidalCategory.whiskerLeft_comp_assoc, c.ι.naturality, pushout.condition])
 
-end Transfinite
+lemma newSqComm :
+    (φ_j ι F c j) ≫
+      ((natTransLeftFunctor c.ι ι).map (homOfLE (Order.le_succ j))) =
+    (ι □ (F.map (homOfLE (Order.le_succ j)))) ≫
+      ((inlDescFunctor c.ι ι).app (Order.succ j)) := by
+  simp [Functor.PushoutObjObj.ι]
+  apply pushout.hom_ext
+  · simp
+  · simp [pushout.condition]
+
+noncomputable
+def newPushoutCocone (j : J) : PushoutCocone
+    (φ_j ι F c j) (ι □ (F.map (homOfLE (Order.le_succ j)))) :=
+  PushoutCocone.mk _ _ (newSqComm ι F c)
+
+@[simp]
+noncomputable
+def newPushoutIsColimit_desc (s : PushoutCocone (φ_j ι F c j) (ι □ (F.map (homOfLE (Order.le_succ j))))) :
+    (natTransLeftFunctor c.ι ι).obj (Order.succ j) ⟶ s.pt :=
+  pushout.desc s.inr ((pushout.inr _ _) ≫ s.inl)
+    (by simpa [Functor.PushoutObjObj.ι] using ((pushout.inr _ _) ≫= s.condition).symm)
+
+lemma newPushoutIsColimit_fac_left (s : PushoutCocone (φ_j ι F c j) (ι □ F.map (homOfLE (Order.le_succ j)))) :
+    (natTransLeftFunctor c.ι ι).map (homOfLE (Order.le_succ j)) ≫ newPushoutIsColimit_desc ι F c s = s.inl := by
+  simp only [Fin.isValue, natTransLeftFunctor_obj, Functor.const_obj_obj,
+    Functor.id_obj, Monotone.functor_obj, homOfLE_leOfHom, Functor.comp_obj,
+    NatTrans.hcomp_app, NatTrans.id_app, φ_j, Arrow.mk_left, NatTrans.arrowFunctor_obj_left,
+    Arrow.mk_right, NatTrans.arrowFunctor_obj_right, Arrow.mk_hom, NatTrans.arrowFunctor_obj_hom,
+    Functor.PushoutObjObj.ι, curriedTensor_obj_obj, Functor.PushoutObjObj.ofHasPushout_pt,
+    curriedTensor_map_app, curriedTensor_obj_map, Functor.PushoutObjObj.ofHasPushout_inl,
+    Functor.PushoutObjObj.ofHasPushout_inr, natTransLeftFunctor_map, Functor.const_obj_map,
+    MonoidalCategory.whiskerLeft_id, newPushoutIsColimit_desc, PushoutCocone.ι_app_right,
+    PushoutCocone.ι_app_left]
+  apply pushout.hom_ext
+  · have := (pushout.inl _ _) ≫= s.condition
+    simp [Functor.PushoutObjObj.ι] at this
+    rw [this]
+    rw [pushout.inl_desc_assoc]
+    have := (_ ◁ F.map (homOfLE (Order.le_succ j))) ≫=
+      pushout.inl_desc s.inr (pushout.inr (ι ▷ F.obj j) (_ ◁ c.ι.app j) ≫ s.inl) (newPushoutIsColimit_desc.proof_5 ι F c s)
+    rw [← this]
+    dsimp only [NatTrans.arrowFunctor, Arrow.mk, Functor.id_obj]
+    rw [pushout.inl_desc, Category.assoc, pushout.inl_desc]
+  · simp only [pushout.inr_desc_assoc, Category.id_comp, pushout.inr_desc]
+
+noncomputable
+def newPushoutIsColimit : IsColimit (newPushoutCocone ι F c j) := by
+  refine PushoutCocone.IsColimit.mk _ (newPushoutIsColimit_desc ι F c) ?_ ?_ ?_
+  · exact newPushoutIsColimit_fac_left _ _ _
+  · intro
+    simp only [newPushoutIsColimit_desc, pushout.inl_desc, Arrow.mk, NatTrans.arrowFunctor, inlDescFunctor,
+      Functor.id_obj, Functor.PushoutObjObj.ofHasPushout]
+  · intro _ _ h h'
+    apply pushout.hom_ext
+    · dsimp only [inlDescFunctor, Functor.id_obj, Arrow.mk, NatTrans.arrowFunctor, newPushoutIsColimit_desc]
+      rw [pushout.inl_desc, ← h']
+      simp [inlDescFunctor]
+    · dsimp only [Functor.id_obj, Arrow.mk, NatTrans.arrowFunctor, newPushoutIsColimit_desc]
+      rw [pushout.inr_desc, ← h]
+      simp
+
+def newPushoutIsPushout (j : J) : IsPushout
+    (φ_j ι F c j)
+    (ι □ F.map (homOfLE (Order.le_succ j)))
+    ((natTransLeftFunctor c.ι ι).map (homOfLE (Order.le_succ j)))
+    (pushout.inl _ _) :=
+  .of_isColimit (newPushoutIsColimit ι F c)
+
+end Transfinite'
 
 section Coproduct
 
@@ -602,7 +660,6 @@ def c₁' {J : Type*} {X₁ X₂ : Discrete J ⥤ C}
 variable  {J : Type*} {X₁ : Discrete J ⥤ C}  {X₂ : Discrete J ⥤ C}
     [PreservesColimit X₁ (tensorLeft A)] [PreservesColimit X₁ (tensorLeft B)]
     [PreservesColimit X₂ (tensorLeft A)]
-
 
 set_option maxHeartbeats 800000 in
 open Limits in
@@ -658,79 +715,5 @@ def c₁'_isColimit
       simp [c₁']
 
 end Coproduct
-
-/-
-section PushoutProduct
-
-open MorphismProperty
-
-variable (T : MorphismProperty C) [WeaklySaturated.{u} T] {A B : C} (ι : A ⟶ B)
-
-open WeaklySaturated
-
-/-- `pushoutProduct_mem` is the class of all morphisms `i` such that `ι □ i` is inner anodyne. -/
-@[simp]
-def pushoutProduct_mem : MorphismProperty C := fun _ _ i ↦
-  T (ι □ i)
-
-instance [∀ (S : C), PreservesColimitsOfSize.{v, v, v, v, u, u} (tensorLeft S)] :
-    IsStableUnderCobaseChange (pushoutProduct_mem T ι) where
-  of_isPushout h hg := by
-    dsimp
-    exact IsStableUnderCobaseChange.of_isPushout (leftFunctor_map_preserves_pushouts' ι h) hg
-
-instance : IsStableUnderRetracts (pushoutProduct_mem T ι) where
-  of_retract h hg := by
-    dsimp
-    exact IsStableUnderRetracts.of_retract (Retract.map h (leftFunctor ι)) hg
-
-set_option maxHeartbeats 400000 in
-instance : IsStableUnderCoproducts.{u} (pushoutProduct_mem T f) where
-  isStableUnderCoproductsOfShape J := by
-    refine (isStableUnderColimitsOfShape_iff_colimitsOfShape_le _ (Discrete J)).mpr ?_
-    intro X Y _ hf
-    cases hf with
-    | mk X₁ X₂ c₁ c₂ h₁ h₂ f' hf =>
-    dsimp
-    dsimp only [MorphismProperty.functorCategory, pushoutProduct_mem] at hf
-    apply (WeaklySaturated.IsStableUnderCoproducts.isStableUnderCoproductsOfShape J).colimitsOfShape_le
-    let α := h₁.desc { pt := c₂.pt, ι := f' ≫ c₂.ι }
-    let f'' := descFunctor f' ι
-    let c₁' := c₁' ι c₂ h₁ f'
-    let h₁' : Limits.IsColimit c₁' := c₁'_isColimit ι c₂ h₁ h₂ f'
-    let c₂' := (tensorLeft B).mapCocone c₂
-    let h₂' : Limits.IsColimit c₂' := Limits.isColimitOfPreserves (tensorLeft B) h₂
-    convert colimitsOfShape.mk (natTransLeftFunctor f' ι) (X₂ ⋙ tensorLeft B) c₁' c₂' h₁' h₂' f'' hf
-    convert h₁'.uniq _ _ _
-    · rfl
-    · rfl
-    · intro j
-      dsimp only [c₁', PushoutProduct.c₁', c₂', f'', descFunctor, tensorLeft, curriedTensor,
-        Functor.mapCocone]
-      simp only [Functor.PushoutObjObj.ι]
-      aesop
-
-open Limits in
-instance : IsStableUnderTransfiniteComposition.{u} (T.{u} f) where
-  isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := by
-    rw [isStableUnderTransfiniteCompositionOfShape_iff.{u}]
-    intro X Y f' ⟨hf⟩
-    dsimp only [T]
-    apply (monomorphisms SSet).transfiniteCompositions_le
-    rw [transfiniteCompositions_iff]
-    refine ⟨J, _, _, _, _, ⟨(leftFunctor_preserves_transfiniteComposition J f f' hf.1), ?_⟩⟩
-
-    intro j hj
-    dsimp only [leftFunctor_preserves_transfiniteComposition]
-    exact IsStableUnderCobaseChange.of_isPushout (newPushoutIsPushout f hf.F (Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
-
-instance : WeaklySaturated.{u} (T.{u} f) where
-  IsStableUnderCobaseChange := by infer_instance
-  IsStableUnderRetracts := by infer_instance
-  IsStableUnderCoproducts := by infer_instance
-  IsStableUnderTransfiniteComposition := by infer_instance
-
-end WeaklySaturated
--/
 
 end CategoryTheory.PushoutProduct
