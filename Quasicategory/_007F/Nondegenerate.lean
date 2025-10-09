@@ -1,7 +1,7 @@
 import Mathlib.Data.Sigma.Order
 import Quasicategory.TopCatModelCategory.SSet.NonDegenerateProdSimplex
 
-universe u
+namespace SSet
 
 open CategoryTheory MonoidalCategory SSet Simplicial SimplexCategory prodStdSimplex
 

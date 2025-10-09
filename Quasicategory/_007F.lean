@@ -8,7 +8,9 @@ The second half of the proof of `007F`, which is much more technical.
 
 -/
 
-universe w v u
+universe w
+
+namespace SSet
 
 open CategoryTheory MorphismProperty Simplicial SSet PushoutProduct MonoidalCategory Subcomplex
 
@@ -45,7 +47,7 @@ instance {X Y Z : SSet} : Unique ((Y ⊗ (⊥ : X.Subcomplex).toSSet) ⟶ Z)  wh
   uniq _ := Subsingleton.elim _ _
 
 noncomputable
-def SSet.Subcomplex.tensorBotIsInitial {X Y : SSet} : Limits.IsInitial (Y ⊗ (⊥ : X.Subcomplex).toSSet) :=
+def Subcomplex.tensorBotIsInitial {X Y : SSet} : Limits.IsInitial (Y ⊗ (⊥ : X.Subcomplex).toSSet) :=
   Limits.IsInitial.ofUnique _
 
 noncomputable
@@ -75,12 +77,12 @@ def zero_unionProd_arrowIso :
   · exact Arrow.isoMk (Subcomplex.unionProd.symmIso _ _) (β_ _ _) rfl
   · exact Arrow.isoMk (stdSimplex.rightUnitor _) (stdSimplex.rightUnitor _) rfl
 
-namespace CategoryTheory.MorphismProperty
+section
 
 variable {C : Type*} [Category C] (W : MorphismProperty C) [W.IsMultiplicative]
 
 -- go from `⟨b, a⟩ --> ⟨b, a'⟩` for `a ≤ a'`
-lemma map_mem_of_sigma' {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ C)
+lemma _root_.CategoryTheory.MorphismProperty.map_mem_of_sigma' {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ C)
     (hF : ∀ (i : Σₗ (b : Fin (n + 1)), Fin b.succ), W (F.map (homOfLE (Sigma.Lex.le_succ i))))
     {b : Fin (n + 1)} (a a' : Fin b.succ) (h : a ≤ a') :
     W (F.map (homOfLE (show ⟨b, a⟩ ≤ ⟨b, a'⟩ by right; simpa))) := by
@@ -91,7 +93,8 @@ lemma map_mem_of_sigma' {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤
   | zero =>
     simp only [Fin.le_iff_val_le_val, le_zero_iff] at h
     subst h
-    simp only [homOfLE_refl, Functor.map_id]
+    simp only [Fin.val_succ, Fin.succ_mk, Fin.zero_eta, CategoryTheory.homOfLE_refl,
+      CategoryTheory.Functor.map_id]
     apply id_mem
   | succ a' h' =>
   cases lt_or_eq_of_le h
@@ -102,16 +105,17 @@ lemma map_mem_of_sigma' {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤
     change _ = (⟨⟨b, hb⟩, ⟨a' + 1, ha'⟩⟩ : (Σₗ (b : Fin (n + 1)), Fin b.succ)) at eq
     convert W.comp_mem _ _ one two
     exact eq.symm
-    rw [← F.map_comp, homOfLE_comp]
+    rw [← F.map_comp, CategoryTheory.homOfLE_comp]
     congr!
     exact eq.symm
   · next h'' =>
     simp at h''
     subst h''
-    simp only [homOfLE_refl, Functor.map_id]
+    simp only [Fin.val_succ, Fin.succ_mk, CategoryTheory.homOfLE_refl,
+      CategoryTheory.Functor.map_id]
     apply id_mem
 
-lemma map_mem_of_sigma {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ C)
+lemma _root_.CategoryTheory.MorphismProperty.map_mem_of_sigma {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ C)
     (hF : ∀ (i : Σₗ (b : Fin (n + 1)), Fin b.succ), W (F.map (homOfLE (Sigma.Lex.le_succ i))))
     {i j : Σₗ (b : Fin (n + 1)), Fin b.succ} (f : i ⟶ j) :
     W (F.map f) := by
@@ -145,9 +149,9 @@ lemma map_mem_of_sigma {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ 
         simpa
       suffices W (F.map (homOfLE bb_b'0)) by
         have := (W.comp_mem (F.map <| homOfLE ba_bb) (F.map (homOfLE bb_b'0)) ?_ this)
-        rw [← F.map_comp, homOfLE_comp] at this
+        rw [← F.map_comp, CategoryTheory.homOfLE_comp] at this
         have := W.comp_mem _ (F.map <| homOfLE b'0_b'a') (this) ?_
-        rw [← F.map_comp, homOfLE_comp] at this
+        rw [← F.map_comp, CategoryTheory.homOfLE_comp] at this
         exact this
         · apply W.map_mem_of_sigma' F hF
           simp
@@ -188,7 +192,7 @@ lemma map_mem_of_sigma {n : ℕ} (F : (Σₗ (b : Fin (n + 1)), Fin b.succ) ⥤ 
       apply W.map_mem_of_sigma' F hF
       omega
 
-end CategoryTheory.MorphismProperty
+end
 
 lemma τ.filtration_last_innerAnodyne : innerHornInclusions.saturation
     (Subcomplex.homOfLE (filtration_monotone (Sigma.Lex.le_succ ⟨Fin.last (n + 1), Fin.last (n + 1)⟩))) := by
@@ -304,9 +308,25 @@ def arrow_unionProd_iso : Arrow.mk (Λ[2, 1].ι □ ∂Δ[n].ι) ≅ Arrow.mk (�
   · simp [Functor.PushoutObjObj.ι]
     aesop
 
-lemma innerAnodyne_eq_T : innerAnodyne.{u} = (saturation.{u} bdryHornPushouts) := by
+inductive bdryHornPushout : {X Y : SSet} → (X ⟶ Y) → Prop
+  | mk (m : ℕ) : bdryHornPushout (Λ[2, 1].ι □ ∂Δ[m].ι)
+
+/-- the class of pushout-products of `∂Δ[m] ↪ Δ[m]` with `Λ[2, 1] ↪ Δ[2]`. -/
+def bdryHornPushouts : MorphismProperty SSet := fun _ _ p ↦ bdryHornPushout p
+
+/-- `bdryInclusions` is contained in the class of all morphisms `i : A → B` such that
+the pushout-product with `Λ[2, 1] ↪ Δ[2]` is in the saturation of `bdryHornPushouts`. -/
+lemma bdryInclusions_le_S : bdryInclusions ≤
+  (saturation.{w} bdryHornPushouts).pushoutProduct Λ[2, 1].ι := fun _ _ _ ⟨_⟩ ↦ .of _ (.mk _)
+
+lemma monomorphisms_le_S : monomorphisms SSet.{w} ≤
+    (saturation.{w} bdryHornPushouts).pushoutProduct Λ[2, 1].ι := by
+  rw [monomorphism_eq_saturation_bdryInclusions, ← Saturated.le_iff]
+  exact bdryInclusions_le_S
+
+lemma innerAnodyne_eq_T : innerAnodyne.{w} = (saturation.{w} bdryHornPushouts) := by
   apply le_antisymm
-  all_goals rw [innerAnodyne_eq_saturation_innerHornInclusions, ← WeaklySaturated.le_iff]
+  all_goals rw [innerAnodyne_eq_saturation_innerHornInclusions, ← Saturated.le_iff]
   · intro _ _ _ ⟨h0, hn⟩
     exact .retract (hornRetract _ h0 hn) (monomorphisms_le_S _ (.infer_property _))
   · intro _ _ _ ⟨_⟩
@@ -321,8 +341,8 @@ lemma hornMonoPushout_innerAnodyne {A B : SSet} (i : A ⟶ B) [Mono i] :
 
 -- `007F` (b)
 lemma contains_innerAnodyne_iff_contains_pushout_maps
-    (S : MorphismProperty SSet) [WeaklySaturated.{u} S] :
-    (bdryHornPushouts ≤ S) ↔ (innerAnodyne.{u} ≤ S) := by
+    (S : MorphismProperty SSet) [Saturated.{w} S] :
+    (bdryHornPushouts ≤ S) ↔ (innerAnodyne.{w} ≤ S) := by
   constructor
-  · simp [innerAnodyne_eq_T, ← WeaklySaturated.le_iff]
+  · simp [innerAnodyne_eq_T, ← Saturated.le_iff]
   · exact fun h _ _ _ ⟨m⟩ ↦ h _ (hornMonoPushout_innerAnodyne ∂Δ[m].ι)

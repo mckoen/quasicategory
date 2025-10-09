@@ -39,3 +39,4 @@ instance : EnrichedOrdinaryCategory QCat QCat := enrichedOrdinaryCategorySelf QC
 instance : EnrichedCategory QCat QCat := EnrichedOrdinaryCategory.toEnrichedCategory
 
 end
+#print axioms ihom_isQuasicategory

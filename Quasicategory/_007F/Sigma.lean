@@ -1,17 +1,13 @@
 import Quasicategory._007F.Filtration
 import Quasicategory._007F.Order
 
+namespace SSet.σ
+
 open CategoryTheory Simplicial MorphismProperty MonoidalCategory SSet
 
 open Subcomplex stdSimplex
 
-universe u
-
-variable {n : ℕ}
-
-namespace σ
-
-variable (b : Fin (n + 1)) (i : Σₗ (b : Fin (n + 1)), Fin b.succ)
+variable {n : ℕ} (b : Fin (n + 1)) (i : Σₗ (b : Fin (n + 1)), Fin b.succ)
 
 /-- the image of `Λ[n + 1, i.snd + 1]` under `s i`. -/
 @[simp]

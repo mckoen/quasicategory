@@ -10,23 +10,7 @@ universe w u
 
 namespace SSet
 
-open CategoryTheory Simplicial MorphismProperty MonoidalCategory PushoutProduct
-
-inductive bdryHornPushout : {X Y : SSet} → (X ⟶ Y) → Prop
-  | mk (m : ℕ) : bdryHornPushout (Λ[2, 1].ι □ ∂Δ[m].ι)
-
-/-- the class of pushout-products of `Λ[2, 1] ↪ Δ[2]` with `∂Δ[m] ↪ Δ[m]`. -/
-def bdryHornPushouts : MorphismProperty SSet := fun _ _ p ↦ bdryHornPushout p
-
-/-- `bdryInclusions` is contained in the class of all morphisms `i : A → B` such that the pushout-product with `Λ[2, 1] ↪ Δ[2]` is in
-the saturation of `bdryHornPushouts`. -/
-lemma bdryInclusions_le_S : bdryInclusions ≤
-  (saturation.{w} bdryHornPushouts).pushoutProduct Λ[2, 1].ι := fun _ _ _ ⟨_⟩ ↦ .of _ (.mk _)
-
-lemma monomorphisms_le_S : monomorphisms SSet.{w} ≤
-    (saturation.{w} bdryHornPushouts).pushoutProduct Λ[2, 1].ι := by
-  rw [monomorphism_eq_saturation_bdryInclusions, ← WeaklySaturated.le_iff]
-  exact bdryInclusions_le_S
+open CategoryTheory Simplicial MonoidalCategory PushoutProduct
 
 variable {n : ℕ} (i : Fin (n + 1))
 

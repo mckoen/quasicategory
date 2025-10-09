@@ -1,6 +1,8 @@
 import Quasicategory._007F.Basic
 import Quasicategory.Lex
 
+namespace SSet
+
 open CategoryTheory Simplicial MonoidalCategory SSet Subcomplex
 
 variable {n : ℕ}

@@ -1,6 +1,8 @@
 import Mathlib.AlgebraicTopology.SimplicialSet.Subcomplex
 import Quasicategory.TopCatModelCategory.SSet.Horn
 
+namespace SSet
+
 open CategoryTheory SSet Subcomplex
 
 def image_monotone {X Y : SSet} (f : X ⟶ Y) :

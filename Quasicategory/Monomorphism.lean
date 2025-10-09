@@ -74,7 +74,7 @@ instance IsStableUnderCoproducts.monomorphisms :
   infer_instance
 
 -- `0077` (a) monomorphisms are weakly saturated
-instance monomorphisms.WeaklySaturated : WeaklySaturated.{u} (monomorphisms SSet.{u}) :=
+instance monomorphisms.Saturated : Saturated.{u} (monomorphisms SSet.{u}) :=
   ⟨ IsStableUnderCobaseChange.monomorphisms,
     IsStableUnderRetracts.monomorphisms,
     IsStableUnderCoproducts.monomorphisms,
@@ -109,7 +109,7 @@ lemma monomorphism_eq_saturation_bdryInclusions :
   · rw [← transfiniteCompositions_pushouts_coproducts_bdryInclusions,
       transfiniteCompositions_le_iff, pushouts_le_iff, coproducts_le_iff]
     exact le_saturation bdryInclusions
-  · rw [← WeaklySaturated.le_iff]
+  · rw [← Saturated.le_iff]
     intro _ _ _ ⟨n⟩
     exact monomorphisms.infer_property _
 
@@ -118,7 +118,7 @@ lemma trivialFibration_eq_rlp_monomorphisms :
     trivialFibration = (monomorphisms SSet).rlp:= by
   apply le_antisymm
   · rw [← le_llp_iff_le_rlp, monomorphism_eq_saturation_bdryInclusions,
-      ← WeaklySaturated.le_iff]
+      ← Saturated.le_iff]
     exact le_llp_rlp bdryInclusions
   · exact antitone_rlp brdyInclusions_le_monomorphisms
 
@@ -130,7 +130,7 @@ instance splitEpi_of_trivialFibration {X Y : SSet} {p : X ⟶ Y} (hp : trivialFi
 
 /-- inner anodyne morphisms are monomorphisms -/
 lemma innerAnodyne_le_monomorphisms : innerAnodyne ≤ monomorphisms SSet := by
-  rw [innerAnodyne_eq_saturation_innerHornInclusions, ← WeaklySaturated.le_iff]
+  rw [innerAnodyne_eq_saturation_innerHornInclusions, ← Saturated.le_iff]
   exact fun _ _ _ ⟨_, _⟩ ↦ monomorphisms.infer_property _
 
 end SSet

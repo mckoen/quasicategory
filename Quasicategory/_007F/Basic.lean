@@ -1,6 +1,6 @@
 import Quasicategory._007F.Nondegenerate
 
-universe u
+namespace SSet
 
 open CategoryTheory Simplicial MonoidalCategory SSet
 

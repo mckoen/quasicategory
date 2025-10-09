@@ -76,65 +76,6 @@ section _00J8
 
 variable {A B X Y : SSet} (f : A ⟶ B) {g : X ⟶ Y} [hf : Mono f]
 
-/-- `T` is the class of all morphisms `i` such that `f □ i` is inner anodyne. -/
-def T : MorphismProperty SSet := fun _ _ i ↦
-  innerAnodyne (f □ i)
-
-instance : IsStableUnderCobaseChange (T f) where
-  of_isPushout h hg := by
-    dsimp only [T]
-    exact IsStableUnderCobaseChange.of_isPushout (leftFunctor_map_preserves_pushouts f h) hg
-
-instance : IsStableUnderRetracts (T f) where
-  of_retract h hg := by
-    dsimp only [T]
-    exact IsStableUnderRetracts.of_retract (Retract.map h (leftFunctor f)) hg
-
-set_option maxHeartbeats 400000 in
-instance : IsStableUnderCoproducts.{w} (T f) where
-  isStableUnderCoproductsOfShape J := by
-    refine (isStableUnderColimitsOfShape_iff_colimitsOfShape_le _ (Discrete J)).mpr ?_
-    intro X Y _ hf
-    cases hf with
-    | mk X₁ X₂ c₁ c₂ h₁ h₂ f' hf =>
-    dsimp only [T]
-    dsimp only [MorphismProperty.functorCategory, T] at hf
-    apply (WeaklySaturated.IsStableUnderCoproducts.isStableUnderCoproductsOfShape J).colimitsOfShape_le
-    let α := h₁.desc { pt := c₂.pt, ι := f' ≫ c₂.ι }
-    let f'' := descFunctor f' f
-    let c₁' := c₁' f c₂ h₁ f'
-    let h₁' : Limits.IsColimit c₁' := c₁'_isColimit f c₂ h₁ h₂ f'
-    let c₂' := (tensorLeft B).mapCocone c₂
-    let h₂' : Limits.IsColimit c₂' := Limits.isColimitOfPreserves (tensorLeft B) h₂
-    convert colimitsOfShape.mk (natTransLeftFunctor f' f) (X₂ ⋙ tensorLeft B) c₁' c₂' h₁' h₂' f'' hf
-    convert h₁'.uniq _ _ _
-    · rfl
-    · rfl
-    · intro j
-      dsimp only [c₁', PushoutProduct.c₁', c₂', f'', descFunctor, tensorLeft, curriedTensor,
-        Functor.mapCocone]
-      simp only [Functor.PushoutObjObj.ι]
-      aesop
-
-open Limits in
-instance : IsStableUnderTransfiniteComposition.{w} (T f) where
-  isStableUnderTransfiniteCompositionOfShape J _ _ _ _ := by
-    rw [isStableUnderTransfiniteCompositionOfShape_iff]
-    intro X Y f' ⟨hf⟩
-    apply innerAnodyne.transfiniteCompositions_le
-    rw [transfiniteCompositions_iff]
-    refine ⟨J, _, _, _, _, ⟨(leftFunctor_preserves_transfiniteComposition J f f' hf.1), ?_⟩⟩
-
-    intro j hj
-    dsimp only [leftFunctor_preserves_transfiniteComposition]
-    exact IsStableUnderCobaseChange.of_isPushout (newPushoutIsPushout f hf.F (Cocone.mk _ hf.incl) j) (hf.map_mem j hj)
-
-instance : WeaklySaturated.{w} (T f) where
-  IsStableUnderCobaseChange := by infer_instance
-  IsStableUnderRetracts := by infer_instance
-  IsStableUnderCoproducts := by infer_instance
-  IsStableUnderTransfiniteComposition := by infer_instance
-
 inductive hornMonoPushout : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk {X Y : SSet} (i : X ⟶ Y) (hi : Mono i) : hornMonoPushout (Λ[2, 1].ι □ i)
 
@@ -142,21 +83,22 @@ def hornMonoPushouts : MorphismProperty SSet := fun _ _ p ↦ hornMonoPushout p
 
 lemma saturation_hornMonoPushouts_eq : saturation.{w} hornMonoPushouts = innerAnodyne.{w} := by
   apply le_antisymm
-  · rw [← WeaklySaturated.le_iff]
+  · rw [← Saturated.le_iff]
     intro _ _ _ ⟨i, _⟩
     exact hornMonoPushout_innerAnodyne i
-  · rw [innerAnodyne_eq_T, ← WeaklySaturated.le_iff]
+  · rw [innerAnodyne_eq_T, ← Saturated.le_iff]
     intro _ _ _ ⟨m⟩
     exact .of _ (.mk _ (instMonoι _))
 
-lemma innerAnodyne_le_T : innerAnodyne ≤ T f := by
-  rw [← saturation_hornMonoPushouts_eq, ← WeaklySaturated.le_iff]
+lemma innerAnodyne_le_T : innerAnodyne ≤ (innerAnodyne.pushoutProduct f) := by
+  rw [← saturation_hornMonoPushouts_eq, ← Saturated.le_iff,
+    saturation_hornMonoPushouts_eq]
   intro _ _ _ ⟨i, _⟩
-  dsimp only [T]
   have : Arrow.mk (f □ Λ[2, 1].ι □ i) ≅ Arrow.mk (Λ[2, 1].ι □ f □ i) :=
     (comm_iso _ _) ≪≫
     (PushoutProduct.associator _ _ _) ≪≫
     (iso_of_arrow_iso Λ[2, 1].ι _ _ (comm_iso i f))
+  dsimp only [MorphismProperty.pushoutProduct]
   rw [innerAnodyne.arrow_mk_iso_iff this]
   sorry--exact hornMonoPushout_innerAnodyne (f □ i)
 
