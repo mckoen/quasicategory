@@ -8,37 +8,7 @@ open CategoryTheory MonoidalCategory SSet Simplicial SimplexCategory prodStdSimp
 variable {n : ℕ}
 
 @[simp]
-def τ.simplex₂' (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : Fin (n + 3) →o Fin 3 where
-  toFun k :=
-    if k ≤ ⟨i.2, by dsimp; omega⟩ then 0
-    else if k ≤ i.1.castSucc.succ then 1
-    else 2
-  monotone' := by
-    refine Fin.monotone_iff_le_succ.mpr ?_
-    intro j
-    simp_rw [Fin.le_iff_val_le_val]
-    simp
-    split
-    · next h => simp
-    · next h =>
-      have : ¬j.1 + 1 ≤ i.2.1 := fun h' ↦ h (le_trans (Fin.castSucc_le_succ j) h')
-      simp [this]
-      split
-      · next =>
-          split
-          all_goals omega
-      · next h =>
-        have : ¬j.1 ≤ i.1 := by omega
-        simp [this]
-
-/-- defined for `0 ≤ a ≤ b ≤ n`. Can define it for `b = n + 1`,
-  but then it lands in `Λ[2, 2] _⦋n + 2⦌`. -/
-@[simp]
-def τ.simplex₂ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : Δ[2] _⦋n + 2⦌  :=
-  stdSimplex.objEquiv.symm (mkHom (simplex₂' i))
-
-@[simp]
-def σ.simplex₂' (i : Σₗ (b : Fin n), Fin b.succ) : Fin (n + 2) →o Fin 3 where
+def simplex₂' (i : Σₗ (b : Fin n), Fin b.succ) : Fin (n + 2) →o Fin 3 where
   toFun k :=
     if k ≤ ⟨i.2, by omega⟩ then 0
     else if k ≤ ⟨i.1 + 1, by omega⟩ then 1
@@ -64,6 +34,12 @@ def σ.simplex₂' (i : Σₗ (b : Fin n), Fin b.succ) : Fin (n + 2) →o Fin 3 
         next =>
           split
           all_goals omega
+
+/-- defined for `0 ≤ a ≤ b ≤ n`. Can define it for `b = n + 1`,
+  but then it lands in `Λ[2, 2] _⦋n + 2⦌`. -/
+@[simp]
+def τ.simplex₂ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : Δ[2] _⦋n + 2⦌  :=
+  stdSimplex.objEquiv.symm (mkHom (simplex₂' i))
 
 /-- defined for `0 ≤ a ≤ b < n`. Can define it for `b = n`,
   but then it lands in `Λ[2, 2] _⦋n + 1⦌`. -/
@@ -126,8 +102,6 @@ lemma τ.simplex₂_injective : Function.Injective (τ.simplex₂ (n := n)) := b
       simp at this
       have := DFunLike.congr_fun (stdSimplex.objMk_injective h) ⟨a', by dsimp; omega⟩
       simp [ha] at this
-      exfalso
-      aesop
   exfalso
   have := stdSimplex.objMk_injective h
   simp at this
@@ -146,11 +120,56 @@ lemma τ.simplex₂_injective : Function.Injective (τ.simplex₂ (n := n)) := b
   simp at this
   omega
 
+open stdSimplex in
 def τ.simplex (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : (Δ[n] ⊗ Δ[2] : SSet) _⦋n + 2⦌ :=
-  (stdSimplex.objEquiv.symm (σ ⟨i.2, by omega⟩ ≫ σ i.1), stdSimplex.objEquiv.symm (mkHom (τ.simplex₂' i)))
+  (objEquiv.symm (σ ⟨i.2, by omega⟩ ≫ σ i.1), objEquiv.symm (mkHom (simplex₂' i)))
 
+open stdSimplex in
 def σ.simplex (i : Σₗ (b : Fin n), Fin b.succ) : (Δ[n] ⊗ Δ[2] : SSet) _⦋n + 1⦌ :=
-  (stdSimplex.objEquiv.symm (σ ⟨i.2, by omega⟩), stdSimplex.objEquiv.symm (mkHom (σ.simplex₂' i)))
+  (objEquiv.symm (σ ⟨i.2, by omega⟩), objEquiv.symm (mkHom (simplex₂' i)))
+
+/-- `σ b a = (Δ[n] ⊗ Δ[2]).δ (b + 2) (τ b a) `-/
+lemma simplex_eq_δ_simplex (i : Σₗ (b : Fin n), Fin b.succ) : (σ.simplex i) =
+    (Δ[n] ⊗ Δ[2]).δ ⟨i.1 + 2, by omega⟩ (τ.simplex ⟨i.1.castSucc, i.2⟩) := by
+  dsimp [SimplicialObject.δ]
+  apply Prod.ext
+  · apply_fun (fun f ↦ stdSimplex.objEquiv f)
+    change _ = δ _ ≫ σ _ ≫ σ _
+    dsimp [σ.simplex, SimplicialObject.σ]
+    rw [Equiv.apply_symm_apply]
+    apply SimplexCategory.Hom.ext
+    apply OrderHom.ext
+    ext k
+    simp [σ, Fin.predAbove, δ, Fin.succAbove, Fin.lt_iff_val_lt_val]
+    split_ifs
+    all_goals try omega
+    · next h h' h'' =>
+      simp [show ¬ i.fst.1 < k - 1 by omega]
+    · next h h' h'' =>
+      simp at h h' h''
+      omega
+    · split
+      · simp only [Fin.coe_pred, Fin.pred_succ]
+      · next h h' h'' h''' =>
+        simp at h h' h'' h'''
+        omega
+    · next h h' h'' =>
+      simp at h h' h''
+      omega
+    · next h h' h'' =>
+      simp at h h' h''
+      omega
+    · simp [show ¬ i.1.1 < k by omega]
+  · apply_fun (fun f ↦ stdSimplex.objEquiv f)
+    change mkHom (simplex₂' _) = δ _ ≫ mkHom (simplex₂' _)
+    apply SimplexCategory.Hom.ext
+    apply OrderHom.ext
+    ext k
+    simp [δ, Fin.succAboveOrderEmb, Fin.succAbove, Fin.lt_iff_val_lt_val]
+    split_ifs
+    all_goals
+      simp [Fin.le_iff_val_le_val] at *
+      try omega
 
 /-- for all `0 ≤ a ≤ b < n`, we get a nondegenerate `(n+1)`-simplex. -/
 def σ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin n), Fin b.succ) :
@@ -236,7 +255,7 @@ def τ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
   rcases i with ⟨b, a⟩
   rw [nonDegenerate_iff _ rfl]
   ext x
-  change (((Fin.predAbove b) ∘ (Fin.predAbove ⟨a, _⟩)) x).1 + (τ.simplex₂' ⟨b, a⟩ x) = x
+  change (((Fin.predAbove b) ∘ (Fin.predAbove ⟨a, _⟩)) x).1 + (simplex₂' ⟨b, a⟩ x) = x
   simp [Fin.predAbove, τ.simplex, simplex₂]
   split
   · next h =>
@@ -244,10 +263,12 @@ def τ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     simp [h.not_le]
     split
     · next h' =>
-      simp [h'.not_le]
-      exact Eq.symm (Nat.eq_add_of_sub_eq (le_of_add_le_right h') rfl)
+      simp [Fin.lt_iff_val_lt_val] at h'
+      simp [h'.not_le, Fin.le_iff_val_le_val]
+      omega
     · next h' =>
-      simp [h', not_lt.1 h']
+      simp [Fin.lt_iff_val_lt_val] at h'
+      simp [h', Fin.le_iff_val_le_val]
       omega
   · next h =>
     simp_rw [Fin.lt_castPred_iff]
@@ -258,9 +279,8 @@ def τ.nonDegenerateEquiv.toFun (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
       omega
     simp [(h.trans this).not_lt]
 
-/-
 -- `σab = ⟨(0, 0),..., (0, a), (1, a),..., (1, b), (2, b + 1),..., (2, n)⟩`
--- `(b + 2)`-th face of `τab` and of `τa(b+1)`
+-- `τab = ⟨(0, 0),..., (0, a), (1, a),..., (1, b), (2, b), (2, b + 1),..., (2, n)⟩`
 /-- There is a bijection (via `σ`) between pairs `0 ≤ a ≤ b < n` and nondegenerate
   `(n + 1)`-simplices. -/
 noncomputable
@@ -269,8 +289,9 @@ def σ.nonDegenerateEquiv :
   refine Equiv.ofBijective (σ.nonDegenerateEquiv.toFun) ?_
   constructor
   · exact fun _ _ h ↦ σ.simplex₂_injective (congr_arg (Prod.snd ∘ Subtype.val) h)
-  ·
--/
+  · -- `(Δ[n] ⊗ Δ[2]).δ (b + 2) y` is nd for all `0 ≤ a ≤ b < n` corresponding to `y ∈ nd_(n + 2)`
+    sorry
+
 /-- There is a bijection (via `τ`) between pairs `0 ≤ a ≤ b ≤ n` and nondegenerate
   `(n + 2)`-simplices. -/
 noncomputable

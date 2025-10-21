@@ -98,46 +98,36 @@ lemma face_zero_image_le_top_prod_horn :
 lemma face_snd_succ_image_eq (a : Fin b) :
     (face {⟨a.succ, by omega⟩}ᶜ).image (s ⟨b, a.succ⟩) =
       (face {⟨a.succ, by omega⟩}ᶜ).image (s ⟨b, a.castSucc⟩) := by
-  /-
   rw [face_image_eq_range_comp, face_image_eq_range_comp]
   apply congr_arg
-  apply_fun (fun f ↦ SSet.yonedaEquiv f)
-  dsimp [s, CosimplicialObject.δ]
-  simp only [yonedaEquiv_comp, yonedaEquiv_map]
-  apply Prod.ext
-  · ext e
-    apply_fun (fun f ↦ objEquiv f)
+  ext1
+  all_goals
+    apply_fun (fun f ↦ SSet.yonedaEquiv f)
+    apply_fun (fun f ↦ stdSimplex.objEquiv f)
     apply SimplexCategory.Hom.ext
     apply OrderHom.ext
-    ext j
-    simp [simplex]
-    apply stdSimplex.ext
-    intro j
-    sorry
-  · apply stdSimplex.ext
-    sorry
-  -/
-  simp [face_singleton_compl]
-  congr
-  apply Prod.ext
-  all_goals
-    simp [SSet.yonedaEquiv, SSet.uliftFunctor, yonedaCompUliftFunctorEquiv, stdSimplex,
-      objEquiv, SimplexCategory.σ, SimplexCategory.δ, Fin.succAboveOrderEmb, objMk, s,
-      simplex, nonDegenerateEquiv.toFun, σ.subcomplex]
-    rw [SimplexCategory.Hom.ext_iff, OrderHom.ext_iff]
-    ext e
-    simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val, Nat.mod_eq_of_lt]
-  · split
-    · next h => simp [h.le.not_lt, show (¬ a.1 < e) by omega]
-    · next => simp [show (a.1 < e) by omega, show (a.1 < e + 1) by omega]
-  · split
+  · change Fin.predAbove _ ∘ Fin.succAboveOrderEmb _ = Fin.predAbove _ ∘ Fin.succAboveOrderEmb _
+    ext k
+    simp only [SimplexCategory.len_mk, Fin.val_succ, Sigma.Lex.Fin.fst_eq, Function.comp_apply,
+      Fin.predAbove, Fin.castSucc_mk, Fin.succAboveOrderEmb_apply, Fin.succAbove,
+      Fin.lt_iff_val_lt_val, Fin.coe_castSucc]
+    split_ifs
     · next h =>
-      simp [show e.1 ≤ (a.1) by omega, show ¬(a.1 + 1) < e.1 by omega]
+      dsimp at h
+      omega
+    · simp only [Fin.castPred_castSucc, Fin.coe_castSucc, show ¬a.1 < k by omega, ↓reduceDIte]
+    · simp only [Fin.pred_succ, Fin.val_succ, show a.1 < k + 1 by omega, ↓reduceDIte]
     · next h =>
-      rw [not_lt] at h
-      have : a.1 + 1 < e.succ := Nat.add_lt_of_lt_sub h
-      have := this.not_le
-      simp [show ¬e.1.succ ≤ (a.1 + 1) by omega, show ¬e.1.succ ≤ (a.1) by omega]
+      dsimp at h
+      omega
+  · change simplex₂' _ ∘ Fin.succAboveOrderEmb _ = simplex₂' _ ∘ Fin.succAboveOrderEmb _
+    ext k
+    simp [Fin.succAbove, Fin.lt_iff_val_lt_val]
+    split_ifs
+    all_goals
+      simp only [not_lt, Fin.le_iff_val_le_val, Fin.val_succ, add_le_add_iff_right, not_le,
+        Fin.isValue, Fin.val_zero, Fin.val_one, zero_ne_one, Fin.coe_castSucc] at *
+      try omega
 
 /-- for `0 ≤ a < b < n`, the `(a + 1)`-th face of `σ b (a + 1)` is contained in `σ b a`. -/
 lemma face_snd_succ_image_le (a : Fin b) :
@@ -213,12 +203,8 @@ lemma face_snd_succ_succ_image_not_le_top_prod_horn (a : Fin b) :
   ext i
   fin_cases i
   all_goals simp [Fin.succAbove]
-  · use a.succ
+  · use ⟨a.succ, by omega⟩
     simp [Fin.lt_iff_val_lt_val]
-    rw [Nat.mod_eq_of_lt (by omega)]
-    simp [Fin.lt_iff_val_lt_val]
-    rw [Nat.mod_eq_of_lt (by omega)]
-    simp
   · use b.succ
     simp [Fin.lt_iff_val_lt_val, show ¬b.1 < a.1 + 1 by omega]
     split
@@ -312,10 +298,7 @@ lemma face_snd_succ_succ_image_not_le_σ (a j : Fin b) (i : Fin j.succ) :
         omega
   · next h =>
     simp_rw [← h] at h₁ h₂
-    have p : ¬(a.1 + 1) % (n + 1) < b.1 := by
-      rw [Nat.mod_eq_of_lt (by omega)]
-      omega
-    simp [show a.1 + 1 < a.1 + 1 + 1 by omega, h.symm.le, p] at h₁ h₂
+    simp [show a.1 + 1 < a.1 + 1 + 1 by omega, h.symm.le, show ¬a.1 + 1 < b by omega] at h₁ h₂
     split at h₁
     · next h' =>
       simp [Fin.ext_iff, h.not_lt] at h₁
@@ -325,8 +308,6 @@ lemma face_snd_succ_succ_image_not_le_σ (a j : Fin b) (i : Fin j.succ) :
       · omega
     · next h' =>
       simp [Fin.ext_iff] at h₁
-      rw [Nat.mod_eq_of_lt (by omega)] at p
-      simp [p] at h₁
       omega
 
 /-- for `0 ≤ a < b ≤ n`, the `(a + 2)`-th face of `σ b (a + 1)` is not contained in

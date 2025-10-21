@@ -226,7 +226,7 @@ lemma face_snd_succ_image_eq (a : Fin b) :
       σ.nonDegenerateEquiv.toFun, Equiv.ulift]
     rw [SimplexCategory.Hom.ext_iff, OrderHom.ext_iff]
     ext e
-    simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val, Nat.mod_eq_of_lt]
+    simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val]
   · split
     · next h => simp [h.le.not_lt, show (¬ a.1 < e) by omega]
     · next => simp [show (a.1 < e) by omega, show (a.1 < e + 1) by omega]
@@ -356,14 +356,10 @@ lemma face_snd_succ_succ_image_not_le_top_prod_horn (a : Fin b) :
   ext i
   fin_cases i
   all_goals simp [Fin.succAbove]
-  · use a.succ
+  · use ⟨a.succ, by omega⟩
     simp [Fin.lt_iff_val_lt_val]
-    rw [Nat.mod_eq_of_lt (by omega)]
-    simp [Fin.lt_iff_val_lt_val]
-    rw [Nat.mod_eq_of_lt (by omega)]
-    simp
   · use b.succ
-    simp [Fin.lt_iff_val_lt_val, show ¬b.1 < a.1 + 1 by omega]
+    simp [Fin.lt_iff_val_lt_val, show ¬b.1 < a.1 + 1 by omega, Fin.le_iff_val_le_val]
     omega
 
 lemma face_one_image_not_le_top_prod_horn (b : Fin (n + 1)) :
@@ -379,7 +375,7 @@ lemma face_one_image_not_le_top_prod_horn (b : Fin (n + 1)) :
   · use 0
     aesop
   · use b.succ.succ
-    simp [Fin.lt_iff_val_lt_val]
+    simp [Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val]
     exact Fin.succ_ne_zero _
 
 /-- for `0 ≤ a < b ≤ n`, the `a + 2`-th face of `τ b (a + 1)` is not contained in
@@ -455,107 +451,43 @@ lemma face_snd_succ_succ_image_not_le_σ (a : Fin b) (j : Fin (n + 1)) (i : Fin 
   rw [SimplexCategory.Hom.ext_iff, OrderHom.ext_iff] at h₁ h₂
   dsimp at h₁ h₂
   change _ ∘ x = _ at h₁ h₂
-  by_cases hb : a.1 + 1 = b
-  · simp_rw [hb] at h₁ h₂ -- check vertices (0, b) & (2, b)
-    simp_all
-    cases Fin.eq_last_or_eq_castSucc b
-    · next h =>
-      subst h
-      let h₁' := congr_fun h₁ (Fin.last (n + 1)).castSucc
-      let h₂' := congr_fun h₂ (Fin.last (n + 1)).castSucc
-      simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.eq_mk_iff_val_eq] at h₁' h₂'
-      split at h₁'
-      · next h' =>
-        rw [Fin.ext_iff] at h₁'
-        simp [Fin.le_iff_val_le_val] at h₂'
-        aesop
-      · next h' =>
-        rw [not_lt] at h'
-        rw [Fin.ext_iff] at h₁'
-        simp at h₁'
-        omega
-    · next hb =>
-      obtain ⟨b', hb⟩ := hb
-      subst hb
-      let h₁' := congr_fun h₁ b'.castSucc.castSucc
-      let h₂' := congr_fun h₂ b'.castSucc.castSucc
-      simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.eq_mk_iff_val_eq] at h₁' h₂'
+  obtain hj | (hj : b ≤ j.castSucc) := Fin.lt_or_le j.castSucc b
+  · replace h₁' := congr_fun h₁ b.castSucc
+    replace h₂' := congr_fun h₂ b.castSucc
+    simp only [Fin.lt_iff_val_lt_val, Fin.coe_castSucc] at hj
+    have : a.1 + 1 ≤ b := a.2
+    obtain ha | ha := Nat.lt_or_eq_of_le this
+    · simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val,
+        show ¬ b.1 < ↑a + 1 + 1 by omega,
+        show a.1 < b + 1 by omega, show ¬ b.1 ≤ a by omega] at h₁' h₂'
+      simp [Fin.ext_iff] at h₁' h₂'
       split at h₁'
       · next h =>
-        rw [Fin.ext_iff] at h₁'
-        simp [Fin.le_iff_val_le_val] at h₂'
-        aesop
-      · next h => -- b ≤ i
-        rw [Fin.eq_mk_iff_val_eq] at h₁'
-        dsimp at h₁'
-        rw [not_lt, h₁'] at h
-        replace h₁' := congr_fun h₁ b'.succ.castSucc
-        replace h₂' := congr_fun h₂ b'.succ.castSucc
-        simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val,
-          Fin.eq_mk_iff_val_eq, show b'.1 < b' + 1 + 1 + 1 by omega, show b'.1 < b' + 1 + 1 by omega,
-          show ¬b'.1 + 1 + 1 < b' by omega, show ¬b'.1 + 1 + 1 + 1 ≤ b' by omega,
-          show ¬b'.1 + 1 + 1≤ b' by omega] at h₁' h₂'
-        split at h₁'
-        · next h' =>
-          simp [h'.not_le] at h₂'
-          rw [Fin.eq_mk_iff_val_eq] at h₁'
-          dsimp at h₁'
-          omega -- get j < b
-        · next h' =>
-          rw [not_lt] at h'
-          simp [h'] at h₂'
-  · have a_lt_b : a.1 + 1 < b := by omega
-    cases Fin.eq_last_or_eq_castSucc b
+        simp [h.not_le] at h₂'
+        simp at h₁'
+        simp [show ¬ (x b.castSucc).1 ≤ j.1 + 1 by omega] at h₂'
+      · aesop
+    · simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val] at h₁' h₂'
+      simp_rw [← ha] at h₁' h₂'
+      simp [Fin.ext_iff] at h₁' h₂'
+      simp_rw [← ha] at h₁' h₂'
+      simp at h₁' h₂'
+      split at h₁'
+      · aesop
+      · next h =>
+        simp [show ¬ a.1 + 1 < b by omega] at h₁'
+        omega
+  · replace h₁' := congr_fun h₁ b.succ
+    replace h₂' := congr_fun h₂ b.succ
+    simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val] at h₁' h₂'
+    simp [show ¬ b.1 < a + 1 by omega, show ¬ b.1 + 1 ≤ a by omega, show a.1 < b + 1 by omega] at h₁' h₂'
+    split at h₁'
     · next h =>
-      subst h
-      let h₁' := congr_fun h₁ (Fin.last (n + 1)).castSucc
-      let h₂' := congr_fun h₂ (Fin.last (n + 1)).castSucc
-      simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val,
-        Fin.eq_mk_iff_val_eq, show ¬n + 1 < a + 1 + 1 by omega, show ¬n + 1 ≤ a by omega] at h₁' h₂'
-      split at h₁'
-      · next h' =>
-        simp [h'.not_le] at h₂'
-        rw [Fin.eq_mk_iff_val_eq] at h₁'
-        simp at h₁'
-        omega
-      · next h' =>
-        rw [not_lt] at h'
-        rw [Fin.eq_mk_iff_val_eq] at h₁'
-        simp at h₁'
-        omega
-    . next hb =>
-      obtain ⟨b', hb⟩ := hb
-      subst hb
-      dsimp at a_lt_b
-      replace h₁' := congr_fun h₁ b'.succ.castSucc
-      replace h₂' := congr_fun h₂ b'.succ.castSucc
-      simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val,
-        Fin.eq_mk_iff_val_eq, show ¬b'.1 < a + 1 by omega, show a.1 < b' + 1 by omega,
-        show ¬b'.1 + 1 ≤ a by omega] at h₁' h₂'
-      split at h₁'
-      · next h' =>
-        simp [h'.not_le] at h₂'
-        rw [Fin.eq_mk_iff_val_eq] at h₁'
-        dsimp at h₁'
-        have : j.1 < b' := by omega -- get j < b
-        let h₁' := congr_fun h₁ b'.castSucc.castSucc
-        let h₂' := congr_fun h₂ b'.castSucc.castSucc
-        simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val,
-          Fin.eq_mk_iff_val_eq, show ¬b'.1 < a + 1 + 1 by omega, show ¬b'.1 ≤ a by omega] at h₁' h₂'
-        split at h₁'
-        · next h =>
-          simp [h.not_le] at h₂'
-          rw [Fin.eq_mk_iff_val_eq] at h₁'
-          simp at h₁'
-          omega
-        · next h => -- b ≤ i
-          rw [Fin.eq_mk_iff_val_eq] at h₁'
-          dsimp at h₁'
-          rw [not_lt, h₁'] at h
-          omega
-      · next h' =>
-        rw [not_lt] at h'
-        simp [h'] at h₂'
+      simp [h.not_le] at h₂'
+      simp [Fin.ext_iff] at h₁'
+      simp [Fin.le_iff_val_le_val] at hj
+      omega
+    · aesop
 
 lemma face_one_image_not_le_σ (b : Fin n) (j : Fin n) (i : Fin j.succ) :
     ¬ (face {1}ᶜ).image (t ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩)
@@ -575,76 +507,26 @@ lemma face_one_image_not_le_σ (b : Fin n) (j : Fin n) (i : Fin j.succ) :
   rw [SimplexCategory.Hom.ext_iff, OrderHom.ext_iff] at h₁ h₂
   dsimp at h₁ h₂
   change _ ∘ x = _ at h₁ h₂
-  cases n with
-  | zero =>
-    fin_cases j
-  | succ n =>
-  cases Fin.eq_last_or_eq_castSucc b.succ
-  · next hb =>
-    rw [hb] at h₁ h₂
-    let h₁' := congr_fun h₁ (Fin.last (n + 1)).castSucc
-    let h₂' := congr_fun h₂ (Fin.last (n + 1)).castSucc
-    simp [Fin.predAbove, Fin.succAbove] at h₁' h₂'
-    simp_rw [Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val] at h₁' h₂'
-    simp at h₁' h₂'
+  obtain hj | (hj : b.succ ≤ j.castSucc) := Fin.lt_or_le j.castSucc b.succ
+  · let h₁' := congr_fun h₁ b.succ.castSucc
+    let h₂' := congr_fun h₂ b.succ.castSucc
+    simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val] at h₁' h₂'
+    simp [Fin.ext_iff] at h₁' h₂'
     split at h₁'
-    · next h' =>
-      rw [Fin.ext_iff] at h₁'
-      simp [h'.not_le] at h₂'
-      simp [Fin.last] at h₂' h₁'
-      omega
-    · next h' =>
-      rw [Fin.eq_mk_iff_val_eq] at h₁'
+    · next h =>
+      simp [h.not_le] at h₂'
+      simp [Fin.lt_iff_val_lt_val] at hj
       simp at h₁'
-      omega
-  · next hb =>
-    obtain ⟨b, hb⟩ := hb
-    rw [hb] at h₁ h₂
-    by_cases hb : b.1 = 0
-    · let h₁' := congr_fun h₁ 1
-      let h₂' := congr_fun h₂ 1
-      simp [Fin.predAbove, Fin.succAbove] at h₁' h₂'
-      simp_rw [Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val] at h₁' h₂'
-      simp [hb] at h₁' h₂'
-      split at h₁'
-      · next h' =>
-        simp [h'.not_le, Fin.succ] at h₂'
-        rw [Fin.eq_mk_iff_val_eq] at h₁'
-        dsimp at h₁'
-        simp [show (j.1 + 1) % (n + 1 + 1 + 1) = j + 1 by rw [Nat.mod_eq_of_lt (by omega)],
-          show (x 1).1 ≤ j + 1 by omega, show ¬ (2 : Fin (n + 4)) = 0 by exact ne_of_beq_false rfl] at h₂'
-      · next h' =>
-        simp [not_lt.1 h', show ¬ (2 : Fin (n + 4)) = 0 by exact ne_of_beq_false rfl] at h₂'
-    · let h₁' := congr_fun h₁ b.succ.castSucc
-      let h₂' := congr_fun h₂ b.succ.castSucc
-      simp [Fin.predAbove, Fin.succAbove] at h₁' h₂'
-      simp_rw [Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val, Fin.ext_iff] at h₁' h₂'
-      simp at h₁' h₂'
-      split at h₁'
-      · next h' =>
-        simp [h'.not_le, show (j.1 + 1) % (n + 1 + 1 + 1) = j + 1 by rw [Nat.mod_eq_of_lt (by omega)]] at h₂'
-        dsimp at h₁'
-        split at h₂'
-        · omega
-        have : j.1 < b := by omega -- get j < b
-        let h₁' := congr_fun h₁ b.castSucc.castSucc
-        let h₂' := congr_fun h₂ b.castSucc.castSucc
-        dsimp [Fin.predAbove, Fin.succAbove] at h₁' h₂'
-        simp_rw [Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val] at h₁' h₂'
-        simp [Fin.succ, hb] at h₁' h₂'
-        split at h₁'
-        · next h =>
-          simp [h.not_le, show (j.1 + 1) % (n + 1 + 1 + 1) = j + 1 by rw [Nat.mod_eq_of_lt (by omega)]] at h₂'
-          rw [Fin.ext_iff] at h₁'
-          simp at h₁'
-          omega
-        · next h => -- b ≤ i
-          rw [Fin.eq_mk_iff_val_eq] at h₁'
-          dsimp at h₁'
-          rw [not_lt, h₁'] at h
-          omega
-      · next h' =>
-        simp [not_lt.1 h'] at h₂'
+      rw [h₁'] at h₂'
+      simp [show ¬ b.1 + 2 ≤ j + 1 by omega] at h₂'
+    · next h =>
+      aesop
+  · let h₁' := congr_fun h₁ b.succ.succ
+    let h₂' := congr_fun h₂ b.succ.succ
+    simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val] at h₁' h₂'
+    simp [Fin.ext_iff] at h₁' h₂'
+    simp [Fin.le_iff_val_le_val] at hj
+    aesop
 
 /-- for `0 ≤ a < b < n`, the `((a + 1) + 1)`-th face of `σ (a + 1) b` is not contained in
   `σ i j` for any `0 ≤ i ≤ j < b`. -/

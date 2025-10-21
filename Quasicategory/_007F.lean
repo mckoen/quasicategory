@@ -308,27 +308,27 @@ def arrow_unionProd_iso : Arrow.mk (Λ[2, 1].ι □ ∂Δ[n].ι) ≅ Arrow.mk (�
   · simp [Functor.PushoutObjObj.ι]
     aesop
 
-inductive bdryHornPushout : {X Y : SSet} → (X ⟶ Y) → Prop
-  | mk (m : ℕ) : bdryHornPushout (Λ[2, 1].ι □ ∂Δ[m].ι)
+inductive HornBoundaryPushout : {X Y : SSet} → (X ⟶ Y) → Prop
+  | mk (m : ℕ) : HornBoundaryPushout (Λ[2, 1].ι □ ∂Δ[m].ι)
 
 /-- the class of pushout-products of `∂Δ[m] ↪ Δ[m]` with `Λ[2, 1] ↪ Δ[2]`. -/
-def bdryHornPushouts : MorphismProperty SSet := fun _ _ p ↦ bdryHornPushout p
+def hornBoundaryPushouts : MorphismProperty SSet := fun _ _ p ↦ HornBoundaryPushout p
 
-/-- `bdryInclusions` is contained in the class of all morphisms `i : A → B` such that
-the pushout-product with `Λ[2, 1] ↪ Δ[2]` is in the saturation of `bdryHornPushouts`. -/
-lemma bdryInclusions_le_S : bdryInclusions ≤
-  (saturation.{w} bdryHornPushouts).pushoutProduct Λ[2, 1].ι := fun _ _ _ ⟨_⟩ ↦ .of _ (.mk _)
+/-- `boundaryInclusions` is contained in the class of all morphisms `i : A → B` such that
+the pushout-product with `Λ[2, 1] ↪ Δ[2]` is in the saturation of `hornBoundaryPushouts`. -/
+lemma boundaryInclusions_le_S : boundaryInclusions ≤
+  (saturation.{w} hornBoundaryPushouts).pushoutProduct Λ[2, 1].ι := fun _ _ _ ⟨_⟩ ↦ .of _ (.mk _)
 
 lemma monomorphisms_le_S : monomorphisms SSet.{w} ≤
-    (saturation.{w} bdryHornPushouts).pushoutProduct Λ[2, 1].ι := by
-  rw [monomorphism_eq_saturation_bdryInclusions, ← Saturated.le_iff]
-  exact bdryInclusions_le_S
+    (saturation.{w} hornBoundaryPushouts).pushoutProduct Λ[2, 1].ι := by
+  rw [monomorphisms_eq_saturation_boundaryInclusions, ← Saturated.le_iff]
+  exact boundaryInclusions_le_S
 
-lemma innerAnodyne_eq_T : innerAnodyne.{w} = (saturation.{w} bdryHornPushouts) := by
+lemma innerAnodyne_eq_T : innerAnodyne.{w} = (saturation.{w} hornBoundaryPushouts) := by
   apply le_antisymm
   all_goals rw [innerAnodyne_eq_saturation_innerHornInclusions, ← Saturated.le_iff]
   · intro _ _ _ ⟨h0, hn⟩
-    exact .retract (hornRetract _ h0 hn) (monomorphisms_le_S _ (.infer_property _))
+    refine .retract (hornRetract _ h0 hn) (monomorphisms_le_S _ (.infer_property _))
   · intro _ _ _ ⟨_⟩
     rw [← innerAnodyne_eq_saturation_innerHornInclusions]
     exact (arrow_mk_iso_iff _ arrow_unionProd_iso).2 unionProd_ι_innerAnodyne
@@ -342,7 +342,7 @@ lemma hornMonoPushout_innerAnodyne {A B : SSet} (i : A ⟶ B) [Mono i] :
 -- `007F` (b)
 lemma contains_innerAnodyne_iff_contains_pushout_maps
     (S : MorphismProperty SSet) [Saturated.{w} S] :
-    (bdryHornPushouts ≤ S) ↔ (innerAnodyne.{w} ≤ S) := by
+    (hornBoundaryPushouts ≤ S) ↔ (innerAnodyne.{w} ≤ S) := by
   constructor
   · simp [innerAnodyne_eq_T, ← Saturated.le_iff]
   · exact fun h _ _ _ ⟨m⟩ ↦ h _ (hornMonoPushout_innerAnodyne ∂Δ[m].ι)

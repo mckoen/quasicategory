@@ -13,16 +13,10 @@ open CategoryTheory Simplicial MorphismProperty
 inductive BoundaryInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
   | mk n : BoundaryInclusion ∂Δ[n].ι
 
-example {X Y : SSet} (f : X ⟶ Y) (h : BoundaryInclusion f) :
-    ∃ (n : ℕ), HEq f ∂Δ[n].ι := by
-  induction h
-  case mk n =>
-  · refine ⟨n, Quiver.heq_of_homOfEq_ext rfl rfl rfl⟩
-
 /-- The class of all boundary inclusions. -/
-def bdryInclusions : MorphismProperty SSet := fun _ _ p ↦ BoundaryInclusion p
+def boundaryInclusions : MorphismProperty SSet := fun _ _ p ↦ BoundaryInclusion p
 
-lemma brdyInclusions_le_monomorphisms : bdryInclusions ≤ monomorphisms SSet :=
+lemma boundaryInclusions_le_monomorphisms : boundaryInclusions ≤ monomorphisms SSet :=
   fun _ _ _ ⟨_⟩ ↦ monomorphisms.infer_property _
 
 inductive InnerHornInclusion : {X Y : SSet} → (X ⟶ Y) → Prop
@@ -47,7 +41,7 @@ lemma innerHornInclusions_ofHoms_eq : innerHornInclusions_ofHoms = innerHornIncl
     simp_rw [innerHornInclusions_ofHoms, iSup_iff, ofHoms_iff]
     exact ⟨_, ⟨⟨_, ⟨h0, hn⟩⟩, rfl⟩⟩
 
-abbrev trivialFibration := bdryInclusions.rlp
+abbrev trivialFibration := boundaryInclusions.rlp
 
 abbrev innerFibration := innerHornInclusions.rlp
 
