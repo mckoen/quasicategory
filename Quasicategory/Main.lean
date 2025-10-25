@@ -36,7 +36,7 @@ instance quasicategory_iff_internalHom_horn_trivialFibration (S : SSet) :
     Quasicategory S ↔
       trivialFibration ((internalHom.map Λ[2, 1].ι.op).app S) := by
   rw [quasicategory_iff_from_innerAnodyne_rlp, morphism_rlp_iff,
-    ← contains_innerAnodyne_iff_contains_pushout_maps, le_llp_iff_le_rlp, morphism_le_iff]
+    innerAnodyne_eq_saturation_hornBoundaryPushouts, ← Saturated.le_iff, le_llp_iff_le_rlp, morphism_le_iff]
   constructor
   · intro h _ _ _ ⟨m⟩
     rw [← iff_of_arrow_iso_right _ hornFromPullbackPower_π_arrowIso,
@@ -61,7 +61,7 @@ instance trivialFibration_of_ihom_map_trivialFibration {X Y : SSet} (B : SSet) (
 open MonoidalClosed in
 /-- if `D` is a quasi-category, then the restriction map
   `ihom(Δ[2], ihom(S, D)) ⟶ ihom(Λ[2, 1], ihom(S, D))` is a trivial fibration. -/
-def aux (S D : SSet) [Quasicategory D] :
+def trivialFibration_internalHom_horn_map (S D : SSet) [Quasicategory D] :
     trivialFibration ((internalHom.map Λ[2, 1].ι.op).app ((ihom S).obj D)) := by
   intro _ _ i ⟨n⟩
   have := (quasicategory_iff_internalHom_horn_trivialFibration D).1 (by infer_instance)
@@ -86,7 +86,7 @@ lemma saturation_hornMonoPushouts_eq : saturation.{w} hornMonoPushouts = innerAn
   · rw [← Saturated.le_iff]
     intro _ _ _ ⟨i, _⟩
     exact hornMonoPushout_innerAnodyne i
-  · rw [innerAnodyne_eq_T, ← Saturated.le_iff]
+  · rw [innerAnodyne_eq_saturation_hornBoundaryPushouts, ← Saturated.le_iff]
     intro _ _ _ ⟨m⟩
     exact .of _ (.mk _ (instMonoι _))
 

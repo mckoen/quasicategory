@@ -23,7 +23,8 @@ instance : MonoidalPredicate Quasicategory where
 
 instance ihom_isQuasicategory {X Y : SSet} [Quasicategory Y] :
     Quasicategory ((ihom X).obj Y) :=
-  (quasicategory_iff_internalHom_horn_trivialFibration _).2 (aux X Y)
+  (quasicategory_iff_internalHom_horn_trivialFibration _).2
+    (trivialFibration_internalHom_horn_map X Y)
 
 instance : ClosedPredicate Quasicategory where
   prop_ihom _ _ := ihom_isQuasicategory

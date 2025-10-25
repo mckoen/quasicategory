@@ -35,14 +35,10 @@ def simplex₂' (i : Σₗ (b : Fin n), Fin b.succ) : Fin (n + 2) →o Fin 3 whe
           split
           all_goals omega
 
-/-- defined for `0 ≤ a ≤ b ≤ n`. Can define it for `b = n + 1`,
-  but then it lands in `Λ[2, 2] _⦋n + 2⦌`. -/
 @[simp]
 def τ.simplex₂ (i : Σₗ (b : Fin (n + 1)), Fin b.succ) : Δ[2] _⦋n + 2⦌  :=
   stdSimplex.objEquiv.symm (mkHom (simplex₂' i))
 
-/-- defined for `0 ≤ a ≤ b < n`. Can define it for `b = n`,
-  but then it lands in `Λ[2, 2] _⦋n + 1⦌`. -/
 @[simp]
 def σ.simplex₂ (i : Σₗ (b : Fin n), Fin b.succ) : Δ[2] _⦋n + 1⦌  :=
   stdSimplex.objEquiv.symm (mkHom (simplex₂' i))

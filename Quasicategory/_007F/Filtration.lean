@@ -9,7 +9,6 @@ variable {n : ℕ}
 
 namespace σ
 
-/-- doesn't make sense for n = 0, so do n + 1. -/
 noncomputable
 def filtration (i : Σₗ (b : Fin (n + 1)), Fin b.succ) :
     (Δ[n + 1] ⊗ Δ[2]).Subcomplex :=

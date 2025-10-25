@@ -11,7 +11,7 @@ variable {n : ℕ}
 
 variable (b : Fin (n + 2)) (i : Σₗ (b : Fin (n + 2)), Fin b.succ)
 
-/-- the image of `Λ[n + 2, i.snd + 1]` under `t i`. -/
+/-- the image of `Λ[n + 3, i.snd + 1]` under `t i`. -/
 @[simp]
 noncomputable
 abbrev innerHornImage : (Δ[n + 1] ⊗ Δ[2]).Subcomplex :=
@@ -27,8 +27,8 @@ lemma innerHornImage_eq_iSup : innerHornImage i =
     ⨆ (j : ({⟨i.snd.succ, by omega⟩}ᶜ : Set (Fin (n + 4)))), (face {j.1}ᶜ).image (t i) := by
   simp only [innerHornImage, horn_eq_iSup, image_iSup]
 
-/-- for `0 ≤ a ≤ b ≤ n`, each face of `τ b a` except the `a`-th, `a + 1`-th, `b + 1`-th, and
-  `b + 2`-th is contained in `∂Δ[n] ⊗ Δ[2]`. -/
+/-- for `0 ≤ a ≤ b ≤ n + 1`, each face of `τ b a` except the `a`-th, `a + 1`-th, `b + 1`-th, and
+  `b + 2`-th is contained in `∂Δ[n + 1] ⊗ Δ[2]`. -/
 lemma face_ne_fst_snd_succ_image_le_boundary_prod_top (a : Fin b.succ) (j : Fin (n + 4))
     (ha : ¬j = ⟨a, by omega⟩) (ha' : ¬j = ⟨a + 1, by omega⟩)
     (hb : ¬j = b.succ.castSucc) (hb' : ¬j = b.succ.succ) :
@@ -118,7 +118,7 @@ lemma face_ne_fst_snd_succ_image_le_boundary_prod_top (a : Fin b.succ) (j : Fin 
           simp [Fin.eq_mk_iff_val_eq] at hi
           omega
 
-/-- for `0 ≤ b ≤ n`, the `0`-th face of `τ b 0` is contained in `Δ[n] ⊗ Λ[2, 1]`. -/
+/-- for `0 ≤ b ≤ n`, the `0`-th face of `τ b 0` is contained in `Δ[n + 1] ⊗ Λ[2, 1]`. -/
 lemma face_zero_image_le_top_prod_horn :
     (face {0}ᶜ).image (t ⟨b, ⟨0, Nat.zero_lt_succ _⟩⟩) ≤ prod ⊤ Λ[2, 1] := by
   simp [face_singleton_compl]
@@ -130,7 +130,7 @@ lemma face_zero_image_le_top_prod_horn :
   intro ⟨e, he⟩
   aesop
 
-/-- for `0 ≤ a ≤ n` the `n + 2`-th face of `τ n a` is contained in `Δ[n] ⊗ Λ[2, 1]`. -/
+/-- for `0 ≤ a ≤ n` the `n + 2`-th face of `τ n a` is contained in `Δ[n + 1] ⊗ Λ[2, 1]`. -/
 lemma face_last_image_le_top_prod_horn (a : Fin (n + 1)) :
     (face {Fin.last (n + 2)}ᶜ).image (t ⟨Fin.last n, a⟩) ≤ prod ⊤ Λ[2, 1] := by
   simp [face_singleton_compl, SimplexCategory.δ, Fin.succAboveOrderEmb]
@@ -238,7 +238,7 @@ lemma face_snd_succ_image_eq (a : Fin b) :
       all_goals simp [show ¬e.1 + 1 ≤ a by omega]
 
 /-- for `0 ≤ a < b ≤ n + 1`, the image of `Λ[n + 3, a + 2]` under `t b (a + 1)` is contained
-  in `Y(b, a)`. -/
+  in `T(b, a)`. -/
 lemma innerHornImage_intermediate_le_filtration (b : Fin (n + 2)) (a : Fin b) :
     innerHornImage ⟨b, a.succ⟩ ≤ filtration ⟨b, a.castSucc⟩ := by
   rw [innerHornImage_eq_iSup]
@@ -284,7 +284,7 @@ lemma innerHornImage_intermediate_le_filtration (b : Fin (n + 2)) (a : Fin b) :
           (le_sup_of_le_right
             (face_ne_fst_snd_succ_image_le_boundary_prod_top b a.succ j h hj h' h'')))
 
-/-- for `0 ≤ b < n`, the image of `Λ[n + 2, 1]` under `g (b + 1) 0` is contained in `Y(b, b)`. -/
+/-- for `0 ≤ b ≤ n`, the image of `Λ[n + 3, 1]` under `t (b + 1) 0` is contained in `T(b, b)`. -/
 lemma innerHornImage_join_le_filtration (b : Fin (n + 1)) :
     innerHornImage ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩ ≤
       filtration ⟨b.castSucc, ⟨b, Nat.lt_add_one _⟩⟩ := by
@@ -343,8 +343,8 @@ lemma innerHornImage_bot_le_filtration : innerHornImage (⊥ : Σₗ (b : Fin (n
     · exact le_sup_of_le_left (le_sup_of_le_right
         (face_ne_fst_snd_succ_image_le_boundary_prod_top _ _ j.succ (ne_of_beq_false rfl) hj hj (by simpa [Fin.succ, Fin.ext_iff] using h)))
 
-/-- for `0 ≤ a < b ≤ n`, the `a + 2`-th face of `τ b (a + 1)` is not contained in
-  `Δ[n] ⊗ Λ[2, 1]`. -/
+/-- for `0 ≤ a < b ≤ n + 1`, the `a + 2`-th face of `τ b (a + 1)` is not contained in
+  `Δ[n + 1] ⊗ Λ[2, 1]`. -/
 lemma face_snd_succ_succ_image_not_le_top_prod_horn (a : Fin b) :
     ¬ (face {⟨a.succ.succ, by omega⟩}ᶜ).image (t ⟨b, a.succ⟩)
       ≤ prod ⊤ Λ[2, 1] := by
@@ -378,8 +378,8 @@ lemma face_one_image_not_le_top_prod_horn (b : Fin (n + 1)) :
     simp [Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val]
     exact Fin.succ_ne_zero _
 
-/-- for `0 ≤ a < b ≤ n`, the `a + 2`-th face of `τ b (a + 1)` is not contained in
-  `∂Δ[n] ⊗ Δ[2]`. -/
+/-- for `0 ≤ a < b ≤ n + 1`, the `a + 2`-th face of `τ b (a + 1)` is not contained in
+  `∂Δ[n + 1] ⊗ Δ[2]`. -/
 lemma face_snd_succ_succ_image_not_le_boundary_prod_top (a : Fin b) :
     ¬ (face {⟨a.succ.succ, by omega⟩}ᶜ).image (t ⟨b, a.succ⟩)
       ≤ ∂Δ[n + 1].prod ⊤ := by
@@ -402,6 +402,7 @@ lemma face_snd_succ_succ_image_not_le_boundary_prod_top (a : Fin b) :
     · simp [show a.1 < i by omega]
       omega
 
+/-- for `0 ≤ b ≤ n`, the first face of `τ (b + 1) 0` is not contained in `∂Δ[n + 1].prod ⊤`. -/
 lemma face_one_image_not_le_boundary_prod_top (b : Fin (n + 1)) :
     ¬ (face {1}ᶜ).image (t ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩)
       ≤ ∂Δ[n + 1].prod ⊤ := by
@@ -431,8 +432,8 @@ lemma face_one_image_not_le_boundary_prod_top (b : Fin (n + 1)) :
       exfalso
       exact h h'
 
-/-- for `0 ≤ a < b ≤ n`, the `a + 2`-th face of `τ b (a + 1)` is not contained in
-  `σ j i` for any `0 ≤ i ≤ j < n`. -/
+/-- for `0 ≤ a < b ≤ n + 1`, the `a + 2`-th face of `τ b (a + 1)` is not contained in
+  `σ j i` for any `0 ≤ i ≤ j ≤ n`. -/
 lemma face_snd_succ_succ_image_not_le_σ (a : Fin b) (j : Fin (n + 1)) (i : Fin j.succ) :
     ¬ (face {⟨a.succ.succ, by omega⟩}ᶜ).image (t ⟨b, a.succ⟩)
       ≤ σ.subcomplex ⟨j, i⟩ := by
@@ -489,7 +490,9 @@ lemma face_snd_succ_succ_image_not_le_σ (a : Fin b) (j : Fin (n + 1)) (i : Fin 
       omega
     · aesop
 
-lemma face_one_image_not_le_σ (b : Fin n) (j : Fin n) (i : Fin j.succ) :
+/-- for `0 ≤ b ≤ n`, the first face of `τ (b + 1) 0` is not contained in
+  `σ j i` for any `0 ≤ i ≤ j ≤ n`. -/
+lemma face_one_image_not_le_σ (b : Fin (n + 1)) (j : Fin (n + 1)) (i : Fin j.succ) :
     ¬ (face {1}ᶜ).image (t ⟨b.succ, ⟨0, Nat.zero_lt_succ _⟩⟩)
       ≤ σ.subcomplex ⟨j, i⟩ := by
   dsimp [τ.subcomplex, σ.subcomplex]
@@ -510,8 +513,8 @@ lemma face_one_image_not_le_σ (b : Fin n) (j : Fin n) (i : Fin j.succ) :
   obtain hj | (hj : b.succ ≤ j.castSucc) := Fin.lt_or_le j.castSucc b.succ
   · let h₁' := congr_fun h₁ b.succ.castSucc
     let h₂' := congr_fun h₂ b.succ.castSucc
-    simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val] at h₁' h₂'
-    simp [Fin.ext_iff] at h₁' h₂'
+    simp [Fin.predAbove, Fin.succAbove] at h₁' h₂'
+    simp_rw [Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val, Fin.ext_iff] at h₁' h₂'
     split at h₁'
     · next h =>
       simp [h.not_le] at h₂'
@@ -523,13 +526,13 @@ lemma face_one_image_not_le_σ (b : Fin n) (j : Fin n) (i : Fin j.succ) :
       aesop
   · let h₁' := congr_fun h₁ b.succ.succ
     let h₂' := congr_fun h₂ b.succ.succ
-    simp [Fin.predAbove, Fin.succAbove, Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val] at h₁' h₂'
-    simp [Fin.ext_iff] at h₁' h₂'
+    simp [Fin.predAbove, Fin.succAbove] at h₁' h₂'
+    simp_rw [Fin.lt_iff_val_lt_val, Fin.le_iff_val_le_val, Fin.ext_iff] at h₁' h₂'
     simp [Fin.le_iff_val_le_val] at hj
     aesop
 
-/-- for `0 ≤ a < b < n`, the `((a + 1) + 1)`-th face of `σ (a + 1) b` is not contained in
-  `σ i j` for any `0 ≤ i ≤ j < b`. -/
+/-- for `0 ≤ a < b ≤ n + 1`, the `a + 2`-th face of `τ b (a + 1)` is not contained in
+  `τ j i` for any `0 ≤ i ≤ j < b`. -/
 lemma face_snd_succ_succ_image_not_le_τ (a j : Fin b) (i : Fin j.succ) :
     ¬ (face {⟨a.succ.succ, by omega⟩}ᶜ).image (t ⟨b, a.succ⟩)
       ≤ τ.subcomplex ⟨⟨j, by omega⟩, ⟨i, by simp⟩⟩ := by
@@ -591,8 +594,8 @@ lemma face_snd_succ_succ_image_not_le_τ (a j : Fin b) (i : Fin j.succ) :
           omega
     · omega
 
-/-- for `0 ≤ a < b < n`, the `a + 2`-th face of `σ b (a + 1)` is not contained in
-  `σ b i` for any `0 ≤ i ≤ a`. -/
+/-- for `0 ≤ a < b ≤ n`, the `a + 2`-th face of `τ b (a + 1)` is not contained in
+  `τ b i` for any `0 ≤ i ≤ a`. -/
 lemma face_snd_succ_succ_image_not_le_τ' (a : Fin b) (i : Fin a.succ) :
     ¬ (face {⟨a.succ.succ, by omega⟩}ᶜ).image (t ⟨b, a.succ⟩)
       ≤ τ.subcomplex ⟨b, ⟨i, by simp; omega⟩⟩ := by
@@ -716,7 +719,7 @@ lemma face_snd_succ_succ_image_succ_not_le_filtration (hn : i < ⊤) :
     simp [face_singleton_compl] at this
     exact this
 
-/-- for `0 ≤ b ≤ n`, the `1`-th face of `τ 0 b` is not contained in `Y(b)`. -/
+/-- the first face of `τ 0 0` is not contained in `S(n,n)`. -/
 lemma face_one_image_not_le_σ_filtration_top :
   ¬ (face {(1 : Fin (n + 4))}ᶜ).image (t ⊥) ≤ σ.filtration ⊤ := by
   simp [face_singleton_compl, σ.filtration, unionProd]
